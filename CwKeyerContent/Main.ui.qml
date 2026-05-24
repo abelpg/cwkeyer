@@ -29,7 +29,9 @@ Rectangle {
         Connections {
             target: btn_keyer
 
-            function onClicked() {usbDevice.list_devices();}
+            function onClicked() {
+                usbDevice.list_devices()
+            }
         }
     }
 
