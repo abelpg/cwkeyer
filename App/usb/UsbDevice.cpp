@@ -4,6 +4,12 @@
 
 #include "UsbDevice.h"
 
+/*
+*TESTED_DEVICES = [
+{"vendor_id": 0x413d, "product_id": 0x2107, "interface": 0, "endpoint": 0x81, "max_packet_size": 8}, # Vail
+{"vendor_id": 0x413d, "product_id": 0x2107, "interface": 1, "endpoint": 0x82, "max_packet_size": 4}  # Left click/right
+]
+ */
 UsbDevice::UsbDevice() {
   qDebug() << "UsbDevice constructor called";
 }
@@ -12,66 +18,50 @@ UsbDevice::~UsbDevice() {
   qDebug() << "UsbDevice destructor called";
 }
 
-void UsbDevice::list_devices() {
-  libusb_device **devs;
-  int r = libusb_init_context(/*ctx=*/NULL, /*options=*/NULL, /*num_options=*/0);
-  if (r >= 0) {
-    ssize_t cnt = libusb_get_device_list(NULL, &devs);
-    if (cnt >= 0) {
-      libusb_exit(NULL);
+void UsbDevice::connect_device() {
 
-
-      libusb_free_device_list(devs, 1);
-
-      libusb_exit(NULL);
-    }
-  }
+  qDebug() << "UsbDevice connect_device called";
 }
 
-void UsbDevice::print_devs(libusb_device **devs, int verbose) {
-  libusb_device *dev;
-  int i = 0, j = 0;
-  uint8_t path[8];
-  char string_buffer[LIBUSB_DEVICE_STRING_BYTES_MAX];
+void UsbDevice::list_devices() {
+  libusb_context *context = NULL;
+  libusb_device **list = NULL;
+  int rc = 0;
+  ssize_t count = 0;
 
-  while ((dev = devs[i++]) != NULL) {
-    struct libusb_device_descriptor desc;
-    int r = libusb_get_device_descriptor(dev, &desc);
-    if (r < 0) {
-      fprintf(stderr, "failed to get device descriptor");
-      return;
-    }
+  rc = libusb_init(&context);
+  assert(rc == 0);
 
-    printf("%04x:%04x (bus %d, device %d)",
-      desc.idVendor, desc.idProduct,
-      libusb_get_bus_number(dev), libusb_get_device_address(dev));
+  count = libusb_get_device_list(context, &list);
+  assert(count > 0);
 
-    r = libusb_get_port_numbers(dev, path, sizeof(path));
-    if (r > 0) {
-      printf(" path: %d", path[0]);
-      for (j = 1; j < r; j++)
-        printf(".%d", path[j]);
-    }
+  for (size_t idx = 0; idx < count; ++idx) {
+      libusb_device *device = list[idx];
+      libusb_device_descriptor desc = {0};
 
-    if (verbose) {
-      r = libusb_get_device_string(dev, LIBUSB_DEVICE_STRING_MANUFACTURER,
-        string_buffer, sizeof(string_buffer));
-      if (r >= 0) {
-        printf("\n    manufacturer = %s", string_buffer);
-      }
+      rc = libusb_get_device_descriptor(device, &desc);
+      assert(rc == 0);
 
-      r = libusb_get_device_string(dev, LIBUSB_DEVICE_STRING_PRODUCT,
-        string_buffer, sizeof(string_buffer));
-      if (r >= 0) {
-        printf("\n    product = %s", string_buffer);
-      }
+      qDebug() << "DeviceClass: " << (int) desc.bDeviceClass ;
+      qDebug()  << "IdVendor: "  << int_to_hex(desc.idVendor) << " IdProduct: " << int_to_hex(desc.idProduct);
 
-      r = libusb_get_device_string(dev, LIBUSB_DEVICE_STRING_SERIAL_NUMBER,
-        string_buffer, sizeof(string_buffer));
-      if (r >= 0) {
-        printf("\n    serial_number = %s", string_buffer);
-      }
-    }
-    printf("\n");
+      //printf("Vendor:Device = %04x:%04x\n", desc.idVendor, desc.idProduct);
   }
+
+  libusb_free_device_list(list, 1);
+  libusb_exit(context);
+}
+
+/**
+ * Transforms a number to a hexadecimal representation
+ * @tparam T With number
+ * @param i with value
+ * @return String with hex value.
+ */
+template< typename T > std::string UsbDevice::int_to_hex( T i ) {
+  std::stringstream stream;
+  stream << "0x"
+         << std::setfill ('0') << std::setw(sizeof(T)*2)
+         << std::hex << i;
+  return stream.str();
 }

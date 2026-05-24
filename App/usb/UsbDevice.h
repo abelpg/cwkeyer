@@ -8,8 +8,9 @@
 #include <QDebug>
 #include <QObject>
 #include "libusb/libusb.h"
-#include <stdio.h>
-#include <string.h>
+
+
+#include <iomanip>
 
 class UsbDevice : public QObject {
   Q_OBJECT
@@ -19,8 +20,11 @@ class UsbDevice : public QObject {
 
     Q_INVOKABLE void list_devices();
 
+    Q_INVOKABLE void connect_device();
+
   private:
-    static void print_devs(libusb_device **devs, int verbose);
+    template<typename T> static std::string int_to_hex(T i);
+
 };
 
 
