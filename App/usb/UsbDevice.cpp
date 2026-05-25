@@ -97,10 +97,8 @@ std::set<Device> UsbDevice::list_devices() {
 }
 
 
-Device * UsbDevice::detect_device() {
+void UsbDevice::detect_device() {
   std::set<Device> devices = list_devices();
-
-  Device *device = nullptr;
 
   for (int i=0; i< 5 ; i++) {
     std::set<Device> devicesNow = list_devices();
@@ -115,21 +113,16 @@ Device * UsbDevice::detect_device() {
     } else if (devices.size() == 1) {
 
       for (auto d : devices) {
-        device = &d;
+        detected_device = &d;
         break;
       }
     } else {
       qDebug() << "More than one device";
     }
-    sleep_for(1000);
+    Utils::sleep_for(1000);
 
   }
 
-  return device;
-}
-
-void UsbDevice::sleep_for(int milliseconds) {
-  usleep(milliseconds * 1000);
 }
 
 

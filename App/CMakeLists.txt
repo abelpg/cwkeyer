@@ -3,6 +3,7 @@ target_sources(${CMAKE_PROJECT_NAME} PUBLIC
     main.cpp
 )
 
+add_subdirectory(utils)
 add_subdirectory(configuration)
 add_subdirectory(sound)
 add_subdirectory(usb)

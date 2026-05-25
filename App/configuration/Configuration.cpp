@@ -41,43 +41,20 @@ Configuration Configuration::getInstance() {
   return *instance;
 }
 
-template<typename T>
-T Configuration::get(std::string key) {
+ QJsonObject * Configuration::getObject(std::string key) {
 
   QString keyName = QString::fromStdString(key);
 
   if (jsonObject != nullptr && jsonObject->contains(keyName)) {
-    QJsonValue value = jsonObject->value(keyName);
-    if (value.isDouble()) {
-      return static_cast<T>(value.toDouble());
-    } else if (value.isString()) {
-      return value.toString().toStdString();
-    } else if (value.isBool()) {
-      return value.toBool();
-    }
+    return new QJsonObject(jsonObject->value(keyName).toObject());
   }
 
   return nullptr;
 
 }
 
-template<typename T>
-void Configuration::put(std::string key, T i) {
-
-  qDebug() <<  "Type id" << typeid(T).name();
-
-  //
-  // jsonObject[QString::fromStdString(key)] = QJsonValue::fromVariant(QVariant::fromValue(i));
-  //
-  // QFile file(CONFIGURATION_FILE_NAME);
-  // if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
-  //   throw std::runtime_error("Could not open file");
-  // }
-  //
-  // QJsonDocument document(*jsonObject);
-  // file.write( document.toJson());
-  //
-  // file.close();
+void Configuration::putObject(std::string key, QJsonObject value) {
+  jsonObject->operator[](QString::fromStdString(key)) = value;
 
 }
 

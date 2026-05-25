@@ -1,17 +1,12 @@
-//
-// Created by Capitang7 on 24/05/2026.
-//
-
 #ifndef CWKEYERAPP_USBDEVICE_H
 #define CWKEYERAPP_USBDEVICE_H
 
 #include <QDebug>
 #include <QObject>
-#include "libusb/libusb.h"
 #include <iomanip>
 
-#include <unistd.h>
-
+#include "libusb/libusb.h"
+#include "../utils/Utils.h"
 #include "Device.h"
 
 class UsbDevice : public QObject {
@@ -25,7 +20,7 @@ class UsbDevice : public QObject {
 
     Q_INVOKABLE void connect_device();
 
-    Q_INVOKABLE Device* detect_device();
+    Q_INVOKABLE void detect_device();
 
   private:
 
@@ -42,11 +37,10 @@ class UsbDevice : public QObject {
     /**
      *
      */
-    Device *detectedDevice = nullptr;
+    Device *detected_device = nullptr;
 
     template<typename T> static std::string int_to_hex(T i);
 
-    static void sleep_for(int milliseconds);
 
 };
 

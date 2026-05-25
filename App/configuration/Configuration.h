@@ -8,15 +8,6 @@
 #include <stdexcept>
 
 
-template<typename T>
-struct TypeParseTraits;
-
-#define REGISTER_PARSE_TYPE(X) template <> struct TypeParseTraits<X> \
-{ static const char* name; } ; const char* TypeParseTraits<X>::name = #X;
-
-REGISTER_PARSE_TYPE(int);
-REGISTER_PARSE_TYPE(double);
-REGISTER_PARSE_TYPE(std::string);
 
 class Configuration {
 
@@ -24,18 +15,18 @@ class Configuration {
     static Configuration getInstance();
     ~Configuration();
 
-    template<typename T> void put(std::string key, T i);
+    void putObject(std::string key,  QJsonObject  object);
 
-    template<typename T> T get(std::string key);
+    QJsonObject* getObject(std::string key);
 
   private:
     inline static const auto CONFIGURATION_FILE_NAME = QStringLiteral("configuration.json");
 
     Configuration();
 
-    static Configuration *instance;
+    static Configuration* instance;
 
-    QJsonObject * jsonObject;
+    QJsonObject* jsonObject;
 
 };
 

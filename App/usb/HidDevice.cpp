@@ -13,28 +13,63 @@ HidDevice::HidDevice() {
 std::set<Device> HidDevice::list_devices() {
   std::set<Device> devicesLocal;
 
-  hid_device_info *devs = hid_enumerate(0x0, 0x0);
-  hid_device_info *cur_dev = devs;
+  hid_device_info *cur_dev = hid_enumerate(0x0, 0x0);
 
   while (cur_dev) {
     qDebug() << "Device Found";
     qDebug() << "  type: " << int_to_hex(cur_dev->vendor_id) << " " << int_to_hex(cur_dev->product_id);
     qDebug() << "  path: " << cur_dev->path;
-    qDebug() << "  serial_number: " << cur_dev->serial_number;
-    qDebug() << "  manufacturer_string: " << cur_dev->manufacturer_string;
-    qDebug() << "  product_string: " << cur_dev->product_string;
-    qDebug() << "  release_number: " << cur_dev->release_number;
-    qDebug() << "  interface_number: " << cur_dev->interface_number;
 
-    Device vp(cur_dev->vendor_id, cur_dev->product_id);
+
+    Device vp(cur_dev->vendor_id, cur_dev->product_id, new std::string(cur_dev->path));
     devicesLocal.insert(vp);
+
 
     cur_dev = cur_dev->next;
   }
-  hid_free_enumeration(devs);
+
+  hid_free_enumeration(cur_dev);
 
   return devicesLocal;
 }
+
+
+void HidDevice::detect_device() {
+  std::set<Device> devices = list_devices();
+
+  for (int i=0; i< 5 && detected_device == nullptr; i++) {
+    std::set<Device> devicesNow = list_devices();
+
+    for (auto dn : devicesNow) {
+      bool found = false;
+      for (auto d : devices) {
+        if (d == dn) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        detected_device = &dn;
+        break;
+      }
+    }
+
+    if (detected_device == nullptr) {
+      Utils::sleep_for(2000);
+    }
+  }
+
+  if (detected_device != nullptr) {
+    Configuration::getInstance().putObject("device", detected_device->toJson());
+    qDebug() << " Detected device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
+  } else {
+    qDebug() << " No device detected";
+  }
+
+
+
+}
+
 
 HidDevice::~HidDevice() {
   qDebug() << "HidDevice destructor called";

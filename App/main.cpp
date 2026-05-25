@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     }, Qt::QueuedConnection);
 
     Sound sound;
-    UsbDevice device;
+    HidDevice device;
 
     QQmlContext *context = engine.rootContext();
     context->setContextProperty("sound", &sound);
