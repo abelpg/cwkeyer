@@ -8,6 +8,8 @@ HidDevice::HidDevice() {
   qDebug() << "HidDevice constructor called";
   const int rc = hid_init();
   assert(rc >= 0);
+
+  configuration = new Configuration();
 }
 
 std::set<Device> HidDevice::list_devices() {
@@ -60,7 +62,7 @@ void HidDevice::detect_device() {
   }
 
   if (detected_device != nullptr) {
-    Configuration::getInstance().putObject("device", detected_device->toJson());
+    configuration->putObject("device", detected_device->toJson());
     qDebug() << " Detected device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
   } else {
     qDebug() << " No device detected";

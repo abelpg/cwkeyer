@@ -17,9 +17,10 @@ target_include_directories(LibUsbDevice
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+
 target_link_libraries(LibUsbDevice PRIVATE
-        LibUtils
         LibConfiguration
+        LibUtils
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb/libusb-1.0.a
         ${CMAKE_CURRENT_SOURCE_DIR}/hidapi/hidapi.lib
         Qt${QT_VERSION_MAJOR}::Core

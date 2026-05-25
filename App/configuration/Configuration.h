@@ -8,11 +8,11 @@
 #include <stdexcept>
 
 
-
 class Configuration {
 
   public:
-    static Configuration getInstance();
+
+    Configuration();
     ~Configuration();
 
     void putObject(std::string key,  QJsonObject  object);
@@ -21,10 +21,6 @@ class Configuration {
 
   private:
     inline static const auto CONFIGURATION_FILE_NAME = QStringLiteral("configuration.json");
-
-    Configuration();
-
-    static Configuration* instance;
 
     QJsonObject* jsonObject;
 

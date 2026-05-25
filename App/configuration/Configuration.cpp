@@ -1,6 +1,3 @@
-//
-// Created by Capitang7 on 25/05/2026.
-//
 
 #include "Configuration.h"
 
@@ -31,15 +28,6 @@ Configuration::Configuration() {
 
 }
 
-Configuration Configuration::getInstance() {
-
-  if (instance != nullptr) {
-    return *instance;
-  }
-
-  instance = new Configuration();
-  return *instance;
-}
 
  QJsonObject * Configuration::getObject(std::string key) {
 
@@ -60,5 +48,4 @@ void Configuration::putObject(std::string key, QJsonObject value) {
 
 Configuration::~Configuration() {
   delete jsonObject;
-  delete instance;
 }

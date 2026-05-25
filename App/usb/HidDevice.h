@@ -26,6 +26,8 @@ class HidDevice  : public QObject {
 
     Device *detected_device = nullptr;
 
+    Configuration *configuration = nullptr;
+
     std::set<Device> list_devices();
 
 
