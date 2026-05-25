@@ -22,6 +22,11 @@ qt_standard_project_setup()
 
 qt_add_executable(${CMAKE_PROJECT_NAME})
 
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/App/usb/hidapi/hidapi.dll
+        "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>")
+
 qt_add_resources(${CMAKE_PROJECT_NAME} "configuration"
     PREFIX "/"
     FILES

@@ -14,20 +14,6 @@ UsbDevice::UsbDevice() {
   libusb_set_debug(context, LIBUSB_LOG_LEVEL_INFO);
 }
 
-UsbDevice::~UsbDevice() {
-  qDebug() << "UsbDevice destructor called";
-
-  libusb_exit(context);
-
-  if (devices != nullptr) {
-    for (auto it = devices->begin(); it != devices->end(); ++it) {
-      it  = devices->erase(it);
-    }
-    delete devices;
-  }
-
-
-}
 
 void UsbDevice::connect_device() {
   qDebug() << "UsbDevice connect_device called";
@@ -60,14 +46,14 @@ void UsbDevice::connect_device() {
 
 }
 
-std::set<VendorProduct> UsbDevice::list_devices() {
+std::set<Device> UsbDevice::list_devices() {
 
-  libusb_device **list = NULL;
+  libusb_device **list = nullptr;
   const ssize_t count = libusb_get_device_list(context, &list);
   assert(count > 0);
 
   int rc = 0;
-  std::set<VendorProduct> devicesLocal;
+  std::set<Device> devicesLocal;
   for (size_t idx = 0; idx < count; ++idx) {
       libusb_device *device = list[idx];
       libusb_device_descriptor desc = {0};
@@ -78,16 +64,29 @@ std::set<VendorProduct> UsbDevice::list_devices() {
       qDebug() << "DeviceClass: " << (int) desc.bDeviceClass ;
       qDebug()  << "IdVendor: "  << int_to_hex(desc.idVendor) << " IdProduct: " << int_to_hex(desc.idProduct);
 
-      VendorProduct vp(desc.idVendor, desc.idProduct);
-
-      devicesLocal.insert(vp);
 
       libusb_config_descriptor *config;
 
       rc = libusb_get_active_config_descriptor(device, &config);
       assert(rc == LIBUSB_SUCCESS);
 
-      print_configuration(config);
+      Device vp(desc.idVendor, desc.idProduct);
+      for (int i=0; i< config->bNumInterfaces ; i++) {
+
+        auto interface = config->interface[i];
+
+        for (int x=0; x < interface.num_altsetting; x++) {
+          auto alt_setting = interface.altsetting[x];
+
+          for (int j=0; j< alt_setting.bNumEndpoints; j++) {
+            vp.addInterface(alt_setting.bInterfaceNumber,
+              alt_setting.endpoint[j].bEndpointAddress,
+              alt_setting.endpoint[j].wMaxPacketSize);
+          }
+        }
+      }
+
+      devicesLocal.insert(vp);
 
       libusb_free_config_descriptor(config);
   }
@@ -98,16 +97,39 @@ std::set<VendorProduct> UsbDevice::list_devices() {
 }
 
 
-void UsbDevice::print_configuration(libusb_config_descriptor *config) {
+Device * UsbDevice::detect_device() {
+  std::set<Device> devices = list_devices();
 
-  qDebug() << "Configuration descriptor called";
-  qDebug() <<"    wTotalLength:            " << config->wTotalLength;
-  qDebug() <<"    bNumInterfaces:          " << config->bNumInterfaces;
-  qDebug() <<"    bConfigurationValue:     " << config->bConfigurationValue;
-  qDebug() <<"    iConfiguration:          " << config->iConfiguration;
-  qDebug() <<"    bmAttributes:            " << config->bmAttributes;
-  qDebug() <<"    MaxPower:                 " << config->MaxPower;
+  Device *device = nullptr;
 
+  for (int i=0; i< 5 ; i++) {
+    std::set<Device> devicesNow = list_devices();
+
+    for (const auto& d : devicesNow) {
+      devices.erase(d);
+    }
+
+    if (devices.empty()) {
+      devices = devicesNow;
+      qDebug() << " No device detected";
+    } else if (devices.size() == 1) {
+
+      for (auto d : devices) {
+        device = &d;
+        break;
+      }
+    } else {
+      qDebug() << "More than one device";
+    }
+    sleep_for(1000);
+
+  }
+
+  return device;
+}
+
+void UsbDevice::sleep_for(int milliseconds) {
+  usleep(milliseconds * 1000);
 }
 
 
@@ -123,4 +145,12 @@ template< typename T > std::string UsbDevice::int_to_hex( T i ) {
          << std::setfill ('0') << std::setw(sizeof(T)*2)
          << std::hex << i;
   return stream.str();
+}
+
+
+UsbDevice::~UsbDevice() {
+  qDebug() << "UsbDevice destructor called";
+
+  libusb_exit(context);
+
 }

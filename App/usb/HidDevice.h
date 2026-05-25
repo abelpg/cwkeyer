@@ -4,17 +4,20 @@
 #include <QDebug>
 #include <QObject>
 
-#include "VendorProduct.h"
+#include "Device.h"
 #include "hidapi/hidapi.h"
+#include <iomanip>
 
 class HidDevice  : public QObject {
   Q_OBJECT
   public:
+    HidDevice();
+    ~HidDevice();
 
-  HidDevice();
-  ~HidDevice();
+    Q_INVOKABLE std::set<Device> list_devices();
 
-  Q_INVOKABLE std::set<VendorProduct> list_devices();
+  private:
+    template<typename T> static std::string int_to_hex(T i);
 };
 
 

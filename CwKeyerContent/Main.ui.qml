@@ -21,8 +21,8 @@ Rectangle {
         id: btn_keyer
         text: qsTr("Keyer")
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: -216
-        anchors.horizontalCenterOffset: -263
+        anchors.verticalCenterOffset: -146
+        anchors.horizontalCenterOffset: -250
         checkable: true
         anchors.horizontalCenter: parent.horizontalCenter
 
@@ -37,8 +37,8 @@ Rectangle {
 
     SpinBox {
         id: input_wpm
-        x: 165
-        y: 8
+        x: 156
+        y: 78
         value: 20
         editable: true
         to: 50
@@ -47,9 +47,25 @@ Rectangle {
 
     Label {
         id: lbl_wpm
-        x: 124
-        y: 14
+        x: 115
+        y: 84
         text: qsTr("WPM")
+    }
+
+    Button {
+        id: btn_detect_device
+        x: 8
+        y: 8
+        text: qsTr("Detect device")
+
+        Connections {
+            target: btn_detect_device
+            function onClicked() {
+                btn_detect_device.enabled = false;
+                usbDevice.detect_device();
+                btn_detect_device.enabled = true;
+            }
+        }
     }
     states: [
         State {

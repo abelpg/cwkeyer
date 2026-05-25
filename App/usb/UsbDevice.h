@@ -8,11 +8,11 @@
 #include <QDebug>
 #include <QObject>
 #include "libusb/libusb.h"
-
-#include <functional>
 #include <iomanip>
 
-#include "VendorProduct.h"
+#include <unistd.h>
+
+#include "Device.h"
 
 class UsbDevice : public QObject {
   Q_OBJECT
@@ -21,17 +21,13 @@ class UsbDevice : public QObject {
     UsbDevice();
     ~UsbDevice();
 
-    Q_INVOKABLE std::set<VendorProduct> list_devices();
+    Q_INVOKABLE std::set<Device> list_devices();
 
     Q_INVOKABLE void connect_device();
 
+    Q_INVOKABLE Device* detect_device();
+
   private:
-  /*
-*TESTED_DEVICES = [
-{"vendor_id": 0x413d, "product_id": 0x2107, "interface": 0, "endpoint": 0x81, "max_packet_size": 8}, # Vail
-{"vendor_id": 0x413d, "product_id": 0x2107, "interface": 1, "endpoint": 0x82, "max_packet_size": 4}  # Left click/right
-]
- */
 
     const int VID = 0x413d;
     const int PID = 0x2107;
@@ -39,19 +35,18 @@ class UsbDevice : public QObject {
     const int ENDPOINT = 0x82;
 
     /**
-     * Collection of vendor products.
-     */
-    std::set<VendorProduct> *devices = nullptr;
-
-    /**
      * Usb context.
      */
     libusb_context *context = nullptr;
 
+    /**
+     *
+     */
+    Device *detectedDevice = nullptr;
+
     template<typename T> static std::string int_to_hex(T i);
 
-    static void print_configuration(libusb_config_descriptor *config);
-
+    static void sleep_for(int milliseconds);
 
 };
 
