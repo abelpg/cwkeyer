@@ -12,14 +12,21 @@ UsbDevice::UsbDevice() {
   assert(rc == LIBUSB_SUCCESS);
   libusb_set_option(context, LIBUSB_OPTION_USE_USBDK);
   libusb_set_debug(context, LIBUSB_LOG_LEVEL_INFO);
-
-
 }
 
 UsbDevice::~UsbDevice() {
   qDebug() << "UsbDevice destructor called";
 
   libusb_exit(context);
+
+  if (devices != nullptr) {
+    for (auto it = devices->begin(); it != devices->end(); ++it) {
+      it  = devices->erase(it);
+    }
+    delete devices;
+  }
+
+
 }
 
 void UsbDevice::connect_device() {
@@ -53,15 +60,14 @@ void UsbDevice::connect_device() {
 
 }
 
-std::list<VendorProduct> UsbDevice::list_devices() {
+std::set<VendorProduct> UsbDevice::list_devices() {
 
   libusb_device **list = NULL;
   const ssize_t count = libusb_get_device_list(context, &list);
   assert(count > 0);
 
   int rc = 0;
-  std::list<VendorProduct> devicesLocal;
-  std::list<VendorProduct>::iterator it;
+  std::set<VendorProduct> devicesLocal;
   for (size_t idx = 0; idx < count; ++idx) {
       libusb_device *device = list[idx];
       libusb_device_descriptor desc = {0};
@@ -72,9 +78,9 @@ std::list<VendorProduct> UsbDevice::list_devices() {
       qDebug() << "DeviceClass: " << (int) desc.bDeviceClass ;
       qDebug()  << "IdVendor: "  << int_to_hex(desc.idVendor) << " IdProduct: " << int_to_hex(desc.idProduct);
 
-      it = devicesLocal.begin();
-      it ++;
-      devicesLocal.insert(it, VendorProduct(desc.idVendor, desc.idProduct));
+      VendorProduct vp(desc.idVendor, desc.idProduct);
+
+      devicesLocal.insert(vp);
 
       libusb_config_descriptor *config;
 

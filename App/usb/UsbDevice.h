@@ -21,7 +21,7 @@ class UsbDevice : public QObject {
     UsbDevice();
     ~UsbDevice();
 
-    Q_INVOKABLE std::list<VendorProduct> list_devices();
+    Q_INVOKABLE std::set<VendorProduct> list_devices();
 
     Q_INVOKABLE void connect_device();
 
@@ -38,17 +38,15 @@ class UsbDevice : public QObject {
     const int INTERFACE = 1;
     const int ENDPOINT = 0x82;
 
-    std::list<VendorProduct> devices;
+    /**
+     * Collection of vendor products.
+     */
+    std::set<VendorProduct> *devices = nullptr;
 
     /**
      * Usb context.
      */
     libusb_context *context = nullptr;
-
-    /**
-     * Callback handle to perform hotplug.
-     */
-    libusb_hotplug_callback_handle callback_handle;
 
     template<typename T> static std::string int_to_hex(T i);
 

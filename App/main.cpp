@@ -7,7 +7,7 @@
 
 #include "autogen/environment.h"
 #include "core/sound.h"
-#include "usb/UsbDevice.h"
+#include "usb/HidDevice.h"
 
 int main(int argc, char *argv[]) {
     set_qt_environment();
@@ -24,11 +24,11 @@ int main(int argc, char *argv[]) {
     }, Qt::QueuedConnection);
 
     Sound sound;
-    UsbDevice usbDevice;
+    //HidDevice hid_device;
 
     QQmlContext *context = engine.rootContext();
     context->setContextProperty("sound", &sound);
-    context->setContextProperty("usbDevice", &usbDevice);
+    //context->setContextProperty("usbDevice", &hid_device);
 
     engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");
     engine.addImportPath(":/");

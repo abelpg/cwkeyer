@@ -12,6 +12,9 @@ class VendorProduct {
     int product_id;
 
     VendorProduct(int vendor_id, int product_id);
+
+    friend bool operator< (const VendorProduct &left, const VendorProduct &right);
+
 };
 
 
