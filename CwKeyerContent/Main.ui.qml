@@ -61,11 +61,34 @@ Rectangle {
         Connections {
             target: btn_detect_device
             function onClicked() {
-                btn_detect_device.enabled = false;
-                usbDevice.detect_device();
-                btn_detect_device.enabled = true;
+                btn_detect_device.enabled = false
+                bsy_indicator.opacity = 1.0
+                guiConnector.detect_device()
+                bsy_indicator.opacity = 0.0
+                btn_detect_device.enabled = true
             }
         }
+    }
+
+    BusyIndicator {
+        id: bsy_indicator
+        x: 115
+        y: 8
+        width: 35
+        height: 32
+        opacity: 0
+        visible: true
+    }
+
+    Text {
+        id: txt_device
+        x: 156
+        y: 8
+        width: 161
+        height: 32
+        text: qsTr("Text")
+        font.pixelSize: 12
+        property string device_name: "This is a string"
     }
     states: [
         State {

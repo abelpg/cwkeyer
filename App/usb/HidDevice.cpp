@@ -36,7 +36,7 @@ std::set<Device> HidDevice::list_devices() {
 }
 
 
-void HidDevice::detect_device() {
+bool HidDevice::detect_device() {
   std::set<Device> devices = list_devices();
 
   for (int i=0; i< 5 && detected_device == nullptr; i++) {
@@ -64,12 +64,24 @@ void HidDevice::detect_device() {
   if (detected_device != nullptr) {
     configuration->putObject("device", detected_device->toJson());
     qDebug() << " Detected device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
+    return true;
   } else {
     qDebug() << " No device detected";
   }
+  return false;
 
 
+}
 
+std::string HidDevice::get_current_device() {
+  std::string result = "No device detected";
+
+  if (detected_device != nullptr) {
+    result = "Device vid=" + int_to_hex(detected_device->vendor_id) + " pid=" + int_to_hex(detected_device->product_id)
+    + "\n path=" + *detected_device->path;
+  }
+
+  return result;
 }
 
 

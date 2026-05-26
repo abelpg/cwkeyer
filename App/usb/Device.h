@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <QJsonObject>
 #include <list>
-#include <DeviceInterface.h>
+#include "DeviceInterface.h"
 
 
 class Device {

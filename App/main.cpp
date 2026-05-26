@@ -1,15 +1,11 @@
-// Copyright (C) 2024 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 
 #include "autogen/environment.h"
+#include "gui/GuiConnector.h"
 
-#include "sound/Sound.h"
-#include "usb/HidDevice.h"
-#include "usb/UsbDevice.h"
 
 int main(int argc, char *argv[]) {
     set_qt_environment();
@@ -25,12 +21,10 @@ int main(int argc, char *argv[]) {
         }
     }, Qt::QueuedConnection);
 
-    Sound sound;
-    HidDevice device;
+    GuiConnector guiConnector = GuiConnector();
 
     QQmlContext *context = engine.rootContext();
-    context->setContextProperty("sound", &sound);
-    context->setContextProperty("usbDevice", &device);
+    context->setContextProperty("guiConnector", &guiConnector);
 
     engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");
     engine.addImportPath(":/");

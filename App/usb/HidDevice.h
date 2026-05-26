@@ -12,14 +12,15 @@
 #include "../configuration/Configuration.h"
 #include <iomanip>
 
-class HidDevice  : public QObject {
-  Q_OBJECT
+class HidDevice  {
+
   public:
     HidDevice();
     ~HidDevice();
 
+    bool detect_device();
 
-    Q_INVOKABLE void detect_device();
+    std::string get_current_device();
 
   private:
     template<typename T> static std::string int_to_hex(T i);
@@ -29,7 +30,6 @@ class HidDevice  : public QObject {
     Configuration *configuration = nullptr;
 
     std::set<Device> list_devices();
-
 
 };
 

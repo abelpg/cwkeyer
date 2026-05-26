@@ -8,14 +8,12 @@ add_subdirectory(utils)
 add_subdirectory(configuration)
 add_subdirectory(sound)
 add_subdirectory(usb)
-
+add_subdirectory(gui)
 
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
     PRIVATE
-        LibConfiguration
-        LibSound
-        LibUsbDevice
+        GuiConnector
         Qt${QT_VERSION_MAJOR}::Core
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::Widgets

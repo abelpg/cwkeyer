@@ -2,25 +2,23 @@
 #define CWKEYERAPP_USBDEVICE_H
 
 #include <QDebug>
-#include <QObject>
 #include <iomanip>
 
 #include "libusb/libusb.h"
 #include "../utils/Utils.h"
 #include "Device.h"
 
-class UsbDevice : public QObject {
-  Q_OBJECT
+class UsbDevice  {
   public:
 
     UsbDevice();
     ~UsbDevice();
 
-    Q_INVOKABLE std::set<Device> list_devices();
+    std::set<Device> list_devices();
 
-    Q_INVOKABLE void connect_device();
+    void connect_device();
 
-    Q_INVOKABLE void detect_device();
+    void detect_device();
 
   private:
 
