@@ -22,6 +22,7 @@ class Device {
     std::string * path = nullptr;
     int vendor_id = 0;
     int product_id = 0;
+    bool connected = false;
 
 
     DeviceInterface * device_interface = nullptr;
@@ -52,15 +53,15 @@ class Device {
       return jsonObject;
     };
 
-    Device fromJson(QJsonObject jsonObject) const {
+    static Device * fromJson(QJsonObject jsonObject)  {
       int vendor_id = jsonObject["vendor_id"].toInt();
       int product_id = jsonObject["product_id"].toInt();
 
       if (jsonObject.contains("path")) {
-        return Device(vendor_id, product_id, new std::string(jsonObject["path"].toString().toStdString()));
+        return new Device(vendor_id, product_id, new std::string(jsonObject["path"].toString().toStdString()));
       }
 
-      return Device(vendor_id, product_id);
+      return new Device(vendor_id, product_id);
     }
 
 

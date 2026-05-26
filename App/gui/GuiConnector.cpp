@@ -6,6 +6,21 @@ GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
   device = new HidDevice();
 }
 
+void GuiConnector::init_device() {
+
+  emit device_initiated(QVariant());
+}
+
+
+void GuiConnector::connect_device() {
+
+  emit device_connected();
+}
+
+void GuiConnector::disconnect_device() {
+
+  emit device_disconnected();
+}
 
 void GuiConnector::detect_device() {
 
@@ -16,8 +31,12 @@ void GuiConnector::detect_device() {
   emit device_updated(varData);
 
   varData.clear();
-  if (device->detect_device()) {
-    varData << device->get_current_device().c_str();
+
+  Device * device_detected = this->device->detect_device();
+  std::string result = "No device detected";
+  if (device_detected != nullptr) {
+    result = "Device vid=" + HidDevice::int_to_hex(device_detected->vendor_id) + " pid=" + HidDevice::int_to_hex(device_detected->product_id);
+    varData << result.c_str();
   } else {
     varData <<"Device not detected";
   }

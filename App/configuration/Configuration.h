@@ -7,22 +7,25 @@
 #include <QJsonObject>
 #include <stdexcept>
 
+#include "ConfigurationValue.h"
+
 
 class Configuration {
 
   public:
 
     Configuration();
-    ~Configuration();
 
-    void putObject(std::string key,  QJsonObject  object);
+    static void removeValue(std::string key);
 
-    QJsonObject* getObject(std::string key);
+    static void putObject(std::string key,  QJsonObject  object);
+
+    static  ConfigurationValue* getValue(std::string key);
+
 
   private:
     inline static const auto CONFIGURATION_FILE_NAME = QStringLiteral("configuration.json");
-
-    QJsonObject* jsonObject;
+    static QJsonObject *open_file_to_write(std::string key, QFile * file);
 
 };
 

@@ -43,9 +43,26 @@ int main(int argc, char *argv[]) {
     context->setContextProperty("guiConnector", &guiConnector);
 
     // Here or engine.rootObjects().first()->children().first()
+    QObject * rootObject  = engine.rootObjects().first();
+
     QObject::connect(&guiConnector,
-                  SIGNAL(device_updated(QVariant)), engine.rootObjects().first(),
-                  SLOT(onDeviceUpdated(QVariant)),
+                  SIGNAL(device_initiated(QVariant)),rootObject ,
+                  SLOT(deviceInitiated(QVariant)),
+                        Qt::QueuedConnection);
+
+    QObject::connect(&guiConnector,
+                  SIGNAL(device_updated(QVariant)),rootObject ,
+                  SLOT(deviceUpdated(QVariant)),
+                        Qt::QueuedConnection);
+
+    QObject::connect(&guiConnector,
+                  SIGNAL(device_connected()), rootObject,
+                  SLOT(deviceConnected()),
+                        Qt::QueuedConnection);
+
+    QObject::connect(&guiConnector,
+                  SIGNAL(device_disconnected()), rootObject,
+                  SLOT(deviceDisconnected()),
                         Qt::QueuedConnection);
 
     return QApplication::exec();

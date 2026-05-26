@@ -15,6 +15,7 @@ Rectangle {
     width: Constants.width
     height: Constants.height
     color: Constants.backgroundColor
+    signal deviceUpdatedWindow(string msg)
 
     Button {
         id: btn_keyer
@@ -27,9 +28,8 @@ Rectangle {
 
         Connections {
             target: btn_keyer
-
             function onClicked() {
-                usbDevice.list_devices()
+                console.log("clicked")
             }
         }
     }
@@ -89,6 +89,14 @@ Rectangle {
         text: qsTr("")
         font.pixelSize: 12
     }
+
+    Connections {
+        target: rectangle
+        function onDeviceUpdatedWindow(msg) {
+            txt_device.text = msg
+        }
+    }
+
     states: [
         State {
             name: "clicked"

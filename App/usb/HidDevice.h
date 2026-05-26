@@ -18,12 +18,21 @@ class HidDevice  {
     HidDevice();
     ~HidDevice();
 
-    bool detect_device();
+    Device * detect_device();
 
-    std::string get_current_device();
+    Device * init_device();
+
+    bool connect_device();
+
+    bool disconnect_device();
+
+    template<typename T> static std::string int_to_hex(T i);
 
   private:
-    template<typename T> static std::string int_to_hex(T i);
+
+    static const std::string CONFIG_NAME;
+
+    hid_device * hid_device;
 
     Device *detected_device = nullptr;
 

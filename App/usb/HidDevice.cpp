@@ -3,13 +3,56 @@
 //
 
 #include "HidDevice.h"
-
+const std::string HidDevice::CONFIG_NAME = "device";
 HidDevice::HidDevice() {
   qDebug() << "HidDevice constructor called";
   const int rc = hid_init();
   assert(rc >= 0);
 
   configuration = new Configuration();
+}
+
+Device * HidDevice::init_device() {
+  return detected_device;
+}
+
+bool HidDevice::connect_device() {
+
+  if (detected_device == nullptr) {
+    ConfigurationValue*  value =  configuration->getValue(CONFIG_NAME) ;
+    if (value != nullptr) {
+      detected_device = Device::fromJson(*value->value);
+    }
+  }
+
+  if (detected_device != nullptr) {
+
+    if (!detected_device->connected) {
+      hid_device = hid_open_path(detected_device->path->c_str());
+      if (hid_device != nullptr) {
+        detected_device->connected = true;
+        qDebug() << "Connected to device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
+      }
+    }
+
+    return detected_device->connected;
+  }
+
+  Configuration::removeValue(CONFIG_NAME);
+  qDebug() << "Failed to connect to device";
+
+  return false;
+}
+
+bool HidDevice::disconnect_device() {
+
+  if (detected_device->connected) {
+    hid_close(hid_device);
+    detected_device->connected = false;
+    return true;
+  }
+
+  return false;
 }
 
 std::set<Device> HidDevice::list_devices() {
@@ -22,10 +65,8 @@ std::set<Device> HidDevice::list_devices() {
     qDebug() << "  type: " << int_to_hex(cur_dev->vendor_id) << " " << int_to_hex(cur_dev->product_id);
     qDebug() << "  path: " << cur_dev->path;
 
-
     Device vp(cur_dev->vendor_id, cur_dev->product_id, new std::string(cur_dev->path));
     devicesLocal.insert(vp);
-
 
     cur_dev = cur_dev->next;
   }
@@ -36,10 +77,10 @@ std::set<Device> HidDevice::list_devices() {
 }
 
 
-bool HidDevice::detect_device() {
+ Device * HidDevice::detect_device() {
   std::set<Device> devices = list_devices();
 
-  for (int i=0; i< 5 && detected_device == nullptr; i++) {
+  for (int i=0; i< 10 && detected_device == nullptr; i++) {
     std::set<Device> devicesNow = list_devices();
 
     for (auto dn : devicesNow) {
@@ -57,36 +98,29 @@ bool HidDevice::detect_device() {
     }
 
     if (detected_device == nullptr) {
-      Utils::sleep_for(2000);
+      Utils::sleep_for(1000);
     }
   }
 
   if (detected_device != nullptr) {
-    configuration->putObject("device", detected_device->toJson());
+    configuration->putObject(CONFIG_NAME, detected_device->toJson());
     qDebug() << " Detected device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
-    return true;
+
   } else {
     qDebug() << " No device detected";
   }
-  return false;
 
-
+  return detected_device;
 }
-
-std::string HidDevice::get_current_device() {
-  std::string result = "No device detected";
-
-  if (detected_device != nullptr) {
-    result = "Device vid=" + int_to_hex(detected_device->vendor_id) + " pid=" + int_to_hex(detected_device->product_id)
-    + "\n path=" + *detected_device->path;
-  }
-
-  return result;
-}
-
 
 HidDevice::~HidDevice() {
   qDebug() << "HidDevice destructor called";
+  if (detected_device != nullptr) {
+    delete detected_device;
+  }
+  if (hid_device != nullptr) {
+    hid_close(hid_device);
+  }
   const int rc = hid_exit();
   assert(rc >= 0);
 }
