@@ -11,6 +11,7 @@
 #include "../utils/Utils.h"
 #include "../configuration/Configuration.h"
 #include <iomanip>
+#include <thread>
 
 class HidDevice  {
 
@@ -22,9 +23,9 @@ class HidDevice  {
 
     Device * init_device();
 
-    bool connect_device();
+    Device * connect_device();
 
-    bool disconnect_device();
+    Device * disconnect_device();
 
     template<typename T> static std::string int_to_hex(T i);
 
@@ -32,11 +33,16 @@ class HidDevice  {
 
     static const std::string CONFIG_NAME;
 
+    std::thread thread_task;
+
     hid_device * hid_device;
 
     Device *detected_device = nullptr;
 
     Configuration *configuration = nullptr;
+
+    ///////////////
+    void task_runnable();
 
     std::set<Device> list_devices();
 

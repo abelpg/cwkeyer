@@ -28,15 +28,13 @@ class GuiConnector : public QObject{
 
   //Q_PROPERTY(QString text MEMBER m_text NOTIFY device_updated)
   signals:
-      void device_initiated(QVariant varData);
       void device_updated(QVariant varData);
-      void device_connected();
-      void device_disconnected();
-
 
   private:
     Sound* sound;
     HidDevice* device;
+
+    void send_device_updated(Device * device);
 };
 
 

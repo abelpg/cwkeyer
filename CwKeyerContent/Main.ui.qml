@@ -15,14 +15,14 @@ Rectangle {
     width: Constants.width
     height: Constants.height
     color: Constants.backgroundColor
-    signal deviceUpdatedWindow(string msg)
+    signal deviceUpdatedWindow(string name, bool connected)
 
     Button {
         id: btn_keyer
         text: qsTr("Keyer")
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: -146
-        anchors.horizontalCenterOffset: -250
+        anchors.verticalCenterOffset: -140
+        anchors.horizontalCenterOffset: -285
         checkable: true
         anchors.horizontalCenter: parent.horizontalCenter
 
@@ -36,8 +36,8 @@ Rectangle {
 
     SpinBox {
         id: input_wpm
-        x: 156
-        y: 78
+        x: 121
+        y: 84
         value: 20
         editable: true
         to: 50
@@ -46,8 +46,8 @@ Rectangle {
 
     Label {
         id: lbl_wpm
-        x: 115
-        y: 84
+        x: 80
+        y: 90
         text: qsTr("WPM")
     }
 
@@ -82,18 +82,46 @@ Rectangle {
 
     Text {
         id: txt_device
-        x: 156
+        x: 121
         y: 8
-        width: 161
-        height: 32
+        width: 201
+        height: 70
         text: qsTr("")
-        font.pixelSize: 12
+        font.pixelSize: 20
+        property bool connected: true
     }
 
     Connections {
         target: rectangle
-        function onDeviceUpdatedWindow(msg) {
-            txt_device.text = msg
+
+        function onDeviceUpdatedWindow(name, connected) {
+            txt_device.text = name
+            txt_device.connected = connected
+            if (connected) {
+                btn_connect.text = "Disconnect"
+            } else {
+                btn_connect.text = "Connect"
+            }
+        }
+    }
+
+    Button {
+        id: btn_connect
+        x: 8
+        y: 46
+        width: 107
+        height: 32
+        text: qsTr("Connect")
+
+        Connections {
+            target: btn_connect
+            function onClicked() {
+                if (txt_device.connected) {
+                    guiConnector.disconnect_device()
+                } else {
+                    guiConnector.connect_device()
+                }
+            }
         }
     }
 

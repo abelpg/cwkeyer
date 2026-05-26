@@ -7,19 +7,21 @@ GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
 }
 
 void GuiConnector::init_device() {
-
-  emit device_initiated(QVariant());
+  Device * device_connected = this->device->init_device();
+  send_device_updated(device_connected);
 }
 
 
 void GuiConnector::connect_device() {
-
-  emit device_connected();
+  Device * device_detected = this->device->connect_device();
+  send_device_updated(device_detected);
 }
 
 void GuiConnector::disconnect_device() {
 
-  emit device_disconnected();
+  Device * device_detected = this->device->disconnect_device();
+  send_device_updated(device_detected);
+
 }
 
 void GuiConnector::detect_device() {
@@ -33,15 +35,27 @@ void GuiConnector::detect_device() {
   varData.clear();
 
   Device * device_detected = this->device->detect_device();
-  std::string result = "No device detected";
+  send_device_updated(device_detected);
+
+}
+
+void GuiConnector::send_device_updated(Device * device_detected) {
+  QVariantList varData;
+  varData.clear();
+
+  QJsonObject jsonObject;
+
   if (device_detected != nullptr) {
-    result = "Device vid=" + HidDevice::int_to_hex(device_detected->vendor_id) + " pid=" + HidDevice::int_to_hex(device_detected->product_id);
-    varData << result.c_str();
+    std::string text = "Device vid=" + HidDevice::int_to_hex(device_detected->vendor_id) + " pid=" + HidDevice::int_to_hex(device_detected->product_id);;
+    jsonObject["device_name"] = text.c_str();
   } else {
-    varData <<"Device not detected";
+    jsonObject["device_name"] = "Device not detected";
   }
+
+  jsonObject["connected"] = device_detected!= nullptr? device_detected->connected:false;
+
+  varData <<QJsonDocument(jsonObject).toJson().toStdString().c_str();
 
   emit device_updated(varData);
 
 }
-

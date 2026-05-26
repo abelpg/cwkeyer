@@ -64,7 +64,7 @@ void Configuration::putObject(std::string key, QJsonObject value) {
 
 
 QJsonObject * Configuration::open_file_to_write(std::string key, QFile * file) {
-  if (!file->open(QIODevice::ReadWrite | QIODevice::Text)) {
+  if (!file->open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text)) {
     throw std::runtime_error("Could not open file");
   }
 

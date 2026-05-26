@@ -12,24 +12,11 @@ Window {
     maximumWidth: 640
     title: "CwKeyer"
 
-    function deviceConnected() {
-        console.log("Device connected");
-
-    }
-
-    function deviceDisconnected() {
-        console.log("Device disconnected" );
-
-    }
-
-    function deviceInitiated(msg) {
-        console.log("Device initiated app" +msg);
-        mainScreen.deviceUpdatedWindow(msg);
-    }
 
     function deviceUpdated(msg) {
         console.log("Device updated app" +msg);
-        mainScreen.deviceUpdatedWindow(msg);
+        var obj = JSON.parse(msg)
+        mainScreen.deviceUpdatedWindow(obj["device_name"], obj["connected"]);
     }
 
     Main {
