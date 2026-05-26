@@ -9,3 +9,9 @@ DeviceInterface::DeviceInterface(int interface, int endpoint, int packetSize) {
   this->endpoint = endpoint;
   this->packetSize = packetSize;
 }
+
+DeviceInterface::DeviceInterface(DeviceInterface * deviceInterface) {
+  this->interface = deviceInterface->interface;
+  this->endpoint = deviceInterface->endpoint;
+  this->packetSize = deviceInterface->packetSize;
+};

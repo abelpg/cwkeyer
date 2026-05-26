@@ -31,7 +31,7 @@ Device * HidDevice::connect_device() {
   if (detected_device != nullptr) {
 
     if (!detected_device->connected) {
-      hid_device = hid_open_path(detected_device->path->c_str());
+      hid_device = hid_open_path(detected_device->getPath()->c_str());
       if (hid_device != nullptr) {
         hid_set_nonblocking(hid_device, 0);
 

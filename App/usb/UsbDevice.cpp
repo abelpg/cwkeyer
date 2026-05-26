@@ -48,7 +48,7 @@ Device * UsbDevice::disconnect_device() {
 
   if (detected_device->connected) {
     detected_device->connected = false;
-    libusb_release_interface(device, detected_device->device_interface->interface); //release the claimed interface
+    libusb_release_interface(device, detected_device->getInterface()->interface); //release the claimed interface
     libusb_close(device); //close the device we opened
   }
 
@@ -133,8 +133,8 @@ std::set<Device> UsbDevice::manage_devices(Device *deviceToTry) {
     Device vp(desc.idVendor, desc.idProduct);
 
     if (deviceToTry != nullptr) {
-      vp.device_interface = search_device_interface_available(device, deviceToTry);
-      if (vp.device_interface != nullptr) {
+      vp.setInterface( search_device_interface_available(device, deviceToTry));
+      if (vp.getInterface() != nullptr) {
         devicesLocal.insert(vp);
       }
     } else {
@@ -168,7 +168,7 @@ DeviceInterface* UsbDevice::search_device_interface_available(libusb_device *lib
         DeviceInterface iface(alt_setting.bInterfaceNumber,alt_setting.endpoint[j].bEndpointAddress, alt_setting.endpoint[j].wMaxPacketSize);
 
         if (try_to_read(deviceToTry, &iface)) {
-          result = &iface;
+          result = new DeviceInterface(iface);
         }
 
       }

@@ -20,8 +20,6 @@
 class Device {
   public:
 
-    std::string * path = nullptr;
-    DeviceInterface * device_interface = nullptr;
     int vendor_id = 0;
     int product_id = 0;
     bool connected = false;
@@ -36,7 +34,10 @@ class Device {
 
     friend bool operator< (const Device &left, const Device &right);
 
-
+    void setPath(std::string *path);
+    void setInterface(DeviceInterface * device_interface);
+    std::string * getPath();
+    DeviceInterface * getInterface();
 
     QJsonObject toJson() const {
       QJsonObject jsonObject;
@@ -68,6 +69,10 @@ class Device {
 
       return new Device(vendor_id, product_id);
     }
+
+  private:
+    std::string * path = nullptr;
+    DeviceInterface * device_interface = nullptr;
 
 };
 

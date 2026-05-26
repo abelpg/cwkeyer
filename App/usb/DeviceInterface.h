@@ -12,6 +12,8 @@ class DeviceInterface {
     int endpoint;
     int packetSize;
 
+    DeviceInterface(DeviceInterface * deviceInterface) ;
+
     DeviceInterface(int interface, int endpoint, int packetSize);
 
     QJsonObject toJson() const {

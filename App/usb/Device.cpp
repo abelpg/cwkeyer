@@ -24,5 +24,21 @@ Device::Device(int vendor_id, int product_id, std::string *path)   {
 Device::Device(int vendor_id, int product_id, DeviceInterface * device_interface) {
   this->vendor_id = vendor_id;
   this->product_id = product_id;
-  this->device_interface = device_interface;
+  this->device_interface = new DeviceInterface(device_interface);
+}
+
+void Device::setPath(std::string *path) {
+  this->path = path;
+}
+
+void Device::setInterface(DeviceInterface * device_interface) {
+  this->device_interface = new DeviceInterface(device_interface);
+}
+
+DeviceInterface * Device::getInterface() {
+  return device_interface;
+}
+
+std::string * Device::getPath() {
+  return path;
 }
