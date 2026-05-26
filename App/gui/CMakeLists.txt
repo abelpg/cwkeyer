@@ -17,5 +17,7 @@ target_link_libraries(GuiConnector PRIVATE
         LibSound
         LibUsbDevice
         Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Qml
+        Qt${QT_VERSION_MAJOR}::Gui
 )
 

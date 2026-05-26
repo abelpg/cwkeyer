@@ -14,7 +14,6 @@ Rectangle {
     id: rectangle
     width: Constants.width
     height: Constants.height
-
     color: Constants.backgroundColor
 
     Button {
@@ -60,6 +59,7 @@ Rectangle {
 
         Connections {
             target: btn_detect_device
+
             function onClicked() {
                 btn_detect_device.enabled = false
                 bsy_indicator.opacity = 1.0
@@ -86,9 +86,8 @@ Rectangle {
         y: 8
         width: 161
         height: 32
-        text: qsTr("Text")
+        text: qsTr("")
         font.pixelSize: 12
-        property string device_name: "This is a string"
     }
     states: [
         State {
