@@ -8,7 +8,7 @@
 #include <iostream>
 #include <QVariant>
 #include "../sound/Sound.h"
-#include "../usb/HidDevice.h"
+#include "../usb/UsbDevice.h"
 
 
 
@@ -32,7 +32,7 @@ class GuiConnector : public QObject{
 
   private:
     Sound* sound;
-    HidDevice* device;
+    UsbDevice* device;
 
     void send_device_updated(Device * device);
 };

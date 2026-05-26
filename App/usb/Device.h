@@ -19,27 +19,24 @@
 
 class Device {
   public:
+
     std::string * path = nullptr;
+    DeviceInterface * device_interface = nullptr;
     int vendor_id = 0;
     int product_id = 0;
     bool connected = false;
 
 
-    DeviceInterface * device_interface = nullptr;
-
-    std::list<DeviceInterface> *available_interfaces{};
-
     Device(int vendor_id, int product_id);
     Device(int vendor_id, int product_id, std::string *path);
-    Device(int vendor_id, int product_id, int interface, int endpoint, int packet_size);
-    ~Device();
-
-    void addInterface(int interface, int endpoint, int packetSize);
+    Device(int vendor_id, int product_id, DeviceInterface * device_interface);
 
 
     friend bool operator== (const Device &left, const Device &right);
 
     friend bool operator< (const Device &left, const Device &right);
+
+
 
     QJsonObject toJson() const {
       QJsonObject jsonObject;
@@ -48,6 +45,10 @@ class Device {
 
       if (path != nullptr) {
         jsonObject["path"] = QString::fromStdString(*path);
+      }
+
+      if (device_interface != nullptr) {
+        jsonObject["interface"] = device_interface->toJson();
       }
 
       return jsonObject;
@@ -61,9 +62,12 @@ class Device {
         return new Device(vendor_id, product_id, new std::string(jsonObject["path"].toString().toStdString()));
       }
 
+      if (jsonObject.contains("interface")) {
+        return new Device(vendor_id, product_id, DeviceInterface::fromJson(jsonObject["interface"].toObject()));
+      }
+
       return new Device(vendor_id, product_id);
     }
-
 
 };
 

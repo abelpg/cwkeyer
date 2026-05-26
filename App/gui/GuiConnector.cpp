@@ -1,9 +1,8 @@
 #include "GuiConnector.h"
 
-
 GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
   sound = new Sound();
-  device = new HidDevice();
+  device = new UsbDevice();
 }
 
 void GuiConnector::init_device() {
@@ -46,7 +45,7 @@ void GuiConnector::send_device_updated(Device * device_detected) {
   QJsonObject jsonObject;
 
   if (device_detected != nullptr) {
-    std::string text = "Device vid=" + HidDevice::int_to_hex(device_detected->vendor_id) + " pid=" + HidDevice::int_to_hex(device_detected->product_id);;
+    std::string text = "Device vid=" + UsbDevice::int_to_hex(device_detected->vendor_id) + " pid=" + UsbDevice::int_to_hex(device_detected->product_id);;
     jsonObject["device_name"] = text.c_str();
   } else {
     jsonObject["device_name"] = "Device not detected";
