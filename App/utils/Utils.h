@@ -1,6 +1,3 @@
-//
-// Created by Capitang7 on 25/05/2026.
-//
 
 #ifndef CWKEYERAPP_UTILS_H
 #define CWKEYERAPP_UTILS_H
