@@ -27,6 +27,8 @@ class GuiConnector : public QObject{
 
     Q_INVOKABLE void disconnect_device();
 
+    Q_INVOKABLE void quit();
+
   //Q_PROPERTY(QString text MEMBER m_text NOTIFY device_updated)
   signals:
       void device_updated(QVariant varData);
@@ -37,6 +39,8 @@ class GuiConnector : public QObject{
     Keyer* keyer;
 
     void send_device_updated(Device * device);
+
+
 };
 
 

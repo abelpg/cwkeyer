@@ -7,6 +7,17 @@ GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
   device = new UsbDevice(keyer);
 }
 
+
+void GuiConnector::quit() {
+  qDebug() << "Quit called";
+  sound->stop();
+  device->disconnect_device();
+
+  delete keyer;
+  delete device;
+  delete sound;
+}
+
 void GuiConnector::init_device() {
   Device * device_connected = this->device->init_device();
   send_device_updated(device_connected);

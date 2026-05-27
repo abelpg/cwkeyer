@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
 
     QQmlApplicationEngine engine;
 
+
     GuiConnector guiConnector = GuiConnector(engine.parent());
 
     qmlRegisterType<GuiConnector>("libGui", 1, 0, "GuiConnectorClass");
@@ -51,6 +52,8 @@ int main(int argc, char *argv[]) {
                   SIGNAL(device_updated(QVariant)),rootObject ,
                   SLOT(deviceUpdated(QVariant)),
                         Qt::QueuedConnection);
+
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, &guiConnector, &GuiConnector::quit);
 
 
     return QApplication::exec();

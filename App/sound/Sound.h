@@ -10,6 +10,8 @@
 #include <QByteArray>
 #include <QBuffer>
 #include <cmath>
+#include <iostream>
+#include <map>
 #include <unordered_map>
 #include <thread>
 #include "../utils/IKeyerCW.h"
@@ -29,8 +31,13 @@ public:
   void list_devices();
   void run_cw(int duration) override;   // duration en ms
 
+  signals:
+      void play_requested(int durationMs);   // emitida desde hilo del keyer
+
+  private slots:
+    void on_play_requested(int durationMs); // ejecutada en el hilo de Sound
+
 private:
-  void play_tone(int durationMs);
   QByteArray generate_buffer(double durationSec);
 
   QAudioSink   *sink      = nullptr;
@@ -48,7 +55,8 @@ private:
   double releaseTime   = 0.0;
 
   // Cache: buffers pre-generados para cada tipo
-  //QByteArray cacheDit;   // índice = durationMs
+  std::map<int, QByteArray> cacheSound;
+
 
 };
 
