@@ -275,7 +275,7 @@ void UsbDevice::task_runnable() {
           buffer,
           detected_device->getInterface()->packetSize,
           cb_interrupt,
-          NULL,           // Optional user data pointer
+          nullptr,           // Optional user data pointer
           1000            // Timeout in milliseconds
       );
 
@@ -285,7 +285,7 @@ void UsbDevice::task_runnable() {
       while (detected_device->connected) {
         //int res = hid_read_timeout(hid_device, buff, 8,5000);
         //qDebug() << res;
-        libusb_handle_events(NULL);
+        libusb_handle_events(context);
       }
 
       //libusb_free_transfer(transfer);
@@ -306,7 +306,14 @@ void UsbDevice::cb_interrupt( libusb_transfer *transfer){
     //qDebug() << "Async received " << transfer->actual_length << " bytes";
     // Process transfer->buffer here
     // Re-submit the transfer to keep listening (looping)
-    qDebug() << transfer->buffer;
+    std::string text = "";
+    for (int i=0; i< transfer->actual_length; i++) {
+      text.append(std::to_string( transfer->buffer[i]));
+    }
+    qDebug() << text;
+    libusb_submit_transfer(transfer);
+  }  else if (transfer->status == LIBUSB_TRANSFER_TIMED_OUT) {
+    qDebug() << "Transfer timed out, resubmitting...";
     libusb_submit_transfer(transfer);
   } else {
     fprintf(stderr, "Transfer finished with status: %d\n", transfer->status);
