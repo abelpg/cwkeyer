@@ -40,12 +40,9 @@ Device* UsbDevice::connect_device() {
 
     detected_device->connected = true;
 
-    if (thread_task.joinable()) {
-      qDebug() << "Thread already running";
-      thread_task.detach();
-    }
 
     thread_task = std::thread(&UsbDevice::task_runnable, this);
+    thread_task.detach();
   }
 
   if (detected_device == nullptr || !detected_device->connected) {

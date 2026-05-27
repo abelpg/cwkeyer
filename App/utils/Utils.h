@@ -9,16 +9,10 @@ class Utils {
   public:
     static void sleep_for(int milliseconds);
 
-
   private:
     Utils();
 };
 
-class IDitDah{
-  public:
-  virtual void on_dah(bool pressed);
-  virtual void on_dit(bool pressed);
-};
 
 
 #endif //CWKEYERAPP_UTILS_H

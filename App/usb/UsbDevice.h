@@ -15,7 +15,7 @@
 #include "Device.h"
 #include "../utils/Utils.h"
 #include "../configuration/Configuration.h"
-
+#include "../utils/IDitDah.h"
 
 typedef std::function<void (boolean)> boolean_callback;
 

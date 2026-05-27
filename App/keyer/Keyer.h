@@ -5,7 +5,10 @@
 #include <QDebug>
 #include <queue>
 #include <thread>
+#include <iostream>
 #include "../utils/Utils.h"
+#include "../utils/IDitDah.h"
+#include "../utils/IKeyerCW.h"
 enum KeyerItem {
   DIT = 0x1,
   DAH = 0x2
@@ -22,7 +25,7 @@ enum Mode {
 class Keyer : public IDitDah{
 
   public:
-    Keyer(int wpm);
+    Keyer(int wpm, IKeyerCW * soundCW);
     void on_dit(bool pressed) override;
     void on_dah(bool pressed) override;
 
@@ -41,6 +44,8 @@ class Keyer : public IDitDah{
     void enqueue(KeyerItem item);
     void keyer_call();
     void play_dit_dah(KeyerItem item);
+
+    IKeyerCW * soundCW;
 
     static KeyerItem reverse(KeyerItem item) {
       if (item == DIT) {

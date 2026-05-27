@@ -13,10 +13,12 @@ int main(int argc, char *argv[]) {
     set_qt_environment();
     QApplication app(argc, argv);
 
-    GuiConnector guiConnector;
+    QQmlApplicationEngine engine;
+
+    GuiConnector guiConnector = GuiConnector(engine.parent());
+
     qmlRegisterType<GuiConnector>("libGui", 1, 0, "GuiConnectorClass");
 
-    QQmlApplicationEngine engine;
     const QUrl url(mainQmlFile);
     QObject::connect(
                 &engine, &QQmlApplicationEngine::objectCreated, &app,
