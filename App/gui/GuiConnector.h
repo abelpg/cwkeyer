@@ -9,6 +9,7 @@
 #include <QVariant>
 #include "../sound/Sound.h"
 #include "../usb/UsbDevice.h"
+#include "../keyer/Keyer.h"
 
 
 
@@ -33,6 +34,7 @@ class GuiConnector : public QObject{
   private:
     Sound* sound;
     UsbDevice* device;
+    Keyer* keyer;
 
     void send_device_updated(Device * device);
 };

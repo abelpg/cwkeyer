@@ -5,18 +5,31 @@
 
 
 #include "libusb/libusb.h"
+#include <iomanip>
+#include <thread>
+#include <atomic>
+#include <stdio.h>
+#include <stdlib.h>
+#include <functional>
+
 #include "Device.h"
 #include "../utils/Utils.h"
 #include "../configuration/Configuration.h"
-#include <iomanip>
-#include <thread>
-#include <stdio.h>
-#include <stdlib.h>
+
+
+typedef std::function<void (boolean)> boolean_callback;
+
+enum ClickValues {
+  CLICK_LEFT = 0x01,
+  CLICK_RIGHT = 0x02,
+  CLICK_BOTH = 0x03
+};
 
 class UsbDevice  {
   public:
 
     UsbDevice();
+    UsbDevice(IDitDah* dit_dah);
     ~UsbDevice();
 
     Device * detect_device();
@@ -38,12 +51,15 @@ class UsbDevice  {
      */
     libusb_context *context = nullptr;
 
-
     std::thread thread_task;
 
     Device *detected_device = nullptr;
 
     Configuration *configuration = nullptr;
+
+    bool dit, dah = false;
+
+    IDitDah * dit_dah;
 
     ///////////////
     void task_runnable();
@@ -57,6 +73,8 @@ class UsbDevice  {
     bool attach_device(libusb_device_handle *deviceTemp, int interface);
 
     bool try_to_read(Device * deviceToTry, DeviceInterface *interface);
+
+    void sed_dih_dah(bool dit, bool dah);
 
 
 };

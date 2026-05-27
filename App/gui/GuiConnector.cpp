@@ -2,7 +2,8 @@
 
 GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
   sound = new Sound();
-  device = new UsbDevice();
+  keyer = new Keyer();
+  device = new UsbDevice(keyer);
 }
 
 void GuiConnector::init_device() {

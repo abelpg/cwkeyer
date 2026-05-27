@@ -16,6 +16,7 @@ target_link_libraries(GuiConnector PRIVATE
         LibConfiguration
         LibSound
         LibUsbDevice
+        KeyerLib
         Qt${QT_VERSION_MAJOR}::Core
         Qt${QT_VERSION_MAJOR}::Qml
         Qt${QT_VERSION_MAJOR}::Gui

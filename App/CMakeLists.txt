@@ -8,6 +8,7 @@ add_subdirectory(utils)
 add_subdirectory(configuration)
 add_subdirectory(sound)
 add_subdirectory(usb)
+add_subdirectory(keyer)
 add_subdirectory(gui)
 
 

@@ -13,6 +13,11 @@ UsbDevice::UsbDevice() {
   libusb_set_debug(context, LIBUSB_LOG_LEVEL_INFO);
 }
 
+
+UsbDevice::UsbDevice(IDitDah* dit_dah):UsbDevice() {
+  this->dit_dah = dit_dah;
+}
+
 Device * UsbDevice::init_device() {
   if (connect_device() != nullptr) {
     return detected_device;
@@ -275,16 +280,14 @@ void UsbDevice::task_runnable() {
           buffer,
           detected_device->getInterface()->packetSize,
           cb_interrupt,
-          nullptr,           // Optional user data pointer
-          1000            // Timeout in milliseconds
+          this,         // Optional user data pointer
+          1000          // Timeout in milliseconds
       );
 
       // 4. Submit the transfer to the OS backend
       libusb_submit_transfer(transfer);
 
       while (detected_device->connected) {
-        //int res = hid_read_timeout(hid_device, buff, 8,5000);
-        //qDebug() << res;
         libusb_handle_events(context);
       }
 
@@ -303,14 +306,20 @@ void UsbDevice::task_runnable() {
 
 void UsbDevice::cb_interrupt( libusb_transfer *transfer){
   if (transfer->status == LIBUSB_TRANSFER_COMPLETED) {
-    //qDebug() << "Async received " << transfer->actual_length << " bytes";
-    // Process transfer->buffer here
-    // Re-submit the transfer to keep listening (looping)
-    std::string text = "";
-    for (int i=0; i< transfer->actual_length; i++) {
-      text.append(std::to_string( transfer->buffer[i]));
+
+    UsbDevice * usbDevice = static_cast<UsbDevice*>(transfer->user_data) ;
+    if (transfer->buffer[0] == CLICK_BOTH || (transfer->buffer[2] > 0 && transfer->buffer[3] > 0)) {
+      usbDevice->sed_dih_dah(true,true);
+    } else if (transfer->buffer[0] == CLICK_LEFT || transfer->buffer[2] > 0 ) {
+      usbDevice->sed_dih_dah(true,false);
+    } else if (transfer->buffer[0] == CLICK_RIGHT || transfer->buffer[3] > 0 ) {
+      usbDevice->sed_dih_dah(false,true);
+    } else {
+      usbDevice->sed_dih_dah(false,false);
     }
-    qDebug() << text;
+
+
+    // Re-submit the transfer to keep listening (looping)
     libusb_submit_transfer(transfer);
   }  else if (transfer->status == LIBUSB_TRANSFER_TIMED_OUT) {
     qDebug() << "Transfer timed out, resubmitting...";
@@ -319,4 +328,35 @@ void UsbDevice::cb_interrupt( libusb_transfer *transfer){
     fprintf(stderr, "Transfer finished with status: %d\n", transfer->status);
     libusb_free_transfer(transfer); // Clean up if failed/cancelled
   }
+}
+
+void UsbDevice::sed_dih_dah(bool dit, bool dah) {
+  if (dit && !this->dit) {
+    this->dit=true;
+
+    if (dit_dah != nullptr) {
+      dit_dah->on_dit(this->dit);
+    }
+
+  } else if (!dit && this->dit) {
+    this->dit=false;
+
+    if (dit_dah != nullptr) {
+      dit_dah->on_dit(this->dit);
+    }
+  }
+
+  if (dah && !this->dah) {
+    this->dah=true;
+    if (dit_dah != nullptr) {
+      dit_dah->on_dah(this->dah);
+    }
+  } else if (!dah && this->dah) {
+    this->dah=false;
+    if (dit_dah != nullptr) {
+      dit_dah->on_dah(this->dah);
+    }
+  }
+
+
 }
