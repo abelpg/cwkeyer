@@ -47,7 +47,9 @@ void GuiConnector::send_device_updated(Device * device_detected) {
   if (device_detected != nullptr) {
     std::string text = "Device vid="
       + UsbDevice::int_to_hex(device_detected->vendor_id)
-      + " pid=" + UsbDevice::int_to_hex(device_detected->product_id);
+      + " pid=" + UsbDevice::int_to_hex(device_detected->product_id)
+      + " \ninterface=" + (device_detected->getInterface() != nullptr? std::to_string(device_detected->getInterface()->interface): "N/A")
+      + " endpoint=" + (device_detected->getInterface() != nullptr? UsbDevice::int_to_hex(device_detected->getInterface()->endpoint): "N/A");
 
     jsonObject["device_name"] = text.c_str();
   } else {

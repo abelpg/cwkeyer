@@ -10,6 +10,9 @@
 #include "../configuration/Configuration.h"
 #include <iomanip>
 #include <thread>
+#include <stdio.h>
+#include <stdlib.h>
+
 class UsbDevice  {
   public:
 
@@ -38,14 +41,14 @@ class UsbDevice  {
 
     std::thread thread_task;
 
-    libusb_device_handle *device = nullptr;
-
     Device *detected_device = nullptr;
 
     Configuration *configuration = nullptr;
 
     ///////////////
     void task_runnable();
+
+    static void cb_interrupt( libusb_transfer *transfer) ;
 
     std::set<Device> manage_devices(Device *deviceToTry);
 

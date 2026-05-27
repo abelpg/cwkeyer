@@ -20,6 +20,7 @@ Device * UsbDevice::init_device() {
   return nullptr;
 }
 
+
 Device* UsbDevice::connect_device() {
   qDebug() << "UsbDevice connect_device called";
 
@@ -30,9 +31,16 @@ Device* UsbDevice::connect_device() {
     }
   }
 
-  if (detected_device != nullptr) {
-    device = libusb_open_device_with_vid_pid(context, detected_device->vendor_id, detected_device->product_id);
+  if (detected_device != nullptr && !detected_device->connected) {
 
+    detected_device->connected = true;
+
+    if (thread_task.joinable()) {
+      qDebug() << "Thread already running";
+      thread_task.detach();
+    }
+
+    thread_task = std::thread(&UsbDevice::task_runnable, this);
   }
 
   if (detected_device == nullptr || !detected_device->connected) {
@@ -48,8 +56,6 @@ Device * UsbDevice::disconnect_device() {
 
   if (detected_device->connected) {
     detected_device->connected = false;
-    libusb_release_interface(device, detected_device->getInterface()->interface); //release the claimed interface
-    libusb_close(device); //close the device we opened
   }
 
   return detected_device;
@@ -72,7 +78,6 @@ bool UsbDevice::attach_device(libusb_device_handle *deviceTemp, int interface) {
 
 bool UsbDevice::try_to_read(Device * deviceToTry , DeviceInterface *interface) {
   libusb_device_handle *deviceTemp =  libusb_open_device_with_vid_pid(context, deviceToTry->vendor_id, deviceToTry->product_id);
-
 
   bool detached = attach_device(deviceTemp, interface->interface);
 
@@ -251,18 +256,60 @@ UsbDevice::~UsbDevice() {
 
 void UsbDevice::task_runnable() {
   qDebug() << "Starting task runnable";
-  unsigned char buff[8];;
 
-  // auto data = new unsigned char[4];
-  // while (libusb_interrupt_transfer(device, (ENDPOINT | LIBUSB_ENDPOINT_IN), data, sizeof(data), &read, 1000) == 0 && counter++ < 5) {
-  //   qDebug() << "Data read: " << data[0] << " " << data[1] << " " << data[2] << " " << data[3];
-  // }
-  // delete[] data; //delete the allocated memory for data
-  //
+  if ( detected_device != nullptr) {
+    libusb_device_handle *device = libusb_open_device_with_vid_pid(context, detected_device->vendor_id, detected_device->product_id);
+    bool detached = attach_device(device, detected_device->getInterface()->interface);
 
-  while (detected_device != nullptr && detected_device->connected) {
-    //int res = hid_read_timeout(hid_device, buff, 8,5000);
-    //qDebug() << res;
+    int rs= libusb_claim_interface(device,  detected_device->getInterface()->interface); //claim interface 0 (the first) of device (desired device FX3 has only 1)
+    if (rs == LIBUSB_SUCCESS) {
+      // 2. Allocate the transfer structure
+      libusb_transfer *transfer = libusb_alloc_transfer(0);
+      unsigned  char buffer [detected_device->getInterface()->packetSize] ;
+
+      // 3. Populate the transfer configurations
+      libusb_fill_interrupt_transfer(
+          transfer,
+          device,
+          detected_device->getInterface()->endpoint,
+          buffer,
+          detected_device->getInterface()->packetSize,
+          cb_interrupt,
+          NULL,           // Optional user data pointer
+          1000            // Timeout in milliseconds
+      );
+
+      // 4. Submit the transfer to the OS backend
+      libusb_submit_transfer(transfer);
+
+      while (detected_device->connected) {
+        //int res = hid_read_timeout(hid_device, buff, 8,5000);
+        //qDebug() << res;
+        libusb_handle_events(NULL);
+      }
+
+      //libusb_free_transfer(transfer);
+      if (detached) {
+        rs = libusb_attach_kernel_driver(device, detected_device->getInterface()->interface); //reattach it
+        assert(rs == LIBUSB_SUCCESS);
+        qDebug() << "Reattached" << detected_device->getInterface()->interface << "to kernel driver";
+      }
+      libusb_release_interface(device, detected_device->getInterface()->interface); //release the claimed interface
+      libusb_close(device); //close the device we opened
+    }
   }
 
+}
+
+void UsbDevice::cb_interrupt( libusb_transfer *transfer){
+  if (transfer->status == LIBUSB_TRANSFER_COMPLETED) {
+    //qDebug() << "Async received " << transfer->actual_length << " bytes";
+    // Process transfer->buffer here
+    // Re-submit the transfer to keep listening (looping)
+    qDebug() << transfer->buffer;
+    libusb_submit_transfer(transfer);
+  } else {
+    fprintf(stderr, "Transfer finished with status: %d\n", transfer->status);
+    libusb_free_transfer(transfer); // Clean up if failed/cancelled
+  }
 }
