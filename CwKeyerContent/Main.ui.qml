@@ -216,7 +216,7 @@ Rectangle {
             id: sel_device
             x: 122
             y: 8
-            width: 494
+            width: 215
             height: 32
             model: guiConnector.audioDevices // ← lista desde C++
             currentIndex: guiConnector.selectedAudioDevice
@@ -255,6 +255,15 @@ Rectangle {
             x: 8
             y: 54
             text: qsTr("Frecuency")
+        }
+
+        CheckBox {
+            id: checkbox_send_keyboard
+            x: 359
+            y: 8
+            text: qsTr("Send keyboard active")
+            checked: guiConnector.enabledKeyboard
+            onToggled: guiConnector.setEnabledKeyboard(checked)
         }
     }
 

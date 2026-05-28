@@ -13,7 +13,10 @@ GuiConnector::GuiConnector(QApplication* app, QObject *parent) : QObject(parent)
   serialComm = new SerialComm();
   keyer = new Keyer(sound);
   keyer->init_keyer(m_wpm, static_cast<Mode>(m_mode));
+
+  keyboard = new Keyboard(this);
   device = new UsbDevice(keyer);
+  device->add_dit_dah(keyboard);
 
 }
 
@@ -209,6 +212,16 @@ void GuiConnector::setEnabledCommOut(bool enabled) {
   }
   emit enabledCommOutChanged(enabled);
 }
+
+bool GuiConnector::enabledKeyboard() const {
+  return keyboard->enabled();
+}
+
+void GuiConnector::setEnabledKeyboard(bool enabled) {
+  keyboard->setEnabled(enabled);
+  emit enabledKeyboardChanged(enabled);
+}
+
 
 void GuiConnector::load_audio_devices() {
   m_audioDeviceList = QMediaDevices::audioOutputs();

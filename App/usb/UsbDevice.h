@@ -76,8 +76,8 @@ class UsbDevice  {
 
     bool try_to_read(Device * deviceToTry, DeviceInterface *interface);
 
+    
     void send_dih_dah(bool ditPressed, bool dahPressed);
-
     void send_dit(bool pressed);
     void send_dah(bool pressed);
 

@@ -2,6 +2,7 @@
 #ifndef CWKEYERAPP_GUICONNECTOR_H
 #define CWKEYERAPP_GUICONNECTOR_H
 
+#include <QDebug>
 #include <QObject>
 #include <QApplication>
 #include <QVariant>
@@ -15,6 +16,7 @@
 
 #include "../usb/UsbDevice.h"
 #include "../keyer/Keyer.h"
+#include "../keyboard/Keyboard.h"
 #include "../serial/SerialComm.h"
 
 static constexpr const int    DEFAULT_WPM        = 25;
@@ -35,6 +37,7 @@ class GuiConnector : public QObject{
   Q_PROPERTY(int     mode                 READ mode                WRITE setMode                NOTIFY modeChanged)
   Q_PROPERTY(int     enabledSound         READ enabledSound        WRITE setEnabledSound        NOTIFY soundEnabledChanged)
   Q_PROPERTY(int     enabledCommOut       READ enabledCommOut      WRITE setEnabledCommOut      NOTIFY enabledCommOutChanged)
+  Q_PROPERTY(bool    enabledKeyboard      READ enabledKeyboard     WRITE setEnabledKeyboard     NOTIFY enabledKeyboardChanged)
   Q_PROPERTY(int     selectedAudioDevice  READ selectedAudioDevice WRITE setSelectedAudioDevice NOTIFY selectedAudioDeviceChanged)
   Q_PROPERTY(int     selectedCommPort     READ selectedCommPort    WRITE setSelectedCommPort    NOTIFY selectedCommPortChanged)
   Q_PROPERTY(QStringList audioDevices READ audioDevices NOTIFY audioDevicesChanged)
@@ -52,6 +55,7 @@ class GuiConnector : public QObject{
     int         mode()                const { return m_mode; }
     bool        enabledSound()        const ;
     bool        enabledCommOut()      const ;
+    bool        enabledKeyboard()     const ;
     QStringList commPorts()           const { return m_commPorts; }
     int         selectedCommPort()    const { return m_selectedCommPort; }
 
@@ -69,6 +73,7 @@ class GuiConnector : public QObject{
     void setMode(int value);
     void setEnabledSound(bool enabled);
     void setEnabledCommOut(bool enabled);
+    void setEnabledKeyboard(bool enabled);
     void setSelectedCommPort(int index);
 
   signals:
@@ -83,12 +88,14 @@ class GuiConnector : public QObject{
     void commPortsChanged(QStringList ports);
     void selectedCommPortChanged(int index);
     void enabledCommOutChanged(bool enabled);
+    void enabledKeyboardChanged(bool enabled);
 
   private:
     Sound* sound;
     UsbDevice* device;
     Keyer* keyer;
     SerialComm* serialComm;
+    Keyboard* keyboard;
     QApplication* app;
 
     double m_amplitude = DEFAULT_AMPLITUDE;
