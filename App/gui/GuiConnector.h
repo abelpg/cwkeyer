@@ -72,6 +72,7 @@ class GuiConnector : public QObject{
     void send_device_updated(Device * device);
     void load_audio_devices();
 
+    void load_configuration();
 
 };
 

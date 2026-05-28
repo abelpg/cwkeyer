@@ -126,10 +126,10 @@ Rectangle {
             id: input_wpm
             x: 49
             y: 8
-            value: 20
             editable: true
             to: 50
             from: 10
+            value: guiConnector.wpm
             onValueChanged: guiConnector.wpm = value
         }
 
@@ -190,7 +190,7 @@ Rectangle {
             id: amplitude
             x: 416
             y: 46
-            value: 0.5
+            value: guiConnector.amplitude
             onValueChanged: guiConnector.amplitude = value
         }
 
@@ -228,6 +228,7 @@ Rectangle {
             stepSize: 10
             to: 1000
             from: 300
+            value: guiConnector.frequency
             onValueChanged: guiConnector.frequency = value
         }
 

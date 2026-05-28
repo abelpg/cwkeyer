@@ -8,6 +8,12 @@
 #include <QJsonValue>
 #include <QJsonObject>
 
+static constexpr const char* CONFIGURATION_FILE_NAME   = "configuration.json";
+static constexpr const char* CFG_AMPLITUDE             = "amplitude";
+static constexpr const char* CFG_FREQUENCY             = "frequency";
+static constexpr const char* CFG_WPM                   = "wpm";
+static constexpr const char* CFG_SELECTED_AUDIO_DEVICE = "selected_audio_device";
+
 class Configuration {
 
   public:
@@ -27,7 +33,7 @@ class Configuration {
     static bool getValueBool(std::string key);
 
   private:
-    inline static const auto CONFIGURATION_FILE_NAME = QStringLiteral("configuration.json");
+    void load_configuration();
 
 };
 

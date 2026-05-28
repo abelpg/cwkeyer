@@ -4,12 +4,39 @@
 #include <QtMultimedia/QAudioDevice>
 
 GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
-  load_audio_devices();                          // ← nuevo
+  load_audio_devices();
+  load_configuration();
   sound = new Sound(parent);
   sound->init(600, 44100, 0.5, 0.01, 0.01);
   keyer = new Keyer(sound);
   keyer->init_keyer(25, Mode::IAMBIC_B);
   device = new UsbDevice(keyer);
+}
+
+void GuiConnector::load_configuration() {
+  // Amplitude: valor en [0.0, 1.0]
+  double amp = Configuration::getValueDouble(CFG_AMPLITUDE);
+  if (amp > 0.0) {
+    m_amplitude = amp;
+  }
+
+  // Frequency
+  double freq = Configuration::getValueDouble(CFG_FREQUENCY);
+  if (freq > 0.0) {
+    m_frequency = freq;
+  }
+
+  // WPM
+  int wpm = Configuration::getValueInt(CFG_WPM);
+  if (wpm > 0) {
+    m_wpm = wpm;
+  }
+
+  // Dispositivo de audio seleccionado
+  int selDev = Configuration::getValueInt(CFG_SELECTED_AUDIO_DEVICE);
+  if (selDev >= 0 && selDev < m_audioDeviceList.size()) {
+    m_selectedAudioDevice = selDev;
+  }
 }
 
 
@@ -88,6 +115,7 @@ void GuiConnector::setAmplitude(double value) {
   }
 
   m_amplitude = value;
+  Configuration::putValueDouble(CFG_AMPLITUDE, m_amplitude);
   emit amplitudeChanged(m_amplitude);
   reinit_sound();
 }
@@ -98,6 +126,7 @@ void GuiConnector::setFrequency(double value) {
   }
   m_frequency = value;
   emit frequencyChanged(m_frequency);
+  Configuration::putValueDouble(CFG_FREQUENCY, m_frequency);
   reinit_sound();
 }
 
@@ -107,6 +136,7 @@ void GuiConnector::setWpm(int value) {
   }
   m_wpm = value;
   emit wpmChanged(m_wpm);
+  Configuration::putValueInt(CFG_WPM, m_wpm);
   reinit_keyer();
 }
 
@@ -133,6 +163,7 @@ void GuiConnector::setSelectedAudioDevice(int index) {
   }
   m_selectedAudioDevice = index;
   emit selectedAudioDeviceChanged(m_selectedAudioDevice);
+  Configuration::putValueInt(CFG_SELECTED_AUDIO_DEVICE, m_selectedAudioDevice);
   reinit_sound();
 }
 
