@@ -1,0 +1,365 @@
+
+
+#include "UsbDevice.h"
+
+
+const std::string UsbDevice::CONFIG_NAME = "device-usb";
+
+UsbDevice::UsbDevice() {
+  qDebug() << "UsbDevice constructor called";
+  int rc = libusb_init(&context);
+  assert(rc == LIBUSB_SUCCESS);
+  libusb_set_option(context, LIBUSB_OPTION_USE_USBDK);
+  libusb_set_debug(context, LIBUSB_LOG_LEVEL_INFO);
+}
+
+UsbDevice::UsbDevice(IDitDah* dit_dah):UsbDevice() {
+  add_dit_dah(dit_dah);
+}
+
+void UsbDevice::add_dit_dah(IDitDah* dit_dah) {
+  dit_dah_list.push_back(dit_dah);
+}
+
+Device * UsbDevice::init_device() {
+  if (connect_device() != nullptr) {
+    return detected_device;
+  }
+  return nullptr;
+}
+
+
+Device* UsbDevice::connect_device() {
+  qDebug() << "UsbDevice connect_device called";
+
+  if (detected_device == nullptr) {
+    QJsonObject*  value =  Configuration::getValue(CONFIG_NAME) ;
+    if (value != nullptr) {
+      detected_device = Device::fromJson(*value);
+    }
+  }
+
+  if (detected_device != nullptr && !_connected) {
+    thread_task = std::thread(&UsbDevice::task_runnable, this);
+    thread_task.detach();
+    Utils::sleep_for(500);
+  }
+
+  if (detected_device == nullptr || !_connected) {
+    Configuration::removeValue(CONFIG_NAME);
+    qDebug() << "Failed to connect to device";
+  }
+
+  return detected_device;
+}
+
+
+Device * UsbDevice::disconnect_device() {
+
+  if (detected_device && _connected) {
+    _connected = false;
+  }
+
+  return detected_device;
+}
+
+bool UsbDevice::attach_device(libusb_device_handle *deviceTemp, int interface) {
+  if (libusb_has_capability (LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER) && libusb_kernel_driver_active(deviceTemp, interface) == 1) { //find out if kernel driver is attached
+    const int rs = libusb_detach_kernel_driver(deviceTemp, interface); //detach it
+    qDebug() << "Detached" << interface << "from kernel driver";
+    return rs == LIBUSB_SUCCESS;
+  }
+
+  if (!libusb_has_capability (LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
+    qDebug() << "Detaching kernel driver not supported on this platform";
+  }
+
+  return false;
+}
+
+
+bool UsbDevice::try_to_read(Device * deviceToTry , DeviceInterface *interface) {
+  libusb_device_handle *deviceTemp =  libusb_open_device_with_vid_pid(context, deviceToTry->vendor_id, deviceToTry->product_id);
+
+  bool detached = attach_device(deviceTemp, interface->interface);
+
+  int rs=0;
+  rs = libusb_claim_interface(deviceTemp,  interface->interface); //claim interface 0 (the first) of device (desired device FX3 has only 1)
+
+  bool readData = false;
+  if (rs == LIBUSB_SUCCESS) {
+    qDebug() << "Claimed interface";
+    int read = 0, counter=0;
+    auto data = new unsigned char[interface->packetSize];
+
+    while (libusb_interrupt_transfer(deviceTemp, (interface->endpoint | LIBUSB_ENDPOINT_IN), data, sizeof(data), &read, 1000) == 0 && counter++ < 5 && !readData) {
+      if (read > 0) {
+        qDebug() << "Can read" <<read;
+        readData = true;
+      }
+    }
+
+  }
+
+  libusb_release_interface(deviceTemp, interface->interface); //release the claimed interface
+  qDebug() << "released interface";
+  if (detached) {
+    rs = libusb_attach_kernel_driver(deviceTemp, interface->interface); //reattach it
+    assert(rs == LIBUSB_SUCCESS);
+    qDebug() << "Reattached" << interface->interface << "to kernel driver";
+  }
+  libusb_close(deviceTemp); //close the device we opened
+  qDebug() << "Closed device";
+  return readData;
+}
+
+
+
+std::set<Device> UsbDevice::manage_devices(Device *deviceToTry) {
+
+  libusb_device **list = nullptr;
+  const ssize_t count = libusb_get_device_list(context, &list);
+  assert(count > 0);
+
+  int rc = 0;
+  std::set<Device> devicesLocal;
+  for (size_t idx = 0; idx < count; ++idx) {
+    libusb_device *device = list[idx];
+    libusb_device_descriptor desc = {0};
+
+    rc = libusb_get_device_descriptor(device, &desc);
+    assert(rc == LIBUSB_SUCCESS);
+
+    qDebug() << "DeviceClass: " << (int) desc.bDeviceClass ;
+    qDebug()  << "IdVendor: "  << int_to_hex(desc.idVendor) << " IdProduct: " << int_to_hex(desc.idProduct);
+
+    if (deviceToTry != nullptr && (desc.idVendor != deviceToTry->vendor_id || desc.idProduct != deviceToTry->product_id)) {
+      continue;
+    }
+
+    Device vp(desc.idVendor, desc.idProduct);
+
+    if (deviceToTry != nullptr) {
+      vp.setInterface( search_device_interface_available(device, deviceToTry));
+      if (vp.getInterface() != nullptr) {
+        devicesLocal.insert(vp);
+      }
+    } else {
+      devicesLocal.insert(vp);
+    }
+
+  }
+
+  libusb_free_device_list(list, 1);
+
+  return devicesLocal;
+}
+
+DeviceInterface* UsbDevice::search_device_interface_available(libusb_device *libusb_device, Device * deviceToTry) {
+
+  libusb_config_descriptor *config;
+
+  const int rc = libusb_get_active_config_descriptor(libusb_device, &config);
+  assert(rc == LIBUSB_SUCCESS);
+
+  DeviceInterface * result = nullptr;
+  for (int i=0; i< config->bNumInterfaces && result == nullptr; i++) {
+
+    auto interface = config->interface[i];
+
+    for (int x=0; x < interface.num_altsetting && result == nullptr; x++) {
+      auto alt_setting = interface.altsetting[x];
+
+      for (int j=0; j< alt_setting.bNumEndpoints && result == nullptr; j++) {
+        qDebug() << "Adding interface: " <<  alt_setting.bInterfaceNumber  << " " << int_to_hex(alt_setting.endpoint[j].bEndpointAddress) << " " << alt_setting.endpoint[j].wMaxPacketSize;
+        DeviceInterface iface(alt_setting.bInterfaceNumber,alt_setting.endpoint[j].bEndpointAddress, alt_setting.endpoint[j].wMaxPacketSize);
+
+        if (try_to_read(deviceToTry, &iface)) {
+          result = &iface;
+        }
+
+      }
+    }
+  }
+
+  libusb_free_config_descriptor(config);
+
+  return result;
+}
+
+
+Device *  UsbDevice::detect_device() {
+  std::set<Device> devices = manage_devices(nullptr);
+
+  delete detected_device;
+  for (int i=0; i< 10 && detected_device == nullptr; i++) {
+    std::set<Device> devicesNow = manage_devices(nullptr);
+
+    for (auto dn : devicesNow) {
+      bool found = false;
+      for (auto d : devices) {
+        if (d == dn) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+
+        qDebug() << "Device detected: " << int_to_hex(dn.vendor_id) << " " << int_to_hex(dn.product_id);
+
+        std::set<Device> finalDevice = manage_devices(&dn);
+        for (auto d : finalDevice) {
+          delete detected_device;
+          detected_device = new Device(d.vendor_id, d.product_id, new DeviceInterface(d.getInterface()));
+        }
+        break;
+      }
+    }
+
+    if (detected_device == nullptr) {
+      Utils::sleep_for(1000);
+    }
+  }
+
+  if (detected_device != nullptr) {
+    Configuration::putObject(CONFIG_NAME, detected_device->toJson());
+    qDebug() << " Detected device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
+
+  } else {
+    qDebug() << " No device detected";
+  }
+
+  return detected_device;
+
+}
+
+
+/**
+ * Transforms a number to a hexadecimal representation
+ * @tparam T With number
+ * @param i with value
+ * @return String with hex value.
+ */
+template< typename T > std::string UsbDevice::int_to_hex( T i ) {
+  std::stringstream stream;
+  stream << "0x"
+         << std::setfill ('0') << std::setw(sizeof(T)*2)
+         << std::hex << i;
+  return stream.str();
+}
+
+
+UsbDevice::~UsbDevice() {
+  qDebug() << "UsbDevice destructor called";
+
+  if (detected_device != nullptr) {
+    delete detected_device;
+  }
+  libusb_exit(context);
+
+}
+
+void UsbDevice::task_runnable() {
+  qDebug() << "Starting task runnable";
+
+  if ( detected_device != nullptr) {
+    libusb_device_handle *device = libusb_open_device_with_vid_pid(context, detected_device->vendor_id, detected_device->product_id);
+    bool detached = attach_device(device, detected_device->getInterface()->interface);
+
+    int rs= libusb_claim_interface(device,  detected_device->getInterface()->interface); //claim interface 0 (the first) of device (desired device FX3 has only 1)
+    if (rs == LIBUSB_SUCCESS) {
+      // 2. Allocate the transfer structure
+      libusb_transfer *transfer = libusb_alloc_transfer(0);
+      unsigned  char buffer [detected_device->getInterface()->packetSize] ;
+
+      // 3. Populate the transfer configurations
+      libusb_fill_interrupt_transfer(
+          transfer,
+          device,
+          detected_device->getInterface()->endpoint,
+          buffer,
+          detected_device->getInterface()->packetSize,
+          cb_interrupt,
+          this,         // Optional user data pointer
+          1000          // Timeout in milliseconds
+      );
+
+      // 4. Submit the transfer to the OS backend
+      libusb_submit_transfer(transfer);
+
+      _connected = true;
+
+      while (_connected) {
+        libusb_handle_events(context);
+      }
+
+      libusb_free_transfer(transfer);
+      if (detached) {
+        rs = libusb_attach_kernel_driver(device, detected_device->getInterface()->interface); //reattach it
+        assert(rs == LIBUSB_SUCCESS);
+        qDebug() << "Reattached" << detected_device->getInterface()->interface << "to kernel driver";
+      }
+      libusb_release_interface(device, detected_device->getInterface()->interface); //release the claimed interface
+      libusb_close(device); //close the device we opened
+    }
+  }
+
+}
+
+void UsbDevice::cb_interrupt( libusb_transfer *transfer){
+  if (transfer->status == LIBUSB_TRANSFER_COMPLETED) {
+
+    UsbDevice * usbDevice = static_cast<UsbDevice*>(transfer->user_data) ;
+    if (transfer->buffer[0] == CLICK_BOTH || (transfer->buffer[2] > 0 && transfer->buffer[3] > 0)) {
+      usbDevice->send_dih_dah(true,true);
+    } else if (transfer->buffer[0] == CLICK_LEFT || transfer->buffer[2] > 0 ) {
+      usbDevice->send_dih_dah(true,false);
+    } else if (transfer->buffer[0] == CLICK_RIGHT || transfer->buffer[3] > 0 ) {
+      usbDevice->send_dih_dah(false,true);
+    } else {
+      usbDevice->send_dih_dah(false,false);
+    }
+
+
+    // Re-submit the transfer to keep listening (looping)
+    libusb_submit_transfer(transfer);
+  }  else if (transfer->status == LIBUSB_TRANSFER_TIMED_OUT) {
+    qDebug() << "Transfer timed out, resubmitting...";
+    libusb_submit_transfer(transfer);
+  } else {
+    fprintf(stderr, "Transfer finished with status: %d\n", transfer->status);
+    libusb_free_transfer(transfer); // Clean up if failed/cancelled
+  }
+}
+
+void UsbDevice::send_dah(bool pressed) {
+  for (IDitDah * dit_dah : dit_dah_list) {
+    dit_dah->on_dah(pressed);
+  }
+}
+
+void UsbDevice::send_dit(bool pressed) {
+  for (IDitDah * dit_dah : dit_dah_list) {
+    dit_dah->on_dit(pressed);
+  }
+}
+
+void UsbDevice::send_dih_dah(bool ditPressed, bool dahPressed){
+  if (ditPressed && !this->dit) {
+    this->dit=true;
+    send_dit(true);
+
+  } else if (!ditPressed && this->dit) {
+    this->dit=false;
+    send_dit(false);
+  }
+
+  if (dahPressed && !this->dah) {
+    this->dah=true;
+    send_dah(true);
+  } else if (!dahPressed && this->dah) {
+    this->dah=false;
+    send_dah(false);
+  }
+
+}

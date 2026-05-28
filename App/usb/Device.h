@@ -1,0 +1,79 @@
+#ifndef CWKEYERAPP_DEVICE_H
+#define CWKEYERAPP_DEVICE_H
+
+/*
+*TESTED_DEVICES = [
+{"vendor_id": 0x413d, "product_id": 0x2107, "interface": 0, "endpoint": 0x81, "max_packet_size": 8}, # Vail
+{"vendor_id": 0x413d, "product_id": 0x2107, "interface": 1, "endpoint": 0x82, "max_packet_size": 4}  # Left click/right
+]
+*/
+
+#include <QDebug>
+#include <string>
+#include <iostream>
+#include <stdio.h>
+#include <QJsonObject>
+#include <list>
+#include "DeviceInterface.h"
+
+
+class Device {
+  public:
+
+    int vendor_id = 0;
+    int product_id = 0;
+
+
+    Device(int vendor_id, int product_id);
+    Device(int vendor_id, int product_id, std::string *path);
+    Device(int vendor_id, int product_id, DeviceInterface * device_interface);
+    ~Device();
+
+    friend bool operator== (const Device &left, const Device &right);
+
+    friend bool operator< (const Device &left, const Device &right);
+
+    void setPath(std::string *path);
+    void setInterface(DeviceInterface * device_interface);
+    std::string * getPath();
+    DeviceInterface * getInterface();
+
+    QJsonObject toJson() const {
+      QJsonObject jsonObject;
+      jsonObject["vendor_id"] = vendor_id;
+      jsonObject["product_id"] = product_id;
+
+      if (path != nullptr) {
+        jsonObject["path"] = QString::fromStdString(*path);
+      }
+
+      if (device_interface != nullptr) {
+        jsonObject["interface"] = device_interface->toJson();
+      }
+
+      return jsonObject;
+    };
+
+    static Device * fromJson(QJsonObject jsonObject)  {
+      int vendor_id = jsonObject["vendor_id"].toInt();
+      int product_id = jsonObject["product_id"].toInt();
+
+      if (jsonObject.contains("path")) {
+        return new Device(vendor_id, product_id, new std::string(jsonObject["path"].toString().toStdString()));
+      }
+
+      if (jsonObject.contains("interface")) {
+        return new Device(vendor_id, product_id, DeviceInterface::fromJson(jsonObject["interface"].toObject()));
+      }
+
+      return new Device(vendor_id, product_id);
+    }
+
+  private:
+    std::string * path = nullptr;
+    DeviceInterface * device_interface = nullptr;
+
+};
+
+
+#endif //CWKEYERAPP_DEVICE_H
