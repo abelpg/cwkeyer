@@ -22,7 +22,6 @@ class Device {
 
     int vendor_id = 0;
     int product_id = 0;
-    bool connected = false;
 
 
     Device(int vendor_id, int product_id);

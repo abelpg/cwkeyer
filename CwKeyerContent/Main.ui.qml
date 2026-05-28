@@ -28,9 +28,7 @@ Rectangle {
 
             function onClicked() {
                 btn_detect_device.enabled = false
-                bsy_indicator.opacity = 1.0
                 guiConnector.detect_device()
-                bsy_indicator.opacity = 0.0
                 btn_detect_device.enabled = true
             }
         }
@@ -271,12 +269,12 @@ Rectangle {
         border.width: 2
 
         Button {
-            id: button
+            id: btn_comm_out
             x: 8
             y: 8
             text: qsTr("Comm CW Out")
             Connections {
-                target: btn_sound
+                target: btn_comm_out
                 function onClicked() {
                     if (guiConnector.enabledCommOut) {
                         guiConnector.setEnabledCommOut(false)
@@ -293,6 +291,9 @@ Rectangle {
             y: 8
             width: 160
             height: 32
+            model: guiConnector.commPorts
+            currentIndex: guiConnector.selectedCommPort
+            onCurrentIndexChanged: guiConnector.selectedCommPort = currentIndex
         }
 
         Rectangle {

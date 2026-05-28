@@ -1,41 +1,37 @@
 #ifndef CWKEYERAPP_SERIALCOMM_H
 #define CWKEYERAPP_SERIALCOMM_H
 
-#include <QObject>
-#include <QSerialPort>
-#include <QSerialPortInfo>
-#include <QString>
-#include <QStringList>
+#include <string>
+#include <vector>
+#include <chrono>
 #include <thread>
+#include <iostream>
 #include <atomic>
+#include <windows.h>
 #include "../utils/IKeyerCW.h"
 
-
-class SerialComm : public QObject, public IKeyerCW {
-  Q_OBJECT
+class SerialComm : public IKeyerCW {
 
 public:
   static constexpr int DEFAULT_BAUD_RATE = 9600;
 
-  explicit SerialComm(QObject *parent = nullptr);
+  explicit SerialComm();
   ~SerialComm();
 
-  // Inicializa y abre el puerto serie con los parámetros por defecto
-  bool init(const QString &portName);
-
-  // Cierra y libera el puerto serie
+  bool start(const std::string &portName);
   void stop();
 
-  // Lista los puertos disponibles (ej: COM1, COM2, ...)
-  QStringList list_ports();
+  int started() const { return _started; }
 
-  // Override de IKeyerCW: activa RTS durante 'duration' ms en un hilo nuevo
+  std::vector<std::string> list_ports();
+
   void run_cw(int duration) override;
 
 private:
-  QSerialPort *_serial = nullptr;
+  HANDLE _hSerial = INVALID_HANDLE_VALUE;
   std::atomic<bool> _running{false};
+  bool _started = false;
 };
 
-
 #endif //CWKEYERAPP_SERIALCOMM_H
+

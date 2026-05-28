@@ -30,22 +30,19 @@ Device* UsbDevice::connect_device() {
   qDebug() << "UsbDevice connect_device called";
 
   if (detected_device == nullptr) {
-    QJsonObject*  value =  configuration->getValue(CONFIG_NAME) ;
+    QJsonObject*  value =  Configuration::getValue(CONFIG_NAME) ;
     if (value != nullptr) {
       detected_device = Device::fromJson(*value);
     }
   }
 
-  if (detected_device != nullptr && !detected_device->connected) {
-
-    detected_device->connected = true;
-
-
+  if (detected_device != nullptr && !_connected) {
     thread_task = std::thread(&UsbDevice::task_runnable, this);
     thread_task.detach();
+    Utils::sleep_for(500);
   }
 
-  if (detected_device == nullptr || !detected_device->connected) {
+  if (detected_device == nullptr || !_connected) {
     Configuration::removeValue(CONFIG_NAME);
     qDebug() << "Failed to connect to device";
   }
@@ -56,8 +53,8 @@ Device* UsbDevice::connect_device() {
 
 Device * UsbDevice::disconnect_device() {
 
-  if (detected_device->connected) {
-    detected_device->connected = false;
+  if (detected_device && _connected) {
+    _connected = false;
   }
 
   return detected_device;
@@ -171,7 +168,7 @@ DeviceInterface* UsbDevice::search_device_interface_available(libusb_device *lib
       auto alt_setting = interface.altsetting[x];
 
       for (int j=0; j< alt_setting.bNumEndpoints && result == nullptr; j++) {
-        qDebug() << "Adding interfaz: " <<  alt_setting.bInterfaceNumber  << " " << alt_setting.endpoint[j].bEndpointAddress << " " << alt_setting.endpoint[j].wMaxPacketSize;
+        qDebug() << "Adding interface: " <<  alt_setting.bInterfaceNumber  << " " << int_to_hex(alt_setting.endpoint[j].bEndpointAddress) << " " << alt_setting.endpoint[j].wMaxPacketSize;
         DeviceInterface iface(alt_setting.bInterfaceNumber,alt_setting.endpoint[j].bEndpointAddress, alt_setting.endpoint[j].wMaxPacketSize);
 
         if (try_to_read(deviceToTry, &iface)) {
@@ -205,9 +202,11 @@ Device *  UsbDevice::detect_device() {
       }
       if (!found) {
 
+        qDebug() << "Device detected: " << int_to_hex(dn.vendor_id) << " " << int_to_hex(dn.product_id);
+
         std::set<Device> finalDevice = manage_devices(&dn);
         for (auto d : finalDevice) {
-          detected_device = &d;
+          detected_device = new Device(d.vendor_id, d.product_id, new DeviceInterface(d.getInterface()));
         }
         break;
       }
@@ -219,7 +218,7 @@ Device *  UsbDevice::detect_device() {
   }
 
   if (detected_device != nullptr) {
-    configuration->putObject(CONFIG_NAME, detected_device->toJson());
+    Configuration::putObject(CONFIG_NAME, detected_device->toJson());
     qDebug() << " Detected device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
 
   } else {
@@ -284,7 +283,9 @@ void UsbDevice::task_runnable() {
       // 4. Submit the transfer to the OS backend
       libusb_submit_transfer(transfer);
 
-      while (detected_device->connected) {
+      _connected = true;
+
+      while (_connected) {
         libusb_handle_events(context);
       }
 

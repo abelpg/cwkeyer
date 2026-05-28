@@ -1,14 +1,13 @@
 #include "GuiConnector.h"
 
-#include <QtMultimedia/QMediaDevices>
-#include <QtMultimedia/QAudioDevice>
+
 
 GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
   load_audio_devices();
   load_configuration();
   sound = new Sound(parent);
   sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
-  serialComm = new SerialComm(parent);
+  serialComm = new SerialComm();
 
   keyer = new Keyer(sound);
   keyer->init_keyer(m_wpm, static_cast<Mode>(m_mode));
@@ -124,7 +123,7 @@ void GuiConnector::send_device_updated(Device * device_detected) {
     jsonObject["device_name"] = "Device not detected";
   }
 
-  jsonObject["connected"] = device_detected!= nullptr? device_detected->connected:false;
+  jsonObject["connected"] = device->connected();
 
   varData <<QJsonDocument(jsonObject).toJson().toStdString().c_str();
 
@@ -195,14 +194,16 @@ void GuiConnector::setEnabledSound(bool enabled) {
 }
 
 bool GuiConnector::enabledCommOut() const {
-
-  return sound->enabled();
+  return serialComm->started();
 }
 
 void GuiConnector::setEnabledCommOut(bool enabled) {
-  qDebug() << enabled;
-  sound->setEnabled(enabled);
-  emit soundEnabledChanged(enabled);
+  if (enabled) {
+    serialComm->start(m_commPorts[m_selectedCommPort].toStdString());
+  } else {
+    serialComm->stop();
+  }
+  emit enabledCommOutChanged(enabled);
 }
 
 void GuiConnector::load_audio_devices() {
@@ -214,6 +215,27 @@ void GuiConnector::load_audio_devices() {
   emit audioDevicesChanged(m_audioDevices);
 }
 
+void GuiConnector::load_comm_ports() {
+
+  m_commPorts = QStringList();
+  for (const std::string& port : serialComm->list_ports() ) {
+    m_commPorts << QString::fromStdString(port);
+  }
+  emit commPortsChanged(m_commPorts);
+}
+
+void GuiConnector::setSelectedCommPort(int index) {
+  if (index < 0 || index >= m_commPorts.size()) {
+    return;
+  }
+  if (m_selectedCommPort == index) {
+    return;
+  }
+
+  m_selectedCommPort = index;
+  emit selectedCommPortChanged(m_selectedCommPort);
+
+}
 
 void GuiConnector::reinit_sound() {
   sound->stop();

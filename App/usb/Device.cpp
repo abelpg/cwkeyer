@@ -32,7 +32,7 @@ void Device::setPath(std::string *path) {
 }
 
 void Device::setInterface(DeviceInterface * device_interface) {
-  if (this->device_interface != nullptr) {
+  if (device_interface != nullptr) {
     this->device_interface = new DeviceInterface(device_interface);
   }
 }

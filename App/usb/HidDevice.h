@@ -27,6 +27,8 @@ class HidDevice  {
 
     Device * disconnect_device();
 
+    bool  connected()             const { return _connected; }
+
     template<typename T> static std::string int_to_hex(T i);
 
   private:
@@ -40,6 +42,10 @@ class HidDevice  {
     Device *detected_device = nullptr;
 
     Configuration *configuration = nullptr;
+
+
+    bool _connected = false;
+
 
     ///////////////
     void task_runnable();

@@ -30,12 +30,12 @@ Device * HidDevice::connect_device() {
 
   if (detected_device != nullptr) {
 
-    if (!detected_device->connected) {
+    if (!_connected) {
       hid_device = hid_open_path(detected_device->getPath()->c_str());
       if (hid_device != nullptr) {
         hid_set_nonblocking(hid_device, 0);
 
-        detected_device->connected = true;
+        _connected = true;
 
         qDebug() << "Connected to device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
 
@@ -53,7 +53,7 @@ Device * HidDevice::connect_device() {
     }
   }
 
-  if (detected_device == nullptr || !detected_device->connected) {
+  if (detected_device == nullptr || !_connected) {
     Configuration::removeValue(CONFIG_NAME);
     qDebug() << "Failed to connect to device";
   }
@@ -63,8 +63,8 @@ Device * HidDevice::connect_device() {
 
 Device * HidDevice::disconnect_device() {
 
-  if (detected_device->connected) {
-    detected_device->connected = false;
+  if (_connected) {
+    _connected = false;
     hid_close(hid_device);
   }
 
@@ -146,7 +146,7 @@ HidDevice::~HidDevice() {
 void HidDevice::task_runnable() {
   qDebug() << "Starting task runnable";
   unsigned char buff[8];;
-  while (detected_device != nullptr && detected_device->connected) {
+  while (detected_device != nullptr && _connected) {
     int res = hid_read_timeout(hid_device, buff, 8,5000);
     qDebug() << res;
   }

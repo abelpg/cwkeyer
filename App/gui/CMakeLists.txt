@@ -15,9 +15,9 @@ target_include_directories(GuiConnector
 target_link_libraries(GuiConnector PRIVATE
         LibConfiguration
         LibSound
+        LibSerial
         LibUsbDevice
         LibUtils
-        LibSerial
         KeyerLib
         Qt${QT_VERSION_MAJOR}::Core
         Qt${QT_VERSION_MAJOR}::Qml

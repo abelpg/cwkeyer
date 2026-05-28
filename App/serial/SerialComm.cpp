@@ -1,72 +1,111 @@
 #include "SerialComm.h"
-#include <QDebug>
-#include <chrono>
-SerialComm::SerialComm(QObject *parent) : QObject(parent) {}
+
+SerialComm::SerialComm() {}
 
 SerialComm::~SerialComm() {
   stop();
 }
 
-bool SerialComm::init(const QString &portName) {
-  if (_serial) {
-    stop();
+bool SerialComm::start(const std::string &portName) {
+  if (!_started) {
+    if (_hSerial != INVALID_HANDLE_VALUE) {
+      stop();
+    }
+
+    // En Windows los puertos >= COM10 necesitan el prefijo \\.\
+
+    std::string fullPort = "\\\\.\\" + portName;
+
+    _hSerial = CreateFileA(
+        fullPort.c_str(),
+        GENERIC_READ | GENERIC_WRITE,
+        0, nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr
+    );
+
+    if (_hSerial == INVALID_HANDLE_VALUE) {
+      std::cerr << "SerialComm: port can not be open" << portName
+                << " - error: " << GetLastError() << "\n";
+      return false;
+    }
+
+    DCB dcb = {};
+    dcb.DCBlength = sizeof(dcb);
+    if (!GetCommState(_hSerial, &dcb)) {
+      std::cerr << "SerialComm: getcomstate fail\n";
+      CloseHandle(_hSerial);
+      _hSerial = INVALID_HANDLE_VALUE;
+      return false;
+    }
+
+    dcb.BaudRate    = DEFAULT_BAUD_RATE;
+    dcb.ByteSize    = 8;
+    dcb.StopBits    = ONESTOPBIT;
+    dcb.Parity      = NOPARITY;
+    dcb.fRtsControl = RTS_CONTROL_ENABLE;
+
+    if (!SetCommState(_hSerial, &dcb)) {
+      std::cerr << "SerialComm: SetCommState falló\n";
+      CloseHandle(_hSerial);
+      _hSerial = INVALID_HANDLE_VALUE;
+      return false;
+    }
+
+    std::cout << "SerialComm: puerto abierto: " << portName << "\n";
+    _started = true;
+    return true;
   }
-
-  _serial = new QSerialPort(this);
-  _serial->setPortName(portName);
-  _serial->setBaudRate(DEFAULT_BAUD_RATE);
-  _serial->setFlowControl(QSerialPort::NoFlowControl);  // rts_cts = false
-  _serial->setParity(QSerialPort::NoParity);
-  _serial->setDataBits(QSerialPort::Data8);
-  _serial->setStopBits(QSerialPort::OneStop);
-
-  if (!_serial->open(QIODevice::ReadWrite)) {
-    qWarning() << "SerialComm: no se pudo abrir el puerto" << portName
-               << "-" << _serial->errorString();
-    delete _serial;
-    _serial = nullptr;
-    return false;
-  }
-
-  qDebug() << "SerialComm: puerto abierto:" << portName;
-  return true;
+  return false;
 }
 
 void SerialComm::stop() {
-  if (_serial) {
-    if (_serial->isOpen()) {
-      _serial->setRequestToSend(false);
-      _serial->close();
-    }
-    delete _serial;
-    _serial = nullptr;
-    qDebug() << "SerialComm: puerto cerrado.";
+  if (_hSerial != INVALID_HANDLE_VALUE && _started) {
+    EscapeCommFunction(_hSerial, CLRRTS);
+    CloseHandle(_hSerial);
+    _hSerial = INVALID_HANDLE_VALUE;
+    _started = false;
+    std::cout << "SerialComm: puerto cerrado.\n";
   }
 }
 
-QStringList SerialComm::list_ports() {
-  QStringList ports;
-  const auto availablePorts = QSerialPortInfo::availablePorts();
-  for (const QSerialPortInfo &info : availablePorts) {
-    ports << info.portName();
-    qDebug() << "Puerto disponible:" << info.portName()
-             << "-" << info.description();
+std::vector<std::string> SerialComm::list_ports() {
+  std::vector<std::string> ports;
+  HKEY hKey;
+  if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                    L"HARDWARE\\DEVICEMAP\\SERIALCOMM",
+                    0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+    WCHAR valueName[256], data[256];
+    DWORD index = 0, nameLen, dataLen, type;
+    while (true) {
+      nameLen = 256; dataLen = 256 * sizeof(WCHAR);
+      LONG ret = RegEnumValueW(hKey, index++, valueName, &nameLen,
+                               nullptr, &type,
+                               reinterpret_cast<LPBYTE>(data), &dataLen);
+      if (ret != ERROR_SUCCESS) break;
+      // Convertir WCHAR a std::string
+      int size = WideCharToMultiByte(CP_UTF8, 0, data, -1, nullptr, 0, nullptr, nullptr);
+      std::string portName(size - 1, '\0');
+      WideCharToMultiByte(CP_UTF8, 0, data, -1, portName.data(), size, nullptr, nullptr);
+      ports.push_back(portName);
+      std::cout << "Port available: " << portName << "\n";
+    }
+    RegCloseKey(hKey);
   }
   return ports;
 }
 
 void SerialComm::run_cw(int duration) {
-  if (!_serial || !_serial->isOpen()) {
-    qWarning() << "SerialComm::run_cw: puerto no abierto";
+  if (_hSerial == INVALID_HANDLE_VALUE || !_started) {
+    std::cerr << "SerialComm::run_cw: port closed\n";
     return;
   }
 
-  // Captura el puntero para usarlo en el hilo
-  QSerialPort *serialPtr = _serial;
-
-  std::thread([serialPtr, duration]() {
-      serialPtr->setRequestToSend(true);
+  HANDLE hSerial = _hSerial;
+  std::thread([hSerial, duration]() {
+      EscapeCommFunction(hSerial, SETRTS);
       std::this_thread::sleep_for(std::chrono::milliseconds(duration));
-      serialPtr->setRequestToSend(false);
+      EscapeCommFunction(hSerial, CLRRTS);
   }).detach();
 }
