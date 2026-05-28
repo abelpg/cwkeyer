@@ -2,18 +2,22 @@
 
 
 
-GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
+GuiConnector::GuiConnector(QApplication* app, QObject *parent) : QObject(parent) {
   load_audio_devices();
   load_configuration();
+
+  this->app = app;
+
   sound = new Sound(parent);
   sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
   serialComm = new SerialComm();
-
   keyer = new Keyer(sound);
   keyer->init_keyer(m_wpm, static_cast<Mode>(m_mode));
   device = new UsbDevice(keyer);
 
 }
+
+
 
 void GuiConnector::load_configuration() {
   // Amplitude: valor en [0.0, 1.0]

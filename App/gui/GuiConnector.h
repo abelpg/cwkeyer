@@ -3,6 +3,7 @@
 #define CWKEYERAPP_GUICONNECTOR_H
 
 #include <QObject>
+#include <QApplication>
 #include <QVariant>
 #include <QObject>
 #include <iostream>
@@ -10,6 +11,7 @@
 #include <QtMultimedia/QMediaDevices>
 #include <QtMultimedia/QAudioDevice>
 #include "../sound/Sound.h"
+
 
 #include "../usb/UsbDevice.h"
 #include "../keyer/Keyer.h"
@@ -22,6 +24,7 @@ static constexpr const double DEFAULT_AMPLITUDE  = 0.5;
 static constexpr const double DEFAULT_ATTACK     = 0.01;
 static constexpr const double DEFAULT_RELEASE    = 0.01;
 static constexpr const Mode   DEFAULT_MODE       = IAMBIC_B;
+
 
 class GuiConnector : public QObject{
   Q_OBJECT
@@ -38,7 +41,7 @@ class GuiConnector : public QObject{
   Q_PROPERTY(QStringList commPorts    READ commPorts    NOTIFY commPortsChanged)
 
   public:
-    explicit  GuiConnector(QObject *parent = 0);
+    explicit  GuiConnector(QApplication* app, QObject *parent = 0);
 
     // Getters
     double      amplitude()           const { return m_amplitude; }
@@ -86,6 +89,7 @@ class GuiConnector : public QObject{
     UsbDevice* device;
     Keyer* keyer;
     SerialComm* serialComm;
+    QApplication* app;
 
     double m_amplitude = DEFAULT_AMPLITUDE;
     double m_frequency = DEFAULT_FREQUENCY;

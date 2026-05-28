@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 
     QQmlApplicationEngine engine;
 
-    GuiConnector guiConnector = GuiConnector(engine.parent());
+    GuiConnector guiConnector = GuiConnector(&app, engine.parent());
     qmlRegisterType<GuiConnector>("libGui", 1, 0, "GuiConnectorClass");
 
     QQmlContext *context = engine.rootContext();

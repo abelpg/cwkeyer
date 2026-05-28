@@ -13,9 +13,12 @@ UsbDevice::UsbDevice() {
   libusb_set_debug(context, LIBUSB_LOG_LEVEL_INFO);
 }
 
-
 UsbDevice::UsbDevice(IDitDah* dit_dah):UsbDevice() {
-  this->dit_dah = dit_dah;
+  add_dit_dah(dit_dah);
+}
+
+void UsbDevice::add_dit_dah(IDitDah* dit_dah) {
+  dit_dah_list.push_back(dit_dah);
 }
 
 Device * UsbDevice::init_device() {
@@ -307,13 +310,13 @@ void UsbDevice::cb_interrupt( libusb_transfer *transfer){
 
     UsbDevice * usbDevice = static_cast<UsbDevice*>(transfer->user_data) ;
     if (transfer->buffer[0] == CLICK_BOTH || (transfer->buffer[2] > 0 && transfer->buffer[3] > 0)) {
-      usbDevice->sed_dih_dah(true,true);
+      usbDevice->send_dih_dah(true,true);
     } else if (transfer->buffer[0] == CLICK_LEFT || transfer->buffer[2] > 0 ) {
-      usbDevice->sed_dih_dah(true,false);
+      usbDevice->send_dih_dah(true,false);
     } else if (transfer->buffer[0] == CLICK_RIGHT || transfer->buffer[3] > 0 ) {
-      usbDevice->sed_dih_dah(false,true);
+      usbDevice->send_dih_dah(false,true);
     } else {
-      usbDevice->sed_dih_dah(false,false);
+      usbDevice->send_dih_dah(false,false);
     }
 
 
@@ -328,33 +331,34 @@ void UsbDevice::cb_interrupt( libusb_transfer *transfer){
   }
 }
 
-void UsbDevice::sed_dih_dah(bool dit, bool dah) {
-  if (dit && !this->dit) {
+void UsbDevice::send_dah(bool pressed) {
+  for (IDitDah * dit_dah : dit_dah_list) {
+    dit_dah->on_dah(pressed);
+  }
+}
+
+void UsbDevice::send_dit(bool pressed) {
+  for (IDitDah * dit_dah : dit_dah_list) {
+    dit_dah->on_dit(pressed);
+  }
+}
+
+void UsbDevice::send_dih_dah(bool ditPressed, bool dahPressed){
+  if (ditPressed && !this->dit) {
     this->dit=true;
+    send_dit(true);
 
-    if (dit_dah != nullptr) {
-      dit_dah->on_dit(this->dit);
-    }
-
-  } else if (!dit && this->dit) {
+  } else if (!ditPressed && this->dit) {
     this->dit=false;
-
-    if (dit_dah != nullptr) {
-      dit_dah->on_dit(this->dit);
-    }
+    send_dit(false);
   }
 
-  if (dah && !this->dah) {
+  if (dahPressed && !this->dah) {
     this->dah=true;
-    if (dit_dah != nullptr) {
-      dit_dah->on_dah(this->dah);
-    }
-  } else if (!dah && this->dah) {
+    send_dah(true);
+  } else if (!dahPressed && this->dah) {
     this->dah=false;
-    if (dit_dah != nullptr) {
-      dit_dah->on_dah(this->dah);
-    }
+    send_dah(false);
   }
-
 
 }

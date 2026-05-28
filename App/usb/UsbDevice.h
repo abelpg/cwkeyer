@@ -40,7 +40,9 @@ class UsbDevice  {
 
     Device * disconnect_device();
 
-    bool  connected()             const { return _connected; }
+    bool  connected() const { return _connected; }
+
+    void add_dit_dah(IDitDah* dit_dah);
 
     template<typename T> static std::string int_to_hex(T i);
 
@@ -59,7 +61,7 @@ class UsbDevice  {
 
     bool dit, dah, _connected = false;
 
-    IDitDah * dit_dah;
+    std::list<IDitDah*> dit_dah_list;
 
     ///////////////
     void task_runnable();
@@ -74,7 +76,10 @@ class UsbDevice  {
 
     bool try_to_read(Device * deviceToTry, DeviceInterface *interface);
 
-    void sed_dih_dah(bool dit, bool dah);
+    void send_dih_dah(bool ditPressed, bool dahPressed);
+
+    void send_dit(bool pressed);
+    void send_dah(bool pressed);
 
 
 };
