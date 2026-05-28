@@ -84,6 +84,7 @@ void GuiConnector::quit() {
   delete device;
   delete sound;
   delete serialComm;
+  delete keyboard;
 }
 
 void GuiConnector::init_device() {

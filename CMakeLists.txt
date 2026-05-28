@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.21.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ON by default, we don't want to link the insight tracker library, as it is only used for development and testing purposes.
+# This option allows developers to easily enable or disable linking the library without modifying the CMakeLists.txt file.
 option(LINK_INSIGHT "Link Qt Insight Tracker library" ON)
 option(BUILD_QDS_COMPONENTS "Build design studio components" ON)
 
@@ -19,7 +21,7 @@ set(QML_IMPORT_PATH ${QT_QML_OUTPUT_DIRECTORY}
     FORCE
 )
 
-find_package(Qt6 6.11 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickTimeline ShaderTools Multimedia)
+find_package(Qt6 6.11 REQUIRED COMPONENTS Core Gui Widgets Qml Quick ShaderTools Multimedia)
 qt_standard_project_setup()
 
 
@@ -51,3 +53,18 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+# En CMakeLists.txt raíz, añadir:
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)  # LTO
+
+# Flags de optimización explícitos:
+if(MSVC)
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /O2 /GL)
+    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE /LTCG)
+else()
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -O2 -flto)
+    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -flto)
+endif()
+
+#windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw --qmldir .\qml CwKeyerApp.exe

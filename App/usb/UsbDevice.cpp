@@ -209,6 +209,7 @@ Device *  UsbDevice::detect_device() {
 
         std::set<Device> finalDevice = manage_devices(&dn);
         for (auto d : finalDevice) {
+          delete detected_device;
           detected_device = new Device(d.vendor_id, d.product_id, new DeviceInterface(d.getInterface()));
         }
         break;

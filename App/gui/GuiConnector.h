@@ -3,9 +3,7 @@
 #define CWKEYERAPP_GUICONNECTOR_H
 
 #include <QDebug>
-#include <QObject>
 #include <QApplication>
-#include <QVariant>
 #include <QObject>
 #include <iostream>
 #include <QVariant>
