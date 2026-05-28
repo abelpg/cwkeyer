@@ -260,6 +260,51 @@ Rectangle {
         }
     }
 
+    Rectangle {
+        id: form_com_out
+        x: 8
+        y: 250
+        width: 624
+        height: 50
+        color: "#00ffffff"
+        border.color: "#bbbbbb"
+        border.width: 2
+
+        Button {
+            id: button
+            x: 8
+            y: 8
+            text: qsTr("Comm CW Out")
+            Connections {
+                target: btn_sound
+                function onClicked() {
+                    if (guiConnector.enabledCommOut) {
+                        guiConnector.setEnabledCommOut(false)
+                    } else {
+                        guiConnector.setEnabledCommOut(true)
+                    }
+                }
+            }
+        }
+
+        ComboBox {
+            id: select_comm_out
+            x: 165
+            y: 8
+            width: 160
+            height: 32
+        }
+
+        Rectangle {
+            id: comm_out_connected
+            x: 129
+            y: 10
+            width: 30
+            height: 30
+            color: guiConnector.enabledCommOut ? "#0fad00" : "#b40202"
+        }
+    }
+
     states: [
         State {
             name: "clicked"

@@ -8,9 +8,12 @@ GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
   load_configuration();
   sound = new Sound(parent);
   sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
+  serialComm = new SerialComm(parent);
+
   keyer = new Keyer(sound);
   keyer->init_keyer(m_wpm, static_cast<Mode>(m_mode));
   device = new UsbDevice(keyer);
+
 }
 
 void GuiConnector::load_configuration() {
@@ -67,6 +70,7 @@ void GuiConnector::quit() {
   delete keyer;
   delete device;
   delete sound;
+  delete serialComm;
 }
 
 void GuiConnector::init_device() {
@@ -182,11 +186,20 @@ void GuiConnector::setSelectedAudioDevice(int index) {
 }
 
 bool GuiConnector::enabledSound() const {
-  qDebug() << "GET ENABLED" << sound->enabled();
   return sound->enabled();
 }
 
 void GuiConnector::setEnabledSound(bool enabled) {
+  sound->setEnabled(enabled);
+  emit soundEnabledChanged(enabled);
+}
+
+bool GuiConnector::enabledCommOut() const {
+
+  return sound->enabled();
+}
+
+void GuiConnector::setEnabledCommOut(bool enabled) {
   qDebug() << enabled;
   sound->setEnabled(enabled);
   emit soundEnabledChanged(enabled);

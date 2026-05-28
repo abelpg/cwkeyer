@@ -12,6 +12,7 @@
 #include "../sound/Sound.h"
 #include "../usb/UsbDevice.h"
 #include "../keyer/Keyer.h"
+#include "../serial/SerialComm.h"
 
 static constexpr const int    DEFAULT_WPM        = 25;
 static constexpr const int    DEFAULT_SAMPLE_RATE= 44100;
@@ -31,6 +32,7 @@ class GuiConnector : public QObject{
   Q_PROPERTY(int selectedAudioDevice      READ selectedAudioDevice WRITE setSelectedAudioDevice NOTIFY selectedAudioDeviceChanged)
   Q_PROPERTY(int mode READ mode WRITE setMode NOTIFY modeChanged)
   Q_PROPERTY(int enabledSound READ enabledSound WRITE setEnabledSound NOTIFY soundEnabledChanged)
+  Q_PROPERTY(int enabledCommOut READ enabledCommOut WRITE setEnabledCommOut NOTIFY enabledCommOutChanged)
 
   public:
     explicit  GuiConnector(QObject *parent = 0);
@@ -43,6 +45,7 @@ class GuiConnector : public QObject{
     int         selectedAudioDevice() const { return m_selectedAudioDevice; }
     int         mode()                const { return m_mode; }
     bool        enabledSound()        const ;
+    bool        enabledCommOut()        const ;
 
     Q_INVOKABLE void init_device();
     Q_INVOKABLE void detect_device();
@@ -57,6 +60,7 @@ class GuiConnector : public QObject{
     void setSelectedAudioDevice(int index);
     void setMode(int value);
     void setEnabledSound(bool enabled);
+    void setEnabledCommOut(bool enabled);
 
   signals:
     void device_updated(QVariant varData);
@@ -67,15 +71,17 @@ class GuiConnector : public QObject{
     void selectedAudioDeviceChanged(int index);
     void modeChanged(int mode);
     void soundEnabledChanged(bool enabled);
+    void soundEnabledCommOutChanged(bool enabled);
 
   private:
     Sound* sound;
     UsbDevice* device;
     Keyer* keyer;
+    SerialComm* serialComm;
 
-    double m_amplitude = 0.5;
-    double m_frequency = 640.0;
-    int    m_wpm       = 25;
+    double m_amplitude = DEFAULT_AMPLITUDE;
+    double m_frequency = DEFAULT_FREQUENCY;
+    int    m_wpm       = DEFAULT_WPM;
 
     QStringList                m_audioDevices;
     QList<QAudioDevice>        m_audioDeviceList;
@@ -86,7 +92,6 @@ class GuiConnector : public QObject{
     void reinit_keyer();
     void send_device_updated(Device * device);
     void load_audio_devices();
-
     void load_configuration();
 
 };
