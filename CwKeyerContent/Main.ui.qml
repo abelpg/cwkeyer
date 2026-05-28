@@ -191,7 +191,7 @@ Rectangle {
             x: 416
             y: 46
             value: 0.5
-            onValueChanged: guiConnector.frequency = value
+            onValueChanged: guiConnector.amplitude = value
         }
 
         ComboBox {
@@ -200,6 +200,9 @@ Rectangle {
             y: 8
             width: 494
             height: 32
+            model: guiConnector.audioDevices          // ← lista desde C++
+            currentIndex: guiConnector.selectedAudioDevice
+            onCurrentIndexChanged: guiConnector.selectedAudioDevice = currentIndex
         }
 
         Rectangle {

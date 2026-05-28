@@ -1,6 +1,10 @@
 #include "GuiConnector.h"
 
+#include <QtMultimedia/QMediaDevices>
+#include <QtMultimedia/QAudioDevice>
+
 GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
+  load_audio_devices();                          // ← nuevo
   sound = new Sound(parent);
   sound->init(600, 44100, 0.5, 0.01, 0.01);
   keyer = new Keyer(sound);
@@ -108,10 +112,35 @@ void GuiConnector::setWpm(int value) {
 
 void GuiConnector::reinit_sound() {
   sound->stop();
-  sound->init(m_frequency, 44100, m_amplitude, 0.01, 0.01);
+  if (m_selectedAudioDevice >= 0 && m_selectedAudioDevice < m_audioDeviceList.size()) {
+    sound->initWithDevice(m_audioDeviceList[m_selectedAudioDevice], m_frequency, 44100, m_amplitude, 0.01, 0.01);
+  } else {
+    sound->init(m_frequency, 44100, m_amplitude, 0.01, 0.01);
+  }
 }
 
 void GuiConnector::reinit_keyer() {
   keyer->init_keyer(m_wpm, Mode::IAMBIC_B);
 
+}
+
+void GuiConnector::setSelectedAudioDevice(int index) {
+  if (index < 0 || index >= m_audioDeviceList.size()) {
+    return;
+  }
+  if (m_selectedAudioDevice == index) {
+    return;
+  }
+  m_selectedAudioDevice = index;
+  emit selectedAudioDeviceChanged(m_selectedAudioDevice);
+  reinit_sound();
+}
+
+void GuiConnector::load_audio_devices() {
+  m_audioDeviceList = QMediaDevices::audioOutputs();
+  m_audioDevices.clear();
+  for (const QAudioDevice &dev : m_audioDeviceList) {
+    m_audioDevices << dev.description();
+  }
+  emit audioDevicesChanged(m_audioDevices);
 }

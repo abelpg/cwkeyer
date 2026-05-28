@@ -7,6 +7,8 @@
 #include <QObject>
 #include <iostream>
 #include <QVariant>
+#include <QtMultimedia/QMediaDevices>
+#include <QtMultimedia/QAudioDevice>
 #include "../sound/Sound.h"
 #include "../usb/UsbDevice.h"
 #include "../keyer/Keyer.h"
@@ -19,6 +21,8 @@ class GuiConnector : public QObject{
   Q_PROPERTY(double amplitude  READ amplitude  WRITE setAmplitude  NOTIFY amplitudeChanged)
   Q_PROPERTY(double frequency  READ frequency  WRITE setFrequency  NOTIFY frequencyChanged)
   Q_PROPERTY(int    wpm        READ wpm        WRITE setWpm        NOTIFY wpmChanged)
+  Q_PROPERTY(QStringList audioDevices     READ audioDevices     NOTIFY audioDevicesChanged)
+  Q_PROPERTY(int selectedAudioDevice      READ selectedAudioDevice WRITE setSelectedAudioDevice NOTIFY selectedAudioDeviceChanged)
 
   public:
     explicit  GuiConnector(QObject *parent = 0);
@@ -27,6 +31,8 @@ class GuiConnector : public QObject{
     double amplitude() const { return m_amplitude; }
     double frequency() const { return m_frequency; }
     int    wpm()       const { return m_wpm; }
+    QStringList audioDevices()       const { return m_audioDevices; }
+    int         selectedAudioDevice() const { return m_selectedAudioDevice; }
 
     Q_INVOKABLE void init_device();
     Q_INVOKABLE void detect_device();
@@ -38,12 +44,15 @@ class GuiConnector : public QObject{
     void setAmplitude(double value);
     void setFrequency(double value);
     void setWpm(int value);
+    void setSelectedAudioDevice(int index);
 
   signals:
     void device_updated(QVariant varData);
     void amplitudeChanged(double amplitude);
     void frequencyChanged(double frequency);
     void wpmChanged(int wpm);
+    void audioDevicesChanged(QStringList devices);
+    void selectedAudioDeviceChanged(int index);
 
   private:
     Sound* sound;
@@ -51,12 +60,17 @@ class GuiConnector : public QObject{
     Keyer* keyer;
 
     double m_amplitude = 0.5;
-    double m_frequency = 600.0;
+    double m_frequency = 640.0;
     int    m_wpm       = 25;
+
+    QStringList                m_audioDevices;
+    QList<QAudioDevice>        m_audioDeviceList;
+    int                        m_selectedAudioDevice = 0;
 
     void reinit_sound();
     void reinit_keyer();
     void send_device_updated(Device * device);
+    void load_audio_devices();
 
 
 };

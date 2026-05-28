@@ -15,15 +15,20 @@ Sound::~Sound() {
     delete sink;
 }
 
-void Sound::init(double frequency, int sampleRate, double amplitude, double attackTime, double releaseTime)
-{
-    device = QMediaDevices::defaultAudioOutput();
+void Sound::initWithDevice(const QAudioDevice &dev,
+    double frequency, int sampleRate, double amplitude,
+    double attackTime, double releaseTime) {
 
-    this->frequency    = frequency;
-    this->sampleRate   = sampleRate;
-    this->amplitude    = amplitude;
-    this->attackTime   = attackTime;
-    this->releaseTime  = releaseTime;
+    qDebug() << "Sound::init() freq:" <<frequency << " sampleRate:" << sampleRate << " amplitude:" << amplitude
+             << " attackTime:" << attackTime << " releaseTime:" << releaseTime;
+
+    device = dev;   // sobrescribe el miembro
+    // reutiliza el resto de init()
+    this->frequency   = frequency;
+    this->sampleRate  = sampleRate;
+    this->amplitude   = amplitude;
+    this->attackTime  = attackTime;
+    this->releaseTime = releaseTime;
 
     attackSamples  = static_cast<int>(sampleRate * attackTime);
     releaseSamples = static_cast<int>(sampleRate * releaseTime);
@@ -39,10 +44,15 @@ void Sound::init(double frequency, int sampleRate, double amplitude, double atta
         throw std::runtime_error("format not supported");
     }
 
-    // Crear sink único reutilizable
     delete sink;
     sink = new QAudioSink(device, format, this);
+    cacheSound.clear();
+}
 
+void Sound::init(double frequency, int sampleRate, double amplitude,
+                 double attackTime, double releaseTime) {
+    initWithDevice(QMediaDevices::defaultAudioOutput(),
+                   frequency, sampleRate, amplitude, attackTime, releaseTime);
 }
 
 QByteArray Sound::generate_buffer(double durationSec) {
@@ -83,13 +93,14 @@ void Sound::stop() {
 void Sound::on_play_requested(int duration) {
     stop();
 
-    cacheSound.contains(duration) ? cacheSound[duration] : cacheSound[duration] = generate_buffer(duration / 1000.0);
+        cacheSound.contains(duration) ? cacheSound[duration] : cacheSound[duration] = generate_buffer(duration / 1000.0);
 
-    activeBuffer = new QBuffer();          // sin parent — gestionado por stop()
-    activeBuffer->setData(cacheSound[duration]);
-    activeBuffer->open(QIODevice::ReadOnly);
+        activeBuffer = new QBuffer();          // sin parent — gestionado por stop()
+        activeBuffer->setData(cacheSound[duration]);
+        activeBuffer->open(QIODevice::ReadOnly);
 
-    sink->start(activeBuffer);
+        sink->start(activeBuffer);
+
 }
 
 void Sound::run_cw(int duration) {

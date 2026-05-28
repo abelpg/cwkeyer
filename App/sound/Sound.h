@@ -27,6 +27,9 @@ public:
   void init(double frequency, int sampleRate, double amplitude,
             double attackTime, double releaseTime);
 
+  void initWithDevice(const QAudioDevice &dev, double frequency, int sampleRate,
+                    double amplitude, double attackTime, double releaseTime);
+
   void stop();
   void list_devices();
   void run_cw(int duration) override;   // duration en ms
