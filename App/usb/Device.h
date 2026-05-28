@@ -27,7 +27,7 @@ class Device {
     Device(int vendor_id, int product_id);
     Device(int vendor_id, int product_id, std::string *path);
     Device(int vendor_id, int product_id, DeviceInterface * device_interface);
-
+    ~Device();
 
     friend bool operator== (const Device &left, const Device &right);
 

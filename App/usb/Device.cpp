@@ -44,3 +44,8 @@ DeviceInterface * Device::getInterface() {
 std::string * Device::getPath() {
   return path;
 }
+
+Device::~Device() {
+  //delete device_interface;
+  //delete path;
+}

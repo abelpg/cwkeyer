@@ -66,6 +66,11 @@ void GuiConnector::load_configuration() {
   if (selDev >= 0 && selDev < m_audioDeviceList.size()) {
     m_selectedAudioDevice = selDev;
   }
+
+  int selCom = Configuration::getValueInt(CFG_COMM_OUT);
+  if (selCom >= 0 && selCom < m_commPorts.size()) {
+    m_selectedCommPort = selCom;
+  }
 }
 
 
@@ -252,6 +257,9 @@ void GuiConnector::setSelectedCommPort(int index) {
   }
 
   m_selectedCommPort = index;
+
+  Configuration::putValueInt(CFG_COMM_OUT,   m_selectedCommPort);
+
   emit selectedCommPortChanged(m_selectedCommPort);
 
 }
