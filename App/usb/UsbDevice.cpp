@@ -175,7 +175,7 @@ DeviceInterface* UsbDevice::search_device_interface_available(libusb_device *lib
         DeviceInterface iface(alt_setting.bInterfaceNumber,alt_setting.endpoint[j].bEndpointAddress, alt_setting.endpoint[j].wMaxPacketSize);
 
         if (try_to_read(deviceToTry, &iface)) {
-          result = new DeviceInterface(iface);
+          result = &iface;
         }
 
       }
@@ -292,7 +292,7 @@ void UsbDevice::task_runnable() {
         libusb_handle_events(context);
       }
 
-      //libusb_free_transfer(transfer);
+      libusb_free_transfer(transfer);
       if (detached) {
         rs = libusb_attach_kernel_driver(device, detected_device->getInterface()->interface); //reattach it
         assert(rs == LIBUSB_SUCCESS);
