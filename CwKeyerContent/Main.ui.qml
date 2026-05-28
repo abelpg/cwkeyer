@@ -18,40 +18,6 @@ Rectangle {
     signal deviceUpdatedWindow(string name, bool connected)
 
     Button {
-        id: btn_keyer
-        text: qsTr("Keyer")
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: -140
-        anchors.horizontalCenterOffset: -285
-        checkable: true
-        anchors.horizontalCenter: parent.horizontalCenter
-
-        Connections {
-            target: btn_keyer
-            function onClicked() {
-                console.log("clicked")
-            }
-        }
-    }
-
-    SpinBox {
-        id: input_wpm
-        x: 121
-        y: 84
-        value: 20
-        editable: true
-        to: 50
-        from: 10
-    }
-
-    Label {
-        id: lbl_wpm
-        x: 80
-        y: 90
-        text: qsTr("WPM")
-    }
-
-    Button {
         id: btn_detect_device
         x: 8
         y: 8
@@ -70,27 +36,6 @@ Rectangle {
         }
     }
 
-    BusyIndicator {
-        id: bsy_indicator
-        x: 115
-        y: 8
-        width: 35
-        height: 32
-        opacity: 0
-        visible: true
-    }
-
-    Text {
-        id: txt_device
-        x: 121
-        y: 8
-        width: 201
-        height: 70
-        text: qsTr("")
-        font.pixelSize: 20
-        property bool connected: true
-    }
-
     Connections {
         target: rectangle
 
@@ -98,8 +43,10 @@ Rectangle {
             txt_device.text = name
             txt_device.connected = connected
             if (connected) {
+                device_connected.color = "#0fad00"
                 btn_connect.text = "Disconnect"
             } else {
+                device_connected.color = "#b40202"
                 btn_connect.text = "Connect"
             }
         }
@@ -125,10 +72,170 @@ Rectangle {
         }
     }
 
+    Rectangle {
+        id: line1
+        x: 8
+        y: 84
+        width: 624
+        height: 5
+        color: "#bbbbbb"
+    }
+
+    Rectangle {
+        id: device_connected
+        x: 124
+        y: 8
+        width: 70
+        height: 70
+        color: Constants.backgroundColor
+    }
+
+    Rectangle {
+        id: rectangle_text
+        x: 200
+        y: 8
+        width: 432
+        height: 70
+        color: "#00ffffff"
+        border.color: "#bbbbbb"
+        border.width: 2
+
+        Text {
+            id: txt_device
+            x: 3
+            y: 3
+            width: 425
+            height: 65
+            text: qsTr("")
+            font.pixelSize: 20
+            property bool connected: true
+        }
+    }
+
+    Rectangle {
+        id: form_keyer
+        x: 8
+        y: 95
+        width: 624
+        height: 53
+        color: "#00ffffff"
+        border.color: "#bbbbbb"
+        border.width: 2
+
+        SpinBox {
+            id: input_wpm
+            x: 49
+            y: 8
+            value: 20
+            editable: true
+            to: 50
+            from: 10
+        }
+
+        Label {
+            id: lbl_wpm
+            x: 8
+            y: 14
+            text: qsTr("WPM")
+        }
+
+        Label {
+            id: lbl_mode
+            x: 168
+            y: 15
+            text: qsTr("Mode")
+        }
+
+        RadioButton {
+            id: radio_ultimate
+            x: 225
+            y: 9
+            text: qsTr("Ultimate")
+        }
+
+        RadioButton {
+            id: radio_iambic_a
+            x: 328
+            y: 9
+            text: qsTr("Iambic A")
+        }
+
+        RadioButton {
+            id: radio_iambic_b
+            x: 433
+            y: 9
+            text: qsTr("Iambic B")
+        }
+    }
+
+    Rectangle {
+        id: form_sound
+        x: 8
+        y: 154
+        width: 624
+        height: 90
+        color: "#00ffffff"
+        border.color: "#bbbbbb"
+        border.width: 2
+
+        Button {
+            id: btn_sound
+            x: 8
+            y: 8
+            text: qsTr("Sound")
+        }
+
+        Slider {
+            id: amplitude
+            x: 416
+            y: 46
+            value: 0.5
+        }
+
+        ComboBox {
+            id: sel_device
+            x: 122
+            y: 8
+            width: 494
+            height: 32
+        }
+
+        Rectangle {
+            id: sound_connected
+            x: 72
+            y: 10
+            width: 30
+            height: 30
+            color: Constants.backgroundColor
+        }
+
+        Label {
+            id: lbl_amplitude
+            x: 359
+            y: 52
+            text: qsTr("Volume")
+        }
+
+        SpinBox {
+            id: spinBox
+            x: 122
+            y: 46
+            stepSize: 10
+            to: 1000
+            from: 300
+        }
+
+        Label {
+            id: lbl_frecuency
+            x: 8
+            y: 54
+            text: qsTr("Frecuency")
+        }
+    }
+
     states: [
         State {
             name: "clicked"
-            when: btn_keyer.checked
         }
     ]
 }
