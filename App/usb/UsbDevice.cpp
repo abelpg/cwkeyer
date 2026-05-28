@@ -30,9 +30,9 @@ Device* UsbDevice::connect_device() {
   qDebug() << "UsbDevice connect_device called";
 
   if (detected_device == nullptr) {
-    ConfigurationValue*  value =  configuration->getValue(CONFIG_NAME) ;
+    QJsonObject*  value =  configuration->getValue(CONFIG_NAME) ;
     if (value != nullptr) {
-      detected_device = Device::fromJson(*value->value);
+      detected_device = Device::fromJson(*value);
     }
   }
 

@@ -7,79 +7,127 @@
 Configuration::Configuration() {
 }
 
- ConfigurationValue * Configuration::getValue(std::string key) {
-  ConfigurationValue * configuration = nullptr;
-  QFile file(CONFIGURATION_FILE_NAME);
-  if (file.exists()) {
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      throw std::runtime_error("Could not open file");
-    }
-    try {
-      QJsonDocument document = QJsonDocument::fromJson(file.readAll());
-      QString keyName = QString::fromStdString(key);
-      if (document.object().contains(keyName)) {
-        configuration = new ConfigurationValue( document.object().value(keyName).toObject());
-      }
-    } catch (const std::exception &e) {
-      throw std::runtime_error("Could not parse JSON");
-    }
+// Helper interno: lee el JSON completo del archivo (sin truncar)
+static QJsonObject readFullJson(QFile& file) {
+  if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
     file.close();
+    if (doc.isObject()) {
+      return doc.object();
+    }
+  }
+  return QJsonObject{};
+}
+
+static void writeFullJson(QFile& file, const QJsonObject& root) {
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+    throw std::runtime_error("Could not open file for writing");
+  }
+  file.write(QJsonDocument(root).toJson());
+  file.close();
+}
+
+
+QJsonObject * Configuration::getValue(std::string key) {
+  QJsonObject* object = nullptr;
+  QFile file(CONFIGURATION_FILE_NAME);
+  if (!file.exists()) {
+    return nullptr;
   }
 
-  return configuration;
-
-}
-void Configuration::removeValue(std::string key) {
-  QFile file(CONFIGURATION_FILE_NAME);
-
-  QJsonObject *mainJson = open_file_to_write(key, &file);
-  if (mainJson != nullptr) {
-    QString keyName = QString::fromStdString(key);
-    if (mainJson->contains(keyName)) {
-      mainJson->remove(keyName);
-    }
-
-    file.write(QJsonDocument(*mainJson).toJson());
-    file.close();
-    delete mainJson;
-  }
-
-}
-
-
-void Configuration::putObject(std::string key, QJsonObject value) {
-    QFile file(CONFIGURATION_FILE_NAME);
-
-    QJsonObject *mainJson = open_file_to_write(key, &file);
-    if (mainJson == nullptr) {
-      mainJson = new QJsonObject();
-    }
-    mainJson->operator[](QString::fromStdString(key)) = value;
-
-    file.write(QJsonDocument(*mainJson).toJson());
-    file.close();
-    delete mainJson;
-
-}
-
-
-QJsonObject * Configuration::open_file_to_write(std::string key, QFile * file) {
-  if (!file->open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text)) {
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     throw std::runtime_error("Could not open file");
   }
 
-  QJsonObject * mainJson = nullptr;
-  if (file->exists()) {
-    try {
-      QJsonDocument document = QJsonDocument::fromJson(file->readAll());
-      QString keyName = QString::fromStdString(key);
-      if (document.object().contains(keyName)) {
-        mainJson = new QJsonObject( document.object().value(keyName).toObject());
-      }
-    } catch (const std::exception &e) {
-      throw std::runtime_error("Could not parse JSON");
-    }
+  QJsonDocument document = QJsonDocument::fromJson(file.readAll());
+  file.close();
+
+  QString keyName = QString::fromStdString(key);
+  if (document.object().contains(keyName)) {
+    object = new QJsonObject(document.object().value(keyName).toObject());
   }
 
-  return mainJson;
+  return object;
+}
+
+int Configuration::getValueInt(std::string key) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  if (!file.exists()) {
+    return 0;
+  }
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    throw std::runtime_error("Could not open file");
+  }
+
+  QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  file.close();
+
+  QString k = QString::fromStdString(key);
+  if (!doc.object().contains(k)) {
+    return 0;
+  }
+  return doc.object().value(k).toInt();
+}
+
+double Configuration::getValueDouble(std::string key) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  if (!file.exists()) return 0.0;
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    throw std::runtime_error("Could not open file");
+
+  QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  file.close();
+
+  QString k = QString::fromStdString(key);
+  if (!doc.object().contains(k)) return 0.0;
+  return doc.object().value(k).toDouble();
+}
+
+bool Configuration::getValueBool(std::string key) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  if (!file.exists()) return false;
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    throw std::runtime_error("Could not open file");
+
+  QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  file.close();
+
+  QString k = QString::fromStdString(key);
+  if (!doc.object().contains(k)) return false;
+  return doc.object().value(k).toBool();
+}
+
+void Configuration::putObject(std::string key, QJsonObject value) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  QJsonObject root = readFullJson(file);
+  root[QString::fromStdString(key)] = value;
+  writeFullJson(file, root);
+}
+
+void Configuration::putValueInt(std::string key, int value) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  QJsonObject root = readFullJson(file);
+  root[QString::fromStdString(key)] = value;
+  writeFullJson(file, root);
+}
+
+void Configuration::putValueDouble(std::string key, double value) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  QJsonObject root = readFullJson(file);
+  root[QString::fromStdString(key)] = value;
+  writeFullJson(file, root);
+}
+
+void Configuration::putValueBool(std::string key, bool value) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  QJsonObject root = readFullJson(file);
+  root[QString::fromStdString(key)] = value;
+  writeFullJson(file, root);
+}
+
+void Configuration::removeValue(std::string key) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  QJsonObject root = readFullJson(file);
+  root.remove(QString::fromStdString(key));
+  writeFullJson(file, root);
 }

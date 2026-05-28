@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.16)
 add_library(LibConfiguration
         Configuration.cpp
         Configuration.h
-        ConfigurationValue.cpp
-        ConfigurationValue.h
 )
 
 target_include_directories(LibConfiguration

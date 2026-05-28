@@ -22,9 +22,9 @@ Device * HidDevice::init_device() {
 Device * HidDevice::connect_device() {
 
   if (detected_device == nullptr) {
-    ConfigurationValue*  value =  configuration->getValue(CONFIG_NAME) ;
+    QJsonObject*  value =  configuration->getValue(CONFIG_NAME) ;
     if (value != nullptr) {
-      detected_device = Device::fromJson(*value->value);
+      detected_device = Device::fromJson(*value);
     }
   }
 
