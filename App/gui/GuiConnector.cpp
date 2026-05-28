@@ -17,6 +17,8 @@ GuiConnector::GuiConnector(QApplication* app, QObject *parent) : QObject(parent)
 
   keyboard = new Keyboard(this);
   device = new UsbDevice(keyer);
+  keyboardListener = new KeyboardListener(keyer);
+
   device->add_dit_dah(keyboard);
 
 }
@@ -89,18 +91,27 @@ void GuiConnector::quit() {
 
 void GuiConnector::init_device() {
   Device * device_connected = this->device->init_device();
+
+  if (device_connected == nullptr) {
+    keyboardListener->setEnabled(true);
+  }
+
   send_device_updated(device_connected);
 }
 
 
 void GuiConnector::connect_device() {
   Device * device_detected = this->device->connect_device();
+  if (device_detected == nullptr) {
+    keyboardListener->setEnabled(true);
+  }
   send_device_updated(device_detected);
 }
 
 void GuiConnector::disconnect_device() {
 
   Device * device_detected = this->device->disconnect_device();
+  keyboardListener->setEnabled(false);
   send_device_updated(device_detected);
 
 }
@@ -116,6 +127,7 @@ void GuiConnector::detect_device() {
   varData.clear();
 
   Device * device_detected = this->device->detect_device();
+
   send_device_updated(device_detected);
 
 }
@@ -134,11 +146,12 @@ void GuiConnector::send_device_updated(Device * device_detected) {
       + " endpoint=" + (device_detected->getInterface() != nullptr? UsbDevice::int_to_hex(device_detected->getInterface()->endpoint): "N/A");
 
     jsonObject["device_name"] = text.c_str();
+    jsonObject["connected"] = device->connected();
   } else {
-    jsonObject["device_name"] = "Device not detected";
+    jsonObject["device_name"] = "Vail Adapter / VBand adapter";
+    jsonObject["connected"] = keyboardListener->isEnabled();
   }
 
-  jsonObject["connected"] = device->connected();
 
   varData <<QJsonDocument(jsonObject).toJson().toStdString().c_str();
 
@@ -226,6 +239,10 @@ bool GuiConnector::enabledKeyboard() const {
 }
 
 void GuiConnector::setEnabledKeyboard(bool enabled) {
+  if (keyboardListener->isEnabled() == enabled) {
+    qDebug() << "GuiConnector::enabledKeyboard() when listener is enabled";
+    return;
+  }
   keyboard->setEnabled(enabled);
   emit enabledKeyboardChanged(enabled);
 }

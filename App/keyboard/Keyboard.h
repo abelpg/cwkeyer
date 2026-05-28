@@ -29,7 +29,7 @@ class Keyboard : public QObject, public IDitDah {
       void pressDit(bool pressed);
       void pressDah(bool pressed);
   private:
-      bool m_enabled = true;
+      bool m_enabled = false;
 };
 
 #endif //CWKEYERAPP_KEYBOARD_H

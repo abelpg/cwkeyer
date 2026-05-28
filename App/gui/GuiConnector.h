@@ -15,6 +15,7 @@
 #include "../usb/UsbDevice.h"
 #include "../keyer/Keyer.h"
 #include "../keyboard/Keyboard.h"
+#include "../keyboard/KeyboardListener.h"
 #include "../serial/SerialComm.h"
 
 static constexpr const int    DEFAULT_WPM        = 25;
@@ -94,6 +95,7 @@ class GuiConnector : public QObject{
     Keyer* keyer;
     SerialComm* serialComm;
     Keyboard* keyboard;
+    KeyboardListener *keyboardListener;
     QApplication* app;
 
     double m_amplitude = DEFAULT_AMPLITUDE;

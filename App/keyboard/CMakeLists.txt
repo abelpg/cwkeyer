@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 add_library(LibKeyboard
         Keyboard.cpp
         Keyboard.h
+        KeyboardListener.cpp
+        KeyboardListener.h
 )
 
 target_include_directories(LibKeyboard
