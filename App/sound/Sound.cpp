@@ -55,6 +55,10 @@ void Sound::init(double frequency, int sampleRate, double amplitude,
                    frequency, sampleRate, amplitude, attackTime, releaseTime);
 }
 
+void Sound::setEnabled(bool enable) {
+    _enabled = enable;
+}
+
 QByteArray Sound::generate_buffer(double durationSec) {
     const int totalSamples = static_cast<int>(sampleRate * durationSec);
     QByteArray buffer;
@@ -91,8 +95,9 @@ void Sound::stop() {
 
 // Ejecutado siempre en el hilo de Sound gracias a QueuedConnection
 void Sound::on_play_requested(int duration) {
-    stop();
 
+    if (_enabled) {
+        stop();
         cacheSound.contains(duration) ? cacheSound[duration] : cacheSound[duration] = generate_buffer(duration / 1000.0);
 
         activeBuffer = new QBuffer();          // sin parent — gestionado por stop()
@@ -100,6 +105,7 @@ void Sound::on_play_requested(int duration) {
         activeBuffer->open(QIODevice::ReadOnly);
 
         sink->start(activeBuffer);
+    }
 
 }
 

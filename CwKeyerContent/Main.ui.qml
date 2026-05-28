@@ -152,6 +152,9 @@ Rectangle {
             x: 225
             y: 9
             text: qsTr("Ultimate")
+            checked: guiConnector.mode === 1 // ULTIMATIC = 0x1
+            onCheckedChanged: if (checked)
+                                  guiConnector.mode = 1
         }
 
         RadioButton {
@@ -159,6 +162,9 @@ Rectangle {
             x: 328
             y: 9
             text: qsTr("Iambic A")
+            checked: guiConnector.mode === 2 // IAMBIC_A = 0x2
+            onCheckedChanged: if (checked)
+                                  guiConnector.mode = 2
         }
 
         RadioButton {
@@ -166,6 +172,9 @@ Rectangle {
             x: 433
             y: 9
             text: qsTr("Iambic B")
+            checked: guiConnector.mode === 3 // IAMBIC_B = 0x3
+            onCheckedChanged: if (checked)
+                                  guiConnector.mode = 3
         }
     }
 
@@ -184,6 +193,17 @@ Rectangle {
             x: 8
             y: 8
             text: qsTr("Sound")
+
+            Connections {
+                target: btn_sound
+                function onClicked() {
+                    if (guiConnector.enabledSound) {
+                        guiConnector.setEnabledSound(false)
+                    } else {
+                        guiConnector.setEnabledSound(true)
+                    }
+                }
+            }
         }
 
         Slider {
@@ -200,7 +220,7 @@ Rectangle {
             y: 8
             width: 494
             height: 32
-            model: guiConnector.audioDevices          // ← lista desde C++
+            model: guiConnector.audioDevices // ← lista desde C++
             currentIndex: guiConnector.selectedAudioDevice
             onCurrentIndexChanged: guiConnector.selectedAudioDevice = currentIndex
         }
@@ -211,7 +231,7 @@ Rectangle {
             y: 10
             width: 30
             height: 30
-            color: Constants.backgroundColor
+            color: guiConnector.enabledSound ? "#0fad00" : "#b40202"
         }
 
         Label {

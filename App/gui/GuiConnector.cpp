@@ -7,9 +7,9 @@ GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
   load_audio_devices();
   load_configuration();
   sound = new Sound(parent);
-  sound->init(600, 44100, 0.5, 0.01, 0.01);
+  sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
   keyer = new Keyer(sound);
-  keyer->init_keyer(25, Mode::IAMBIC_B);
+  keyer->init_keyer(m_wpm, static_cast<Mode>(m_mode));
   device = new UsbDevice(keyer);
 }
 
@@ -18,19 +18,38 @@ void GuiConnector::load_configuration() {
   double amp = Configuration::getValueDouble(CFG_AMPLITUDE);
   if (amp > 0.0) {
     m_amplitude = amp;
+  } else {
+    m_amplitude = DEFAULT_AMPLITUDE;
+    Configuration::putValueDouble(CFG_AMPLITUDE, m_amplitude);
   }
 
   // Frequency
   double freq = Configuration::getValueDouble(CFG_FREQUENCY);
   if (freq > 0.0) {
     m_frequency = freq;
+  } else {
+    m_frequency = DEFAULT_FREQUENCY;
+    Configuration::putValueDouble(CFG_FREQUENCY, m_frequency);
   }
 
   // WPM
   int wpm = Configuration::getValueInt(CFG_WPM);
   if (wpm > 0) {
     m_wpm = wpm;
+  }else {
+    m_wpm = DEFAULT_WPM;
+    Configuration::putValueDouble(CFG_WPM, m_wpm);
   }
+
+
+  int mode = Configuration::getValueInt(CFG_MODE);
+  if (mode == ULTIMATIC || mode == IAMBIC_A || mode == IAMBIC_B) {
+    m_mode = mode;
+  } else {
+    m_mode = DEFAULT_MODE;
+    Configuration::putValueInt(CFG_MODE, m_mode);
+  }
+
 
   // Dispositivo de audio seleccionado
   int selDev = Configuration::getValueInt(CFG_SELECTED_AUDIO_DEVICE);
@@ -140,19 +159,14 @@ void GuiConnector::setWpm(int value) {
   reinit_keyer();
 }
 
-void GuiConnector::reinit_sound() {
-  sound->stop();
-  if (m_selectedAudioDevice >= 0 && m_selectedAudioDevice < m_audioDeviceList.size()) {
-    sound->initWithDevice(m_audioDeviceList[m_selectedAudioDevice], m_frequency, 44100, m_amplitude, 0.01, 0.01);
-  } else {
-    sound->init(m_frequency, 44100, m_amplitude, 0.01, 0.01);
-  }
+void GuiConnector::setMode(int value) {
+  if (m_mode == value) return;
+  m_mode = value;
+  emit modeChanged(m_mode);
+  Configuration::putValueInt(CFG_MODE, m_mode);
+  reinit_keyer();
 }
 
-void GuiConnector::reinit_keyer() {
-  keyer->init_keyer(m_wpm, Mode::IAMBIC_B);
-
-}
 
 void GuiConnector::setSelectedAudioDevice(int index) {
   if (index < 0 || index >= m_audioDeviceList.size()) {
@@ -167,6 +181,15 @@ void GuiConnector::setSelectedAudioDevice(int index) {
   reinit_sound();
 }
 
+bool GuiConnector::enabledSound() const {
+  return sound->enabled();
+}
+
+void GuiConnector::setEnabledSound(bool enabled) {
+  sound->setEnabled(enabled);
+  emit soundEnabledChanged(enabled);
+}
+
 void GuiConnector::load_audio_devices() {
   m_audioDeviceList = QMediaDevices::audioOutputs();
   m_audioDevices.clear();
@@ -174,4 +197,18 @@ void GuiConnector::load_audio_devices() {
     m_audioDevices << dev.description();
   }
   emit audioDevicesChanged(m_audioDevices);
+}
+
+
+void GuiConnector::reinit_sound() {
+  sound->stop();
+  if (m_selectedAudioDevice >= 0 && m_selectedAudioDevice < m_audioDeviceList.size()) {
+    sound->initWithDevice(m_audioDeviceList[m_selectedAudioDevice], m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
+  } else {
+    sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
+  }
+}
+
+void GuiConnector::reinit_keyer() {
+  keyer->init_keyer(m_wpm, static_cast<Mode>(m_mode));
 }
