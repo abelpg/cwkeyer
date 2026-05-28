@@ -5,9 +5,11 @@
 // Helper: simulate a key press/release for a given virtual key
 static void sendKey(WORD vk, bool pressed) {
   INPUT input{};
-  input.type       = INPUT_KEYBOARD;
-  input.ki.wVk     = vk;
-  input.ki.dwFlags = pressed ? 0 : KEYEVENTF_KEYUP;
+  input.type           = INPUT_KEYBOARD;
+  input.ki.wVk         = vk;
+  input.ki.wScan       = MapVirtualKey(vk, MAPVK_VK_TO_VSC); // scan code
+  input.ki.dwFlags     = KEYEVENTF_SCANCODE;
+  if (!pressed) input.ki.dwFlags |= KEYEVENTF_KEYUP;
   SendInput(1, &input, sizeof(INPUT));
 }
 
@@ -33,13 +35,15 @@ void Keyboard::on_dah(bool pressed) {
 
 // Executed by the Qt event loop (non-blocking for the caller)
 void Keyboard::pressDit(bool pressed) {
-  qDebug() << "Keyboard::pressDit() called with pressed=" << pressed;
-  sendKey(VK_LCONTROL, pressed);   // Left Ctrl
+  //qDebug() << "Keyboard::pressDit() called with pressed=" << pressed;
+  //sendKey(VK_LCONTROL, pressed);   // Left Ctrl
+  sendKey(VK_OEM_1, pressed);   // Left Ctrl
 }
 
 void Keyboard::pressDah(bool pressed) {
-  qDebug() << "Keyboard::pressDah() called with pressed=" << pressed;
-  sendKey(VK_RCONTROL, pressed);   // Right Ctrl
+  //qDebug() << "Keyboard::pressDah() called with pressed=" << pressed;
+  //sendKey(VK_RCONTROL, pressed);   // Right Ctrl
+  sendKey(VK_OEM_PLUS, pressed);
 }
 void Keyboard::setEnabled(bool enabled) {
   m_enabled = enabled;

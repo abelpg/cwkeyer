@@ -93,6 +93,7 @@ std::vector<std::string> SerialComm::list_ports() {
     }
     RegCloseKey(hKey);
   }
+
   return ports;
 }
 

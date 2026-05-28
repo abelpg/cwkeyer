@@ -4,6 +4,7 @@
 
 GuiConnector::GuiConnector(QApplication* app, QObject *parent) : QObject(parent) {
   load_audio_devices();
+  load_comm_ports() ;
   load_configuration();
 
   this->app = app;
@@ -72,6 +73,7 @@ void GuiConnector::quit() {
   qDebug() << "Quit called";
   sound->stop();
   device->disconnect_device();
+  serialComm->stop();
 
   delete keyer;
   delete device;
