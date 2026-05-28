@@ -57,6 +57,7 @@ void Sound::init(double frequency, int sampleRate, double amplitude,
 
 void Sound::setEnabled(bool enable) {
     _enabled = enable;
+    qDebug() << "Sound::setEnabled()" << enable;
 }
 
 QByteArray Sound::generate_buffer(double durationSec) {

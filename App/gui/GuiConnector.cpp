@@ -182,10 +182,12 @@ void GuiConnector::setSelectedAudioDevice(int index) {
 }
 
 bool GuiConnector::enabledSound() const {
+  qDebug() << "GET ENABLED" << sound->enabled();
   return sound->enabled();
 }
 
 void GuiConnector::setEnabledSound(bool enabled) {
+  qDebug() << enabled;
   sound->setEnabled(enabled);
   emit soundEnabledChanged(enabled);
 }

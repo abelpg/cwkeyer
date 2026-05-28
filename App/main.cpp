@@ -15,10 +15,11 @@ int main(int argc, char *argv[]) {
 
     QQmlApplicationEngine engine;
 
-
     GuiConnector guiConnector = GuiConnector(engine.parent());
-
     qmlRegisterType<GuiConnector>("libGui", 1, 0, "GuiConnectorClass");
+
+    QQmlContext *context = engine.rootContext();
+    context->setContextProperty("guiConnector", &guiConnector);
 
     const QUrl url(mainQmlFile);
     QObject::connect(
@@ -42,8 +43,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    QQmlContext *context = engine.rootContext();
-    context->setContextProperty("guiConnector", &guiConnector);
 
     // Here or engine.rootObjects().first()->children().first()
     QObject * rootObject  = engine.rootObjects().first();

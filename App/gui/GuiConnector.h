@@ -30,6 +30,7 @@ class GuiConnector : public QObject{
   Q_PROPERTY(QStringList audioDevices     READ audioDevices     NOTIFY audioDevicesChanged)
   Q_PROPERTY(int selectedAudioDevice      READ selectedAudioDevice WRITE setSelectedAudioDevice NOTIFY selectedAudioDeviceChanged)
   Q_PROPERTY(int mode READ mode WRITE setMode NOTIFY modeChanged)
+  Q_PROPERTY(int enabledSound READ enabledSound WRITE setEnabledSound NOTIFY soundEnabledChanged)
 
   public:
     explicit  GuiConnector(QObject *parent = 0);
