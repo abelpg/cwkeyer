@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ON by default, we don't want to link the insight tracker library, as it is only used for development and testing purposes.
 # This option allows developers to easily enable or disable linking the library without modifying the CMakeLists.txt file.
-option(LINK_INSIGHT "Link Qt Insight Tracker library" ON)
-option(BUILD_QDS_COMPONENTS "Build design studio components" ON)
+option(LINK_INSIGHT "Link Qt Insight Tracker library" OFF)
+option(BUILD_QDS_COMPONENTS "Build design studio components" OFF)
 
 project(CwKeyerApp LANGUAGES CXX)
 
@@ -54,6 +54,7 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+
 # En CMakeLists.txt raíz, añadir:
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)  # LTO
@@ -74,13 +75,16 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CW Keyer Application")
 set(CPACK_PACKAGE_VERSION           "1.0.0")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "CwKeyer")
 
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)   # crea carpeta raíz dentro del ZIP
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-win64-portable")
+
 # Icono / licencia (opcionales pero recomendados)
 #set(CPACK_RESOURCE_FILE_LICENSE     "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 
 # ── Windows: NSIS o WiX ───────────────────────────────────────────────────────
 if(WIN32)
     # Elige uno: NSIS (requiere NSIS instalado) o WIX (requiere WiX Toolset)
-    set(CPACK_GENERATOR "NSIS")          # o "WIX"
+    set(CPACK_GENERATOR "ZIP;NSIS")   # genera ambos: ZIP portable + instalador NSIS
 
     # NSIS — opciones extra
     set(CPACK_NSIS_DISPLAY_NAME     "CwKeyer")
@@ -89,6 +93,8 @@ if(WIN32)
 
     # WiX — opciones extra (descomenta si usas WIX)
     # set(CPACK_WIX_UPGRADE_GUID   "GENERA-UN-GUID-UNICO-AQUI")
+else()
+    set(CPACK_GENERATOR "TGZ")        # Linux/Mac: tar.gz portable
 endif()
 
 # Instalar hidapi.dll junto al ejecutable
@@ -103,6 +109,7 @@ qt_generate_deploy_app_script(
         TARGET ${CMAKE_PROJECT_NAME}
         OUTPUT_SCRIPT deploy_script
         NO_UNSUPPORTED_PLATFORM_ERROR
+        DEPLOY_TOOL_OPTIONS "--qmldir" "${CMAKE_SOURCE_DIR}"  # apunta al directorio con tus .qml
 )
 install(SCRIPT ${deploy_script})
 
@@ -111,5 +118,5 @@ include(CPack)
 
 #cmake --build cmake-build-debug --config Release
 #cd cmake-build-debug
-#cpack -G NSIS   # o WIX
+#cpack -G NSIS   # o WIX  cpack -G ZIP
 #windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw --qmldir .\qml CwKeyerApp.exe
