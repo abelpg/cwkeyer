@@ -25,10 +25,10 @@ enum Mode {
 class Keyer : public IDitDah{
 
   public:
-    Keyer(int wpm, IKeyerCW * soundCW);
+    Keyer(IKeyerCW * soundCW);
+    void init_keyer(int wpm, Mode mode);
     void on_dit(bool pressed) override;
     void on_dah(bool pressed) override;
-
 
   private:
 
@@ -41,6 +41,7 @@ class Keyer : public IDitDah{
     Mode mode = IAMBIC_B;
     std::queue<KeyerItem> queue;
     std::thread thread_keyer;
+
     void enqueue(KeyerItem item);
     void keyer_call();
     void play_dit_dah(KeyerItem item);

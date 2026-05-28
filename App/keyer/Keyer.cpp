@@ -18,13 +18,17 @@ const int Keyer::TIME_BASE = 1200;
     24 WPM: Dit = 50ms, Dah = 150ms
     30 WPM: Dit = 40ms, Dah = 120ms
  */
-Keyer::Keyer(int wpm, IKeyerCW * soundCW){
+Keyer::Keyer(IKeyerCW * soundCW){
   qDebug() << "Keyer constructor called";
+  this->soundCW = soundCW;
+}
 
+void Keyer::init_keyer(int wpm, Mode mode) {
+  qDebug() << "Keyer init_keyer called";
   dit_time = TIME_BASE / wpm;
   dah_time = dit_time * 3.0;
   space_time = dit_time;
-  this->soundCW = soundCW;
+  this->mode = mode;
 }
 
 

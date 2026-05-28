@@ -3,7 +3,8 @@
 GuiConnector::GuiConnector(QObject *parent) : QObject(parent) {
   sound = new Sound(parent);
   sound->init(600, 44100, 0.5, 0.01, 0.01);
-  keyer = new Keyer(25, sound);
+  keyer = new Keyer(sound);
+  keyer->init_keyer(25, Mode::IAMBIC_B);
   device = new UsbDevice(keyer);
 }
 
@@ -74,5 +75,43 @@ void GuiConnector::send_device_updated(Device * device_detected) {
   varData <<QJsonDocument(jsonObject).toJson().toStdString().c_str();
 
   emit device_updated(varData);
+
+}
+
+void GuiConnector::setAmplitude(double value) {
+  if (qFuzzyCompare(m_amplitude, value)) {
+    return;
+  }
+
+  m_amplitude = value;
+  emit amplitudeChanged(m_amplitude);
+  reinit_sound();
+}
+
+void GuiConnector::setFrequency(double value) {
+  if (qFuzzyCompare(m_frequency, value)) {
+    return;
+  }
+  m_frequency = value;
+  emit frequencyChanged(m_frequency);
+  reinit_sound();
+}
+
+void GuiConnector::setWpm(int value) {
+  if (m_wpm == value) {
+    return;
+  }
+  m_wpm = value;
+  emit wpmChanged(m_wpm);
+  reinit_keyer();
+}
+
+void GuiConnector::reinit_sound() {
+  sound->stop();
+  sound->init(m_frequency, 44100, m_amplitude, 0.01, 0.01);
+}
+
+void GuiConnector::reinit_keyer() {
+  keyer->init_keyer(m_wpm, Mode::IAMBIC_B);
 
 }

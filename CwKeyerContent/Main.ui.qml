@@ -130,6 +130,7 @@ Rectangle {
             editable: true
             to: 50
             from: 10
+            onValueChanged: guiConnector.wpm = value
         }
 
         Label {
@@ -190,6 +191,7 @@ Rectangle {
             x: 416
             y: 46
             value: 0.5
+            onValueChanged: guiConnector.frequency = value
         }
 
         ComboBox {
@@ -217,12 +219,13 @@ Rectangle {
         }
 
         SpinBox {
-            id: spinBox
+            id: frecuency
             x: 122
             y: 46
             stepSize: 10
             to: 1000
             from: 300
+            onValueChanged: guiConnector.frequency = value
         }
 
         Label {
