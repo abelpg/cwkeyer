@@ -10,10 +10,13 @@ GuiConnector::GuiConnector(QApplication* app, QObject *parent) : QObject(parent)
   this->app = app;
 
   sound = new Sound(parent);
-  sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
+  reinit_sound();
+
   serialComm = new SerialComm();
+
   keyer = new Keyer(sound);
-  keyer->init_keyer(m_wpm, static_cast<Mode>(m_mode));
+  keyer->add_keyerCW(serialComm);
+  reinit_keyer();
 
   keyboard = new Keyboard(this);
   device = new UsbDevice(keyer);

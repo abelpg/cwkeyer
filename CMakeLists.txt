@@ -67,4 +67,49 @@ else()
     target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -flto)
 endif()
 
+# ── CPack / Installer ──────────────────────────────────────────────────────────
+set(CPACK_PACKAGE_NAME              "CwKeyer")
+set(CPACK_PACKAGE_VENDOR            "EA1FXG")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CW Keyer Application")
+set(CPACK_PACKAGE_VERSION           "1.0.0")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "CwKeyer")
+
+# Icono / licencia (opcionales pero recomendados)
+#set(CPACK_RESOURCE_FILE_LICENSE     "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+
+# ── Windows: NSIS o WiX ───────────────────────────────────────────────────────
+if(WIN32)
+    # Elige uno: NSIS (requiere NSIS instalado) o WIX (requiere WiX Toolset)
+    set(CPACK_GENERATOR "NSIS")          # o "WIX"
+
+    # NSIS — opciones extra
+    set(CPACK_NSIS_DISPLAY_NAME     "CwKeyer")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+    set(CPACK_NSIS_MODIFY_PATH      ON)   # añade el binario al PATH
+
+    # WiX — opciones extra (descomenta si usas WIX)
+    # set(CPACK_WIX_UPGRADE_GUID   "GENERA-UN-GUID-UNICO-AQUI")
+endif()
+
+# Instalar hidapi.dll junto al ejecutable
+install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/App/usb/libusb/libusb-1.0.dll"
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# Instalar DLLs de Qt (usando windeployqt o instalando manualmente)
+# Opción automática con Qt helper (Qt 6.3+):
+qt_generate_deploy_app_script(
+        TARGET ${CMAKE_PROJECT_NAME}
+        OUTPUT_SCRIPT deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+)
+install(SCRIPT ${deploy_script})
+
+
+include(CPack)
+
+#cmake --build cmake-build-debug --config Release
+#cd cmake-build-debug
+#cpack -G NSIS   # o WIX
 #windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw --qmldir .\qml CwKeyerApp.exe

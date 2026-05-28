@@ -44,7 +44,12 @@ bool SerialComm::start(const std::string &portName) {
     dcb.ByteSize    = 8;
     dcb.StopBits    = ONESTOPBIT;
     dcb.Parity      = NOPARITY;
-    dcb.fRtsControl = RTS_CONTROL_ENABLE;
+    // Control de flujo RTS/CTS (hardware handshaking)
+    dcb.fOutxCtsFlow = TRUE;                    // Habilita CTS en salida
+    dcb.fRtsControl  = RTS_CONTROL_DISABLE;   // RTS en modo handshake automático
+    dcb.fOutX        = FALSE;                   // Deshabilita control de flujo por software (XON/XOFF)
+    dcb.fInX         = FALSE;                   // Deshabilita control de flujo por software (XON/XOFF)
+    dcb.fDtrControl  = DTR_CONTROL_ENABLE;
 
     if (!SetCommState(_hSerial, &dcb)) {
       std::cerr << "SerialComm: SetCommState falló\n";
@@ -52,7 +57,7 @@ bool SerialComm::start(const std::string &portName) {
       _hSerial = INVALID_HANDLE_VALUE;
       return false;
     }
-
+    EscapeCommFunction(_hSerial, CLRDTR);
     std::cout << "SerialComm: puerto abierto: " << portName << "\n";
     _started = true;
     return true;
@@ -98,15 +103,19 @@ std::vector<std::string> SerialComm::list_ports() {
 }
 
 void SerialComm::run_cw(int duration) {
-  if (_hSerial == INVALID_HANDLE_VALUE || !_started) {
+  if (!_started) {
+    return;
+  }
+
+  if (_hSerial == INVALID_HANDLE_VALUE ) {
     std::cerr << "SerialComm::run_cw: port closed\n";
     return;
   }
 
   HANDLE hSerial = _hSerial;
   std::thread([hSerial, duration]() {
-      EscapeCommFunction(hSerial, SETRTS);
+      EscapeCommFunction(hSerial, SETDTR);
       std::this_thread::sleep_for(std::chrono::milliseconds(duration));
-      EscapeCommFunction(hSerial, CLRRTS);
+      EscapeCommFunction(hSerial, CLRDTR);
   }).detach();
 }

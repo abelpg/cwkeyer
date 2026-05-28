@@ -30,6 +30,8 @@ class Keyer : public IDitDah{
     void on_dit(bool pressed) override;
     void on_dah(bool pressed) override;
 
+    void add_keyerCW(IKeyerCW* keyerCW);
+
   private:
 
     const static int TIME_BASE;
@@ -46,7 +48,7 @@ class Keyer : public IDitDah{
     void keyer_call();
     void play_dit_dah(KeyerItem item);
 
-    IKeyerCW * soundCW;
+    std::list<IKeyerCW*> keyerCW_list;
 
     static KeyerItem reverse(KeyerItem item) {
       if (item == DIT) {

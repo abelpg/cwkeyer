@@ -20,7 +20,7 @@ const int Keyer::TIME_BASE = 1200;
  */
 Keyer::Keyer(IKeyerCW * soundCW){
   qDebug() << "Keyer constructor called";
-  this->soundCW = soundCW;
+  add_keyerCW(soundCW);
 }
 
 void Keyer::init_keyer(int wpm, Mode mode) {
@@ -65,14 +65,24 @@ void Keyer::enqueue(KeyerItem item) {
   }
 }
 
+void Keyer::add_keyerCW(IKeyerCW* keyerCW) {
+  keyerCW_list.push_back(keyerCW);
+}
+
+
 void Keyer::play_dit_dah(KeyerItem item) {
 
 
   if (item == DIT) {
-    soundCW->run_cw(dit_time);
+    for (IKeyerCW* keyerCW : keyerCW_list) {
+      keyerCW->run_cw(dit_time);
+    }
+
     Utils::sleep_for(dit_time + space_time);
   } else if (item == DAH) {
-    soundCW->run_cw(dah_time);
+    for (IKeyerCW* keyerCW : keyerCW_list) {
+      keyerCW->run_cw(dah_time);
+    }
     Utils::sleep_for(dah_time + space_time);
   }
 
