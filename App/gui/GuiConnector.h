@@ -17,6 +17,7 @@
 #include "../keyboard/Keyboard.h"
 #include "../keyboard/KeyboardListener.h"
 #include "../serial/SerialComm.h"
+#include "../cwdecoder/CwDecoder.h"
 
 static constexpr const int    DEFAULT_WPM        = 25;
 static constexpr const int    DEFAULT_SAMPLE_RATE= 44100;
@@ -39,6 +40,7 @@ class GuiConnector : public QObject{
   Q_PROPERTY(bool    enabledKeyboard      READ enabledKeyboard     WRITE setEnabledKeyboard     NOTIFY enabledKeyboardChanged)
   Q_PROPERTY(int     selectedAudioDevice  READ selectedAudioDevice WRITE setSelectedAudioDevice NOTIFY selectedAudioDeviceChanged)
   Q_PROPERTY(int     selectedCommPort     READ selectedCommPort    WRITE setSelectedCommPort    NOTIFY selectedCommPortChanged)
+  Q_PROPERTY(bool    enabledCwDecoder     READ enabledCwDecoder     WRITE setEnabledCwDecoder   NOTIFY enabledCwDecoderChanged)
   Q_PROPERTY(QStringList audioDevices READ audioDevices NOTIFY audioDevicesChanged)
   Q_PROPERTY(QStringList commPorts    READ commPorts    NOTIFY commPortsChanged)
 
@@ -55,6 +57,7 @@ class GuiConnector : public QObject{
     bool        enabledSound()        const ;
     bool        enabledCommOut()      const ;
     bool        enabledKeyboard()     const ;
+    bool        enabledCwDecoder()    const ;
     QStringList commPorts()           const { return m_commPorts; }
     int         selectedCommPort()    const { return m_selectedCommPort; }
 
@@ -73,9 +76,11 @@ class GuiConnector : public QObject{
     void setEnabledSound(bool enabled);
     void setEnabledCommOut(bool enabled);
     void setEnabledKeyboard(bool enabled);
+    void setEnabledCwDecoder(bool enabled);
     void setSelectedCommPort(int index);
 
   signals:
+    void textCwDecoderUpdated(QVariant varData);
     void device_updated(QVariant varData);
     void amplitudeChanged(double amplitude);
     void frequencyChanged(double frequency);
@@ -88,6 +93,7 @@ class GuiConnector : public QObject{
     void selectedCommPortChanged(int index);
     void enabledCommOutChanged(bool enabled);
     void enabledKeyboardChanged(bool enabled);
+    void enabledCwDecoderChanged(bool enabled);
 
   private:
     Sound* sound;
@@ -97,6 +103,7 @@ class GuiConnector : public QObject{
     Keyboard* keyboard;
     KeyboardListener *keyboardListener;
     QApplication* app;
+    CwDecoder* cwDecoder;
 
     double m_amplitude = DEFAULT_AMPLITUDE;
     double m_frequency = DEFAULT_FREQUENCY;
@@ -116,6 +123,7 @@ class GuiConnector : public QObject{
     void load_audio_devices();
     void load_configuration();
     void load_comm_ports();
+    void on_decode_text_cw(std::string text);
 
 };
 

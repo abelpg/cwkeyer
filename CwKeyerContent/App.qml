@@ -13,10 +13,13 @@ Window {
     title: "CwKeyer"
 
 
-    function deviceUpdated(msg) {
-        console.log("Device updated app" +msg);
+    function deviceUpdated(msg) {        
         var obj = JSON.parse(msg)
         mainScreen.deviceUpdatedWindow(obj["device_name"], obj["connected"]);
+    }
+
+    function textCwDecoderUpdated(msg) {
+        mainScreen.textCwDecoderUpdated(msg);
     }
 
     Main {

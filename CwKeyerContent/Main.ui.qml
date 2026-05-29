@@ -16,23 +16,7 @@ Rectangle {
     height: Constants.height
     color: Constants.backgroundColor
     signal deviceUpdatedWindow(string name, bool connected)
-
-    Button {
-        id: btn_detect_device
-        x: 8
-        y: 8
-        text: qsTr("Detect device")
-
-        Connections {
-            target: btn_detect_device
-
-            function onClicked() {
-                btn_detect_device.enabled = false
-                guiConnector.detect_device()
-                btn_detect_device.enabled = true
-            }
-        }
-    }
+    signal textCwDecoderUpdated(string text)
 
     Connections {
         target: rectangle
@@ -50,12 +34,41 @@ Rectangle {
         }
     }
 
+    Connections {
+        target: rectangle
+        function onTextCwDecoderUpdated(text) {
+            text_cw_decoder.insert(text_cw_decoder.length, text)
+            text_cw_decoder.cursorPosition = text_cw_decoder.length
+            scroll_text_cw_decoder.ScrollBar.vertical.position = 1.0 - scroll_text_cw_decoder.ScrollBar.vertical.size
+        }
+    }
+
+    Button {
+        id: btn_detect_device
+        x: 550
+        y: 8
+        width: 82
+        height: 70
+        text: qsTr("Search\nZadig device")
+        font.pointSize: 9
+
+        Connections {
+            target: btn_detect_device
+
+            function onClicked() {
+                btn_detect_device.enabled = false
+                guiConnector.detect_device()
+                btn_detect_device.enabled = true
+            }
+        }
+    }
+
     Button {
         id: btn_connect
-        x: 8
-        y: 46
+        x: 11
+        y: 8
         width: 107
-        height: 32
+        height: 70
         text: qsTr("Connect")
 
         Connections {
@@ -92,7 +105,7 @@ Rectangle {
         id: rectangle_text
         x: 200
         y: 8
-        width: 432
+        width: 344
         height: 70
         color: "#00ffffff"
         border.color: "#bbbbbb"
@@ -102,10 +115,10 @@ Rectangle {
             id: txt_device
             x: 3
             y: 3
-            width: 425
+            width: 341
             height: 65
             text: qsTr("")
-            font.pixelSize: 20
+            font.pixelSize: 16
             property bool connected: true
         }
     }
@@ -263,7 +276,7 @@ Rectangle {
             y: 8
             text: qsTr("Send keyboard active")
             checked: guiConnector.enabledKeyboard
-            onToggled: guiConnector.setEnabledKeyboard(checked)
+            onToggled: guiConnector.enabledKeyboard = checked
         }
     }
 
@@ -312,6 +325,51 @@ Rectangle {
             width: 30
             height: 30
             color: guiConnector.enabledCommOut ? "#0fad00" : "#b40202"
+        }
+    }
+
+    CheckBox {
+        id: cw_decoder_active
+        x: 11
+        y: 306
+        text: qsTr("CW Decoder")
+        checked: guiConnector.enabledCwDecoder
+        onToggled: guiConnector.enabledCwDecoder = checked
+    }
+
+    Rectangle {
+        id: rectangle_text_cw_decoder
+        x: 8
+        y: 334
+        width: 624
+        height: 138
+        color: "#00ffffff"
+        border.color: "#bbbbbb"
+        border.width: 2
+
+        ScrollView {
+            id: scroll_text_cw_decoder
+            x: 0
+            y: 0
+            width: 624
+            height: 138
+            ScrollBar.horizontal.interactive: false
+            ScrollBar.vertical.interactive: true
+            clip: true
+
+            TextEdit {
+                id: text_cw_decoder
+                x: 0
+                y: 0
+                width: 624
+                height: 138
+                text: qsTr("")
+                font.pixelSize: 16
+                wrapMode: Text.Wrap
+                overwriteMode: true
+                readOnly: false
+                font.family: "Segoe UI"
+            }
         }
     }
 

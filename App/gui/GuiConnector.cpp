@@ -9,23 +9,37 @@ GuiConnector::GuiConnector(QApplication* app, QObject *parent) : QObject(parent)
 
   this->app = app;
 
+  // Create sound manager
   sound = new Sound(parent);
   reinit_sound();
 
+  // Create serial manager
   serialComm = new SerialComm();
+
+  // Create CwDecoder manager
+  cwDecoder = new CwDecoder(std::bind(&GuiConnector::on_decode_text_cw, this, std::placeholders::_1));
+
+  // Create keyer manager
 
   keyer = new Keyer(sound);
   keyer->add_keyerCW(serialComm);
   reinit_keyer();
 
+  // Zadig device with keyboard sending
   keyboard = new Keyboard(this);
   device = new UsbDevice(keyer);
+  device->add_dit_dah(keyboard);
+
+  // VBand / Vail listener if zadig device is not active
   keyboardListener = new KeyboardListener(keyer);
 
-  device->add_dit_dah(keyboard);
 
 }
 
+void GuiConnector::on_decode_text_cw(std::string text) {
+  qDebug() << "Decoded CW text: " << text;
+  emit textCwDecoderUpdated(QString::fromStdString(text));
+}
 
 
 void GuiConnector::load_configuration() {
@@ -250,6 +264,13 @@ void GuiConnector::setEnabledKeyboard(bool enabled) {
   emit enabledKeyboardChanged(enabled);
 }
 
+bool GuiConnector::enabledCwDecoder() const {
+  return cwDecoder->enabled();
+}
+
+void GuiConnector::setEnabledCwDecoder(bool enabled) {
+  cwDecoder->setEnabled(enabled);
+}
 
 void GuiConnector::load_audio_devices() {
   m_audioDeviceList = QMediaDevices::audioOutputs();

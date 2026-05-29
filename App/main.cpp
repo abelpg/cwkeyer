@@ -48,9 +48,16 @@ int main(int argc, char *argv[]) {
     // Here or engine.rootObjects().first()->children().first()
     QObject * rootObject  = engine.rootObjects().first();
 
+    // When device connected
     QObject::connect(&guiConnector,
                   SIGNAL(device_updated(QVariant)),rootObject ,
                   SLOT(deviceUpdated(QVariant)),
+                        Qt::QueuedConnection);
+
+    // Text qso
+    QObject::connect(&guiConnector,
+                  SIGNAL(textCwDecoderUpdated(QVariant)),rootObject ,
+                  SLOT(textCwDecoderUpdated(QVariant)),
                         Qt::QueuedConnection);
 
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &guiConnector, &GuiConnector::quit);
