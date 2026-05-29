@@ -102,7 +102,7 @@ std::vector<std::string> SerialComm::list_ports() {
   return ports;
 }
 
-void SerialComm::run_cw(int duration) {
+void SerialComm::run_cw(KeyerItem item, int duration) {
   if (!_started) {
     return;
   }

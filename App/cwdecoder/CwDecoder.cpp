@@ -8,18 +8,21 @@ CwDecoder::~CwDecoder() {
   // Nothing
 }
 
-void CwDecoder::setEnabled(bool enabled) {
-  m_enabled = enabled;
-  std::cout << "CwDecoder::setEnabled()";
-  if (enabled) {
-    for (int i = 0; i < 100; i++) {
-      m_callbackTextDecoded("Decoded text " + std::to_string(i));
-    }
-  }
+void CwDecoder::start(int farnsWorth) {
+  m_started = true;
+
+  inter_element_space = IKeyerCW::calculate_duration(KeyerItem::INTER_ELEMENT_SPACE, farnsWorth);
+  letter_space = IKeyerCW::calculate_duration(KeyerItem::LETTER_SPACE, farnsWorth);
+  word_space = IKeyerCW::calculate_duration(KeyerItem::WORD_SPACE, farnsWorth);
+
 }
 
-void CwDecoder::run_cw(int duration) {
-  if (!m_enabled) {
+void CwDecoder::stop() {
+  m_started = false;
+}
+
+void CwDecoder::run_cw(KeyerItem item, int duration) {
+  if (!m_started) {
     return;
   }
 

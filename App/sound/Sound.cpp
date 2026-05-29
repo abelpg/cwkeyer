@@ -110,7 +110,7 @@ void Sound::on_play_requested(int duration) {
 
 }
 
-void Sound::run_cw(int duration) {
+void Sound::run_cw(KeyerItem item, int duration) {
     emit play_requested(duration);
 }
 

@@ -19,13 +19,14 @@
 #include "../serial/SerialComm.h"
 #include "../cwdecoder/CwDecoder.h"
 
-static constexpr const int    DEFAULT_WPM        = 25;
-static constexpr const int    DEFAULT_SAMPLE_RATE= 44100;
-static constexpr const int    DEFAULT_FREQUENCY  = 650;
-static constexpr const double DEFAULT_AMPLITUDE  = 0.5;
-static constexpr const double DEFAULT_ATTACK     = 0.01;
-static constexpr const double DEFAULT_RELEASE    = 0.01;
-static constexpr const Mode   DEFAULT_MODE       = IAMBIC_B;
+static constexpr const int    DEFAULT_WPM         = 25;
+static constexpr const int    DEFAULT_FARNSWORTH  = 25;
+static constexpr const int    DEFAULT_SAMPLE_RATE = 44100;
+static constexpr const int    DEFAULT_FREQUENCY   = 650;
+static constexpr const double DEFAULT_AMPLITUDE   = 0.5;
+static constexpr const double DEFAULT_ATTACK      = 0.01;
+static constexpr const double DEFAULT_RELEASE     = 0.01;
+static constexpr const Mode   DEFAULT_MODE        = IAMBIC_B;
 
 
 class GuiConnector : public QObject{
@@ -34,6 +35,7 @@ class GuiConnector : public QObject{
   Q_PROPERTY(double  amplitude            READ amplitude           WRITE setAmplitude           NOTIFY amplitudeChanged)
   Q_PROPERTY(double  frequency            READ frequency           WRITE setFrequency           NOTIFY frequencyChanged)
   Q_PROPERTY(int     wpm                  READ wpm                 WRITE setWpm                 NOTIFY wpmChanged)
+  Q_PROPERTY(int     farnsWorth           READ farnsWorth          WRITE setFarnsWorth          NOTIFY farnsWorthChanged)
   Q_PROPERTY(int     mode                 READ mode                WRITE setMode                NOTIFY modeChanged)
   Q_PROPERTY(int     enabledSound         READ enabledSound        WRITE setEnabledSound        NOTIFY soundEnabledChanged)
   Q_PROPERTY(int     enabledCommOut       READ enabledCommOut      WRITE setEnabledCommOut      NOTIFY enabledCommOutChanged)
@@ -51,6 +53,7 @@ class GuiConnector : public QObject{
     double      amplitude()           const { return m_amplitude; }
     double      frequency()           const { return m_frequency; }
     int         wpm()                 const { return m_wpm; }
+    int         farnsWorth()          const { return m_farnsWorth; }
     QStringList audioDevices()        const { return m_audioDevices; }
     int         selectedAudioDevice() const { return m_selectedAudioDevice; }
     int         mode()                const { return m_mode; }
@@ -71,6 +74,7 @@ class GuiConnector : public QObject{
     void setAmplitude(double value);
     void setFrequency(double value);
     void setWpm(int value);
+    void setFarnsWorth(int value);
     void setSelectedAudioDevice(int index);
     void setMode(int value);
     void setEnabledSound(bool enabled);
@@ -85,6 +89,7 @@ class GuiConnector : public QObject{
     void amplitudeChanged(double amplitude);
     void frequencyChanged(double frequency);
     void wpmChanged(int wpm);
+    void farnsWorthChanged(int farnsWorth);
     void audioDevicesChanged(QStringList devices);
     void selectedAudioDeviceChanged(int index);
     void modeChanged(int mode);
@@ -108,6 +113,7 @@ class GuiConnector : public QObject{
     double m_amplitude = DEFAULT_AMPLITUDE;
     double m_frequency = DEFAULT_FREQUENCY;
     int    m_wpm       = DEFAULT_WPM;
+    int    m_farnsWorth = DEFAULT_FARNSWORTH;
 
     QStringList                m_audioDevices;
     QList<QAudioDevice>        m_audioDeviceList;

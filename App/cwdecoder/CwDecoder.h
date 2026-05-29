@@ -11,13 +11,15 @@ class CwDecoder : public IKeyerCW {
 public:
    CwDecoder(std::function<void(const std::string&)> callbackTextDecoded);
    ~CwDecoder();
-   bool enabled() const { return m_enabled; };
-   void setEnabled(bool enabled);
+   bool started() const { return m_started; };
+   void start(int farnsWorth);
+   void stop();
 
 private:
-   bool m_enabled = false;
+   int inter_element_space,letter_space, word_space;
+   bool m_started = false;
    std::function<void(const std::string&)> m_callbackTextDecoded;
-   void run_cw(int duration) override;
+   void run_cw(KeyerItem item, int duration) override;
 
 };
 

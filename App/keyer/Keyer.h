@@ -9,18 +9,13 @@
 #include "../utils/Utils.h"
 #include "../utils/IDitDah.h"
 #include "../utils/IKeyerCW.h"
-enum KeyerItem {
-  DIT = 0x1,
-  DAH = 0x2
-};
+
 
 enum Mode {
   ULTIMATIC = 0x1,
   IAMBIC_A = 0x2,
   IAMBIC_B = 0x3
 };
-
-
 
 class Keyer : public IDitDah{
 
@@ -30,13 +25,15 @@ class Keyer : public IDitDah{
     void on_dit(bool pressed) override;
     void on_dah(bool pressed) override;
 
+    int dit_time();
+    int dah_time();
+    int space_time();
+
     void add_keyerCW(IKeyerCW* keyerCW);
 
   private:
 
-    const static int TIME_BASE;
-
-    int dit_time, dah_time, space_time = 0;
+    int _dit_time, _dah_time, _space_time = 0;
 
     bool dit_pressed, dah_pressed, pending, last_squeeze = false;
     KeyerItem last_pressed, last_queued;

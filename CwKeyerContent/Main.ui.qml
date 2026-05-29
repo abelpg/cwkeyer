@@ -39,7 +39,8 @@ Rectangle {
         function onTextCwDecoderUpdated(text) {
             text_cw_decoder.insert(text_cw_decoder.length, text)
             text_cw_decoder.cursorPosition = text_cw_decoder.length
-            scroll_text_cw_decoder.ScrollBar.vertical.position = 1.0 - scroll_text_cw_decoder.ScrollBar.vertical.size
+            scroll_text_cw_decoder.ScrollBar.vertical.position = 1.0
+                    - scroll_text_cw_decoder.ScrollBar.vertical.size
         }
     }
 
@@ -137,9 +138,13 @@ Rectangle {
             id: input_wpm
             x: 49
             y: 8
+            width: 83
+            height: 32
             editable: true
             to: 50
             from: 10
+            padding: 3
+            font.pointSize: 10
             value: guiConnector.wpm
             onValueChanged: guiConnector.wpm = value
         }
@@ -151,17 +156,10 @@ Rectangle {
             text: qsTr("WPM")
         }
 
-        Label {
-            id: lbl_mode
-            x: 168
-            y: 15
-            text: qsTr("Mode")
-        }
-
         RadioButton {
             id: radio_ultimate
-            x: 225
-            y: 9
+            x: 326
+            y: 8
             text: qsTr("Ultimate")
             checked: guiConnector.mode === 1 // ULTIMATIC = 0x1
             onCheckedChanged: if (checked)
@@ -170,8 +168,8 @@ Rectangle {
 
         RadioButton {
             id: radio_iambic_a
-            x: 328
-            y: 9
+            x: 419
+            y: 8
             text: qsTr("Iambic A")
             checked: guiConnector.mode === 2 // IAMBIC_A = 0x2
             onCheckedChanged: if (checked)
@@ -180,12 +178,34 @@ Rectangle {
 
         RadioButton {
             id: radio_iambic_b
-            x: 433
-            y: 9
+            x: 518
+            y: 8
             text: qsTr("Iambic B")
             checked: guiConnector.mode === 3 // IAMBIC_B = 0x3
             onCheckedChanged: if (checked)
                                   guiConnector.mode = 3
+        }
+
+        Label {
+            id: lbl_wordspace
+            x: 144
+            y: 14
+            text: qsTr("Farnsworth")
+        }
+
+        SpinBox {
+            id: input_wordspace
+            x: 222
+            y: 8
+            width: 83
+            height: 32
+            padding: 3
+            font.pointSize: 10
+            editable: true
+            to: 50
+            from: 10
+            value: guiConnector.farnsWorth
+            onValueChanged: guiConnector.farnsWorth = value
         }
     }
 

@@ -1,23 +1,7 @@
 #include "Keyer.h"
 
-// 1WPM dit = 1200 ms mark, 1200 ms space
-const int Keyer::TIME_BASE = 1200;
-/**
-  *
-    So the word PARIS has been chosen to represent the standard word length for measuring the speed of sending CW.
-    The word PARIS comprises a total of 50 units; one unit is the length of one dit. Those 50 units are made up of 22 mark units and 28 space units.
-    Key Timing Formulas
-    Dit Length () = 1200ms / WPM
-    Dah Length () = 3x Dit Length
-    Inter-element Space = 1 Dit Length
-    Letter Space = 3 Dit Lengths
-    Word Space = 7 Dit Lengths
-    Example Speeds
-    15 WPM: Dit = 80ms, Dah = 240ms
-    20 WPM: Dit = 60ms, Dah = 180ms
-    24 WPM: Dit = 50ms, Dah = 150ms
-    30 WPM: Dit = 40ms, Dah = 120ms
- */
+
+
 Keyer::Keyer(IKeyerCW * soundCW){
   qDebug() << "Keyer constructor called";
   add_keyerCW(soundCW);
@@ -25,9 +9,9 @@ Keyer::Keyer(IKeyerCW * soundCW){
 
 void Keyer::init_keyer(int wpm, Mode mode) {
   qDebug() << "Keyer init_keyer called";
-  dit_time = TIME_BASE / wpm;
-  dah_time = dit_time * 3.0;
-  space_time = dit_time;
+  _dit_time = IKeyerCW::calculate_duration(DIT, wpm);
+  _dah_time = IKeyerCW::calculate_duration(DAH, wpm);
+  _space_time = IKeyerCW::calculate_duration(INTER_ELEMENT_SPACE, wpm);
   this->mode = mode;
 }
 
@@ -75,15 +59,15 @@ void Keyer::play_dit_dah(KeyerItem item) {
 
   if (item == DIT) {
     for (IKeyerCW* keyerCW : keyerCW_list) {
-      keyerCW->run_cw(dit_time);
+      keyerCW->run_cw(DIT, _dit_time);
     }
 
-    Utils::sleep_for(dit_time + space_time);
+    Utils::sleep_for(_dit_time + _space_time);
   } else if (item == DAH) {
     for (IKeyerCW* keyerCW : keyerCW_list) {
-      keyerCW->run_cw(dah_time);
+      keyerCW->run_cw(DAH, _dah_time);
     }
-    Utils::sleep_for(dah_time + space_time);
+    Utils::sleep_for(_dah_time + _space_time);
   }
 
 

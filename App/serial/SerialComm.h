@@ -25,7 +25,7 @@ public:
 
   std::vector<std::string> list_ports();
 
-  void run_cw(int duration) override;
+  void run_cw(KeyerItem item, int duration) override;
 
 private:
   HANDLE _hSerial = INVALID_HANDLE_VALUE;

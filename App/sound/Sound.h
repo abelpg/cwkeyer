@@ -37,7 +37,7 @@ class Sound : public QObject, public IKeyerCW {
     int  enabled()             const { return _enabled; }
 
     // Override from IKeyerCW
-    void run_cw(int duration) override;   // duration en ms
+    void run_cw(KeyerItem item, int duration) override;   // duration en ms
 
 
   public slots:

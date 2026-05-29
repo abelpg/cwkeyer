@@ -70,6 +70,14 @@ void GuiConnector::load_configuration() {
     Configuration::putValueDouble(CFG_WPM, m_wpm);
   }
 
+  int farnsWorth = Configuration::getValueInt(CFG_FARNSWORTH);
+  if (farnsWorth > 0) {
+    m_farnsWorth = farnsWorth;
+  }else {
+    m_farnsWorth = DEFAULT_FARNSWORTH;
+    Configuration::putValueDouble(CFG_FARNSWORTH, m_farnsWorth);
+  }
+
 
   int mode = Configuration::getValueInt(CFG_MODE);
   if (mode == ULTIMATIC || mode == IAMBIC_A || mode == IAMBIC_B) {
@@ -204,7 +212,24 @@ void GuiConnector::setWpm(int value) {
   m_wpm = value;
   emit wpmChanged(m_wpm);
   Configuration::putValueInt(CFG_WPM, m_wpm);
+
+  if (m_farnsWorth > m_wpm) {
+    setFarnsWorth(m_wpm);
+  }
+
   reinit_keyer();
+}
+
+void GuiConnector::setFarnsWorth(int value) {
+  if (m_farnsWorth == value) {
+    return;
+  }
+  m_farnsWorth = value;
+  emit farnsWorthChanged(m_farnsWorth);
+  Configuration::putValueInt(CFG_FARNSWORTH, m_farnsWorth);
+  if (m_farnsWorth > m_wpm) {
+    setWpm(m_farnsWorth);
+  }
 }
 
 void GuiConnector::setMode(int value) {
@@ -265,11 +290,16 @@ void GuiConnector::setEnabledKeyboard(bool enabled) {
 }
 
 bool GuiConnector::enabledCwDecoder() const {
-  return cwDecoder->enabled();
+  return cwDecoder->started();
 }
 
 void GuiConnector::setEnabledCwDecoder(bool enabled) {
-  cwDecoder->setEnabled(enabled);
+  if (enabled) {
+    cwDecoder->start(m_farnsWorth);
+  } else {
+    cwDecoder->stop();
+  }
+
 }
 
 void GuiConnector::load_audio_devices() {
