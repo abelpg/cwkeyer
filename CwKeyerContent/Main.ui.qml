@@ -294,6 +294,7 @@ Rectangle {
             id: checkbox_send_keyboard
             x: 359
             y: 8
+            enabled: guiConnector.enabledZadig
             text: qsTr("Send keyboard active")
             checked: guiConnector.enabledKeyboard
             onToggled: guiConnector.enabledKeyboard = checked

@@ -35,7 +35,13 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
 }
 
 void GuiConnector::onDecodeTextCw(std::string text) {
-  emit textCwDecoderUpdated(QString::fromStdString(text));
+
+  QString textToSend = QString::fromStdString(text);
+  if (text.compare("=") == 0 ) {
+    textToSend.append("\n");
+  }
+
+  emit textCwDecoderUpdated(textToSend);
 }
 
 void GuiConnector::loadConfiguration() {
@@ -159,7 +165,9 @@ void GuiConnector::sendDeviceUpdated(Device *deviceDetected) {
 
     jsonObject["device_name"] = text.c_str();
     jsonObject["connected"]   = m_device->connected();
+    emit enabledZadigChanged(m_device->connected());
   } else {
+    emit enabledZadigChanged(false);
     jsonObject["device_name"] = "Vail Adapter / VBand adapter";
     jsonObject["connected"]   = m_keyboardListener->isEnabled();
   }
@@ -255,6 +263,10 @@ void GuiConnector::setEnabledCommOut(bool enabled) {
 
 bool GuiConnector::enabledKeyboard() const {
   return m_keyboard->enabled();
+}
+
+bool GuiConnector::enabledZadig() const {
+  return m_device->connected();
 }
 
 void GuiConnector::setEnabledKeyboard(bool enabled) {

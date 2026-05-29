@@ -44,6 +44,7 @@ class GuiConnector : public QObject{
   Q_PROPERTY(bool        enabledCwDecoder     READ enabledCwDecoder     WRITE setEnabledCwDecoder     NOTIFY enabledCwDecoderChanged)
   Q_PROPERTY(QStringList audioDevices         READ audioDevices         NOTIFY audioDevicesChanged)
   Q_PROPERTY(QStringList commPorts            READ commPorts            NOTIFY commPortsChanged)
+  Q_PROPERTY(bool        enabledZadig         READ enabledZadig         NOTIFY enabledZadigChanged)
 
   public:
     explicit GuiConnector(QApplication *app, QObject *parent = nullptr);
@@ -60,6 +61,7 @@ class GuiConnector : public QObject{
     bool        enabledCommOut()      const;
     bool        enabledKeyboard()     const;
     bool        enabledCwDecoder()    const;
+    bool        enabledZadig()        const;
     QStringList commPorts()           const { return m_commPorts; }
     int         selectedCommPort()    const { return m_selectedCommPort; }
 
@@ -98,6 +100,7 @@ class GuiConnector : public QObject{
     void enabledCommOutChanged(bool enabled);
     void enabledKeyboardChanged(bool enabled);
     void enabledCwDecoderChanged(bool enabled);
+    void enabledZadigChanged(bool enabled);
 
   private:
     Sound            *m_sound;

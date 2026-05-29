@@ -11,7 +11,7 @@ CwDecoder::~CwDecoder() {
 void CwDecoder::start(int farnsWorth, int m_wpm) {
   stop(); // clean up any previous run
 
-  m_interElementSpace = IKeyerCW::calculateDuration(KeyerItem::INTER_ELEMENT_SPACE,      m_wpm);
+  m_interElementSpace = IKeyerCW::calculateDuration(KeyerItem::INTER_ELEMENT_SPACE,      farnsWorth);
   m_letterSpace       = IKeyerCW::calculateDuration(KeyerItem::LETTER_SPACE,             m_wpm);
   m_wordSpace         = IKeyerCW::calculateDuration(KeyerItem::WORD_SPACE,          farnsWorth);
 
