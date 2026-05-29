@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ON by default, we don't want to link the insight tracker library, as it is only used for development and testing purposes.
 # This option allows developers to easily enable or disable linking the library without modifying the CMakeLists.txt file.
-option(LINK_INSIGHT "Link Qt Insight Tracker library" OFF)
-option(BUILD_QDS_COMPONENTS "Build design studio components" OFF)
+option(LINK_INSIGHT "Link Qt Insight Tracker library" ON)
+option(BUILD_QDS_COMPONENTS "Build design studio components" ON)
 
 project(CwKeyerApp LANGUAGES CXX)
 
