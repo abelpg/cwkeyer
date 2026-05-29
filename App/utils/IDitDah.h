@@ -2,11 +2,11 @@
 #define CWKEYERAPP_IDITDAH_H
 
 
-class IDitDah{
+class IDitDah {
   public:
     virtual ~IDitDah() = default;
-    virtual void on_dah(bool pressed) = 0;
-    virtual void on_dit(bool pressed) = 0;
+    virtual void onDah(bool pressed) = 0;
+    virtual void onDit(bool pressed) = 0;
 };
 
 

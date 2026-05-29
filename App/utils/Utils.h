@@ -1,18 +1,16 @@
-
 #ifndef CWKEYERAPP_UTILS_H
 #define CWKEYERAPP_UTILS_H
 
 #include <unistd.h>
 #include <set>
-class Utils {
 
+class Utils {
   public:
-    static void sleep_for(int milliseconds);
+    static void sleepFor(int milliseconds);
 
   private:
     Utils();
 };
-
 
 
 #endif //CWKEYERAPP_UTILS_H

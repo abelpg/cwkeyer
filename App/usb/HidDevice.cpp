@@ -3,103 +3,98 @@
 //
 
 #include "HidDevice.h"
+
 const std::string HidDevice::CONFIG_NAME = "device";
+
 HidDevice::HidDevice() {
   qDebug() << "HidDevice constructor called";
   const int rc = hid_init();
   assert(rc >= 0);
-
-  configuration = new Configuration();
+  m_configuration = new Configuration();
 }
 
-Device * HidDevice::init_device() {
-  if (connect_device()) {
-    return detected_device;
+Device *HidDevice::initDevice() {
+  if (connectDevice()) {
+    return m_detectedDevice;
   }
   return nullptr;
 }
 
-Device * HidDevice::connect_device() {
-
-  if (detected_device == nullptr) {
-    QJsonObject*  value =  configuration->getValue(CONFIG_NAME) ;
+Device *HidDevice::connectDevice() {
+  if (m_detectedDevice == nullptr) {
+    QJsonObject *value = m_configuration->getValue(CONFIG_NAME);
     if (value != nullptr) {
-      detected_device = Device::fromJson(*value);
+      m_detectedDevice = Device::fromJson(*value);
     }
   }
 
-  if (detected_device != nullptr) {
+  if (m_detectedDevice != nullptr) {
+    if (!m_connected) {
+      m_hidDevice = hid_open_path(m_detectedDevice->getPath()->c_str());
+      if (m_hidDevice != nullptr) {
+        hid_set_nonblocking(m_hidDevice, 0);
+        m_connected = true;
 
-    if (!_connected) {
-      hid_device = hid_open_path(detected_device->getPath()->c_str());
-      if (hid_device != nullptr) {
-        hid_set_nonblocking(hid_device, 0);
+        qDebug() << "Connected to device "
+                 << intToHex(m_detectedDevice->vendorId)
+                 << " " << intToHex(m_detectedDevice->productId);
 
-        _connected = true;
-
-        qDebug() << "Connected to device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
-
-        if (thread_task.joinable()) {
+        if (m_threadTask.joinable()) {
           qDebug() << "Thread already running";
-          thread_task.detach();
+          m_threadTask.detach();
         }
-
-        thread_task = std::thread(&HidDevice::task_runnable, this);
-
-
+        m_threadTask = std::thread(&HidDevice::taskRunnable, this);
       }
     } else {
       qDebug() << "Already connected";
     }
   }
 
-  if (detected_device == nullptr || !_connected) {
+  if (m_detectedDevice == nullptr || !m_connected) {
     Configuration::removeValue(CONFIG_NAME);
     qDebug() << "Failed to connect to device";
   }
 
-  return detected_device;
+  return m_detectedDevice;
 }
 
-Device * HidDevice::disconnect_device() {
-
-  if (_connected) {
-    _connected = false;
-    hid_close(hid_device);
+Device *HidDevice::disconnectDevice() {
+  if (m_connected) {
+    m_connected = false;
+    hid_close(m_hidDevice);
   }
-
-  return detected_device;
+  return m_detectedDevice;
 }
 
-std::set<Device> HidDevice::list_devices() {
+std::set<Device> HidDevice::listDevices() {
   std::set<Device> devicesLocal;
 
-  hid_device_info *cur_dev = hid_enumerate(0x0, 0x0);
+  hid_device_info *curDev = hid_enumerate(0x0, 0x0);
 
-  while (cur_dev) {
+  while (curDev) {
     qDebug() << "Device Found";
-    qDebug() << "  type: " << int_to_hex(cur_dev->vendor_id) << " " << int_to_hex(cur_dev->product_id);
-    qDebug() << "  path: " << cur_dev->path;
-    qDebug() << "  interface: " << cur_dev->interface_number;
+    qDebug() << "  type: " << intToHex(curDev->vendor_id) << " " << intToHex(curDev->product_id);
+    qDebug() << "  path: " << curDev->path;
+    qDebug() << "  interface: " << curDev->interface_number;
 
-    Device vp(cur_dev->vendor_id, cur_dev->product_id, new std::string(cur_dev->path));
+    Device vp(curDev->vendor_id, curDev->product_id, new std::string(curDev->path));
     devicesLocal.insert(vp);
 
-    cur_dev = cur_dev->next;
+    curDev = curDev->next;
   }
 
-  hid_free_enumeration(cur_dev);
-
+  hid_free_enumeration(curDev);
   return devicesLocal;
 }
 
+Device *HidDevice::detectDevice() {
+  std::set<Device> devices = listDevices();
 
- Device * HidDevice::detect_device() {
-  std::set<Device> devices = list_devices();
+  delete m_detectedDevice;
+  m_detectedDevice = nullptr;
 
-  delete detected_device;
-  for (int i=0; i< 10 && detected_device == nullptr; i++) {
-    std::set<Device> devicesNow = list_devices();
+  for (int i = 0; i < 10 && m_detectedDevice == nullptr; i++) {
+    std::set<Device> devicesNow = listDevices();
 
     for (auto dn : devicesNow) {
       bool found = false;
@@ -110,47 +105,47 @@ std::set<Device> HidDevice::list_devices() {
         }
       }
       if (!found) {
-        detected_device = &dn;
+        m_detectedDevice = &dn;
         break;
       }
     }
 
-    if (detected_device == nullptr) {
-      Utils::sleep_for(1000);
+    if (m_detectedDevice == nullptr) {
+      Utils::sleepFor(1000);
     }
   }
 
-  if (detected_device != nullptr) {
-    configuration->putObject(CONFIG_NAME, detected_device->toJson());
-    qDebug() << " Detected device " << int_to_hex(detected_device->vendor_id) << " " << int_to_hex(detected_device->product_id);
-
+  if (m_detectedDevice != nullptr) {
+    m_configuration->putObject(CONFIG_NAME, m_detectedDevice->toJson());
+    qDebug() << " Detected device "
+             << intToHex(m_detectedDevice->vendorId)
+             << " " << intToHex(m_detectedDevice->productId);
   } else {
     qDebug() << " No device detected";
   }
 
-  return detected_device;
+  return m_detectedDevice;
 }
 
 HidDevice::~HidDevice() {
   qDebug() << "HidDevice destructor called";
-  if (detected_device != nullptr) {
-    delete detected_device;
+  if (m_detectedDevice != nullptr) {
+    delete m_detectedDevice;
   }
-  if (hid_device != nullptr) {
-    hid_close(hid_device);
+  if (m_hidDevice != nullptr) {
+    hid_close(m_hidDevice);
   }
   const int rc = hid_exit();
   assert(rc >= 0);
 }
 
-void HidDevice::task_runnable() {
+void HidDevice::taskRunnable() {
   qDebug() << "Starting task runnable";
-  unsigned char buff[8];;
-  while (detected_device != nullptr && _connected) {
-    int res = hid_read_timeout(hid_device, buff, 8,5000);
+  unsigned char buff[8];
+  while (m_detectedDevice != nullptr && m_connected) {
+    int res = hid_read_timeout(m_hidDevice, buff, 8, 5000);
     qDebug() << res;
   }
-
 }
 
 /**
@@ -159,10 +154,10 @@ void HidDevice::task_runnable() {
  * @param i with value
  * @return String with hex value.
  */
-template< typename T > std::string HidDevice::int_to_hex( T i ) {
+template<typename T> std::string HidDevice::intToHex(T i) {
   std::stringstream stream;
   stream << "0x"
-         << std::setfill ('0') << std::setw(sizeof(T)*2)
+         << std::setfill('0') << std::setw(sizeof(T) * 2)
          << std::hex << i;
   return stream.str();
 }

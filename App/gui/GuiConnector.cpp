@@ -1,48 +1,43 @@
 #include "GuiConnector.h"
 
 
+GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent) {
+  m_app = app;
 
-GuiConnector::GuiConnector(QApplication* app, QObject *parent) : QObject(parent) {
-  load_audio_devices();
-  load_comm_ports() ;
-  load_configuration();
+  // Create serial manager (needed before loadCommPorts)
+  m_serialComm = new SerialComm();
 
-  this->app = app;
+  loadAudioDevices();
+  loadCommPorts();
+  loadConfiguration();
 
   // Create sound manager
-  sound = new Sound(parent);
-  reinit_sound();
-
-  // Create serial manager
-  serialComm = new SerialComm();
+  m_sound = new Sound(parent);
+  reinitSound();
 
   // Create CwDecoder manager
-  cwDecoder = new CwDecoder(std::bind(&GuiConnector::on_decode_text_cw, this, std::placeholders::_1));
+  m_cwDecoder = new CwDecoder(std::bind(&GuiConnector::onDecodeTextCw, this, std::placeholders::_1));
 
   // Create keyer manager
-
-  keyer = new Keyer(sound);
-  keyer->add_keyerCW(serialComm);
-  reinit_keyer();
+  m_keyer = new Keyer(m_sound);
+  m_keyer->addKeyerCW(m_serialComm);
+  reinitKeyer();
 
   // Zadig device with keyboard sending
-  keyboard = new Keyboard(this);
-  device = new UsbDevice(keyer);
-  device->add_dit_dah(keyboard);
+  m_keyboard = new Keyboard(this);
+  m_device   = new UsbDevice(m_keyer);
+  m_device->addDitDah(m_keyboard);
 
   // VBand / Vail listener if zadig device is not active
-  keyboardListener = new KeyboardListener(keyer);
-
-
+  m_keyboardListener = new KeyboardListener(m_keyer);
 }
 
-void GuiConnector::on_decode_text_cw(std::string text) {
+void GuiConnector::onDecodeTextCw(std::string text) {
   qDebug() << "Decoded CW text: " << text;
   emit textCwDecoderUpdated(QString::fromStdString(text));
 }
 
-
-void GuiConnector::load_configuration() {
+void GuiConnector::loadConfiguration() {
   // Amplitude: valor en [0.0, 1.0]
   double amp = Configuration::getValueDouble(CFG_AMPLITUDE);
   if (amp > 0.0) {
@@ -65,7 +60,7 @@ void GuiConnector::load_configuration() {
   int wpm = Configuration::getValueInt(CFG_WPM);
   if (wpm > 0) {
     m_wpm = wpm;
-  }else {
+  } else {
     m_wpm = DEFAULT_WPM;
     Configuration::putValueDouble(CFG_WPM, m_wpm);
   }
@@ -73,11 +68,10 @@ void GuiConnector::load_configuration() {
   int farnsWorth = Configuration::getValueInt(CFG_FARNSWORTH);
   if (farnsWorth > 0) {
     m_farnsWorth = farnsWorth;
-  }else {
+  } else {
     m_farnsWorth = DEFAULT_FARNSWORTH;
     Configuration::putValueDouble(CFG_FARNSWORTH, m_farnsWorth);
   }
-
 
   int mode = Configuration::getValueInt(CFG_MODE);
   if (mode == ULTIMATIC || mode == IAMBIC_A || mode == IAMBIC_B) {
@@ -86,7 +80,6 @@ void GuiConnector::load_configuration() {
     m_mode = DEFAULT_MODE;
     Configuration::putValueInt(CFG_MODE, m_mode);
   }
-
 
   // Dispositivo de audio seleccionado
   int selDev = Configuration::getValueInt(CFG_SELECTED_AUDIO_DEVICE);
@@ -100,115 +93,101 @@ void GuiConnector::load_configuration() {
   }
 }
 
-
 void GuiConnector::quit() {
   qDebug() << "Quit called";
-  sound->stop();
-  device->disconnect_device();
-  serialComm->stop();
+  m_sound->stop();
+  m_device->disconnectDevice();
+  m_serialComm->stop();
 
-  delete keyer;
-  delete device;
-  delete sound;
-  delete serialComm;
-  delete keyboard;
+  delete m_keyer;
+  delete m_device;
+  delete m_sound;
+  delete m_serialComm;
+  delete m_keyboard;
 }
 
-void GuiConnector::init_device() {
-  Device * device_connected = this->device->init_device();
+void GuiConnector::initDevice() {
+  Device *deviceConnected = m_device->initDevice();
 
-  if (device_connected == nullptr) {
-    keyboardListener->setEnabled(true);
+  if (deviceConnected == nullptr) {
+    m_keyboardListener->setEnabled(true);
   }
 
-  send_device_updated(device_connected);
+  sendDeviceUpdated(deviceConnected);
 }
 
-
-void GuiConnector::connect_device() {
-  Device * device_detected = this->device->connect_device();
-  if (device_detected == nullptr) {
-    keyboardListener->setEnabled(true);
+void GuiConnector::connectDevice() {
+  Device *deviceDetected = m_device->connectDevice();
+  if (deviceDetected == nullptr) {
+    m_keyboardListener->setEnabled(true);
   }
-  send_device_updated(device_detected);
+  sendDeviceUpdated(deviceDetected);
 }
 
-void GuiConnector::disconnect_device() {
-
-  Device * device_detected = this->device->disconnect_device();
-  keyboardListener->setEnabled(false);
-  send_device_updated(device_detected);
-
+void GuiConnector::disconnectDevice() {
+  Device *deviceDetected = m_device->disconnectDevice();
+  m_keyboardListener->setEnabled(false);
+  sendDeviceUpdated(deviceDetected);
 }
 
-void GuiConnector::detect_device() {
-
+void GuiConnector::detectDevice() {
   QVariantList varData;
-  varData.clear();
-
-  varData <<"Detecting device....";
-  emit device_updated(varData);
+  varData << "Detecting device....";
+  emit deviceUpdated(varData);
 
   varData.clear();
 
-  Device * device_detected = this->device->detect_device();
-
-  send_device_updated(device_detected);
-
+  Device *deviceDetected = m_device->detectDevice();
+  sendDeviceUpdated(deviceDetected);
 }
 
-void GuiConnector::send_device_updated(Device * device_detected) {
+void GuiConnector::sendDeviceUpdated(Device *deviceDetected) {
   QVariantList varData;
-  varData.clear();
+  QJsonObject  jsonObject;
 
-  QJsonObject jsonObject;
-
-  if (device_detected != nullptr) {
+  if (deviceDetected != nullptr) {
     std::string text = "Device vid="
-      + UsbDevice::int_to_hex(device_detected->vendor_id)
-      + " pid=" + UsbDevice::int_to_hex(device_detected->product_id)
-      + " \ninterface=" + (device_detected->getInterface() != nullptr? std::to_string(device_detected->getInterface()->interface): "N/A")
-      + " endpoint=" + (device_detected->getInterface() != nullptr? UsbDevice::int_to_hex(device_detected->getInterface()->endpoint): "N/A");
+      + UsbDevice::intToHex(deviceDetected->vendorId)
+      + " pid=" + UsbDevice::intToHex(deviceDetected->productId)
+      + " \ninterface=" + (deviceDetected->getInterface() != nullptr
+                           ? std::to_string(deviceDetected->getInterface()->interfaceNum)
+                           : "N/A")
+      + " endpoint=" + (deviceDetected->getInterface() != nullptr
+                        ? UsbDevice::intToHex(deviceDetected->getInterface()->endpoint)
+                        : "N/A");
 
     jsonObject["device_name"] = text.c_str();
-    jsonObject["connected"] = device->connected();
+    jsonObject["connected"]   = m_device->connected();
   } else {
     jsonObject["device_name"] = "Vail Adapter / VBand adapter";
-    jsonObject["connected"] = keyboardListener->isEnabled();
+    jsonObject["connected"]   = m_keyboardListener->isEnabled();
   }
 
-
-  varData <<QJsonDocument(jsonObject).toJson().toStdString().c_str();
-
-  emit device_updated(varData);
-
+  varData << QJsonDocument(jsonObject).toJson().toStdString().c_str();
+  emit deviceUpdated(varData);
 }
 
 void GuiConnector::setAmplitude(double value) {
-  if (qFuzzyCompare(m_amplitude, value)) {
-    return;
-  }
+  if (qFuzzyCompare(m_amplitude, value)) return;
 
   m_amplitude = value;
   Configuration::putValueDouble(CFG_AMPLITUDE, m_amplitude);
   emit amplitudeChanged(m_amplitude);
-  reinit_sound();
+  reinitSound();
 }
 
 void GuiConnector::setFrequency(double value) {
-  if (qFuzzyCompare(m_frequency, value)) {
-    return;
-  }
+  if (qFuzzyCompare(m_frequency, value)) return;
+
   m_frequency = value;
   emit frequencyChanged(m_frequency);
   Configuration::putValueDouble(CFG_FREQUENCY, m_frequency);
-  reinit_sound();
+  reinitSound();
 }
 
 void GuiConnector::setWpm(int value) {
-  if (m_wpm == value) {
-    return;
-  }
+  if (m_wpm == value) return;
+
   m_wpm = value;
   emit wpmChanged(m_wpm);
   Configuration::putValueInt(CFG_WPM, m_wpm);
@@ -217,16 +196,16 @@ void GuiConnector::setWpm(int value) {
     setFarnsWorth(m_wpm);
   }
 
-  reinit_keyer();
+  reinitKeyer();
 }
 
 void GuiConnector::setFarnsWorth(int value) {
-  if (m_farnsWorth == value) {
-    return;
-  }
+  if (m_farnsWorth == value) return;
+
   m_farnsWorth = value;
   emit farnsWorthChanged(m_farnsWorth);
   Configuration::putValueInt(CFG_FARNSWORTH, m_farnsWorth);
+
   if (m_farnsWorth > m_wpm) {
     setWpm(m_farnsWorth);
   }
@@ -237,72 +216,67 @@ void GuiConnector::setMode(int value) {
   m_mode = value;
   emit modeChanged(m_mode);
   Configuration::putValueInt(CFG_MODE, m_mode);
-  reinit_keyer();
+  reinitKeyer();
 }
 
-
 void GuiConnector::setSelectedAudioDevice(int index) {
-  if (index < 0 || index >= m_audioDeviceList.size()) {
-    return;
-  }
-  if (m_selectedAudioDevice == index) {
-    return;
-  }
+  if (index < 0 || index >= m_audioDeviceList.size()) return;
+  if (m_selectedAudioDevice == index) return;
+
   m_selectedAudioDevice = index;
   emit selectedAudioDeviceChanged(m_selectedAudioDevice);
   Configuration::putValueInt(CFG_SELECTED_AUDIO_DEVICE, m_selectedAudioDevice);
-  reinit_sound();
+  reinitSound();
 }
 
 bool GuiConnector::enabledSound() const {
-  return sound->enabled();
+  return m_sound->enabled();
 }
 
 void GuiConnector::setEnabledSound(bool enabled) {
-  sound->setEnabled(enabled);
+  m_sound->setEnabled(enabled);
   emit soundEnabledChanged(enabled);
 }
 
 bool GuiConnector::enabledCommOut() const {
-  return serialComm->started();
+  return m_serialComm->started();
 }
 
 void GuiConnector::setEnabledCommOut(bool enabled) {
   if (enabled) {
-    serialComm->start(m_commPorts[m_selectedCommPort].toStdString());
+    m_serialComm->start(m_commPorts[m_selectedCommPort].toStdString());
   } else {
-    serialComm->stop();
+    m_serialComm->stop();
   }
   emit enabledCommOutChanged(enabled);
 }
 
 bool GuiConnector::enabledKeyboard() const {
-  return keyboard->enabled();
+  return m_keyboard->enabled();
 }
 
 void GuiConnector::setEnabledKeyboard(bool enabled) {
-  if (keyboardListener->isEnabled() == enabled) {
-    qDebug() << "GuiConnector::enabledKeyboard() when listener is enabled";
+  if (m_keyboardListener->isEnabled() == enabled) {
+    qDebug() << "GuiConnector::setEnabledKeyboard() when listener is enabled";
     return;
   }
-  keyboard->setEnabled(enabled);
+  m_keyboard->setEnabled(enabled);
   emit enabledKeyboardChanged(enabled);
 }
 
 bool GuiConnector::enabledCwDecoder() const {
-  return cwDecoder->started();
+  return m_cwDecoder->started();
 }
 
 void GuiConnector::setEnabledCwDecoder(bool enabled) {
   if (enabled) {
-    cwDecoder->start(m_farnsWorth);
+    m_cwDecoder->start(m_farnsWorth);
   } else {
-    cwDecoder->stop();
+    m_cwDecoder->stop();
   }
-
 }
 
-void GuiConnector::load_audio_devices() {
+void GuiConnector::loadAudioDevices() {
   m_audioDeviceList = QMediaDevices::audioOutputs();
   m_audioDevices.clear();
   for (const QAudioDevice &dev : m_audioDeviceList) {
@@ -311,40 +285,34 @@ void GuiConnector::load_audio_devices() {
   emit audioDevicesChanged(m_audioDevices);
 }
 
-void GuiConnector::load_comm_ports() {
-
+void GuiConnector::loadCommPorts() {
   m_commPorts = QStringList();
-  for (const std::string& port : serialComm->list_ports() ) {
+  for (const std::string &port : m_serialComm->listPorts()) {
     m_commPorts << QString::fromStdString(port);
   }
   emit commPortsChanged(m_commPorts);
 }
 
 void GuiConnector::setSelectedCommPort(int index) {
-  if (index < 0 || index >= m_commPorts.size()) {
-    return;
-  }
-  if (m_selectedCommPort == index) {
-    return;
-  }
+  if (index < 0 || index >= m_commPorts.size()) return;
+  if (m_selectedCommPort == index) return;
 
   m_selectedCommPort = index;
-
-  Configuration::putValueInt(CFG_COMM_OUT,   m_selectedCommPort);
-
+  Configuration::putValueInt(CFG_COMM_OUT, m_selectedCommPort);
   emit selectedCommPortChanged(m_selectedCommPort);
-
 }
 
-void GuiConnector::reinit_sound() {
-  sound->stop();
+void GuiConnector::reinitSound() {
+  m_sound->stop();
   if (m_selectedAudioDevice >= 0 && m_selectedAudioDevice < m_audioDeviceList.size()) {
-    sound->initWithDevice(m_audioDeviceList[m_selectedAudioDevice], m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
+    m_sound->initWithDevice(m_audioDeviceList[m_selectedAudioDevice],
+                            m_frequency, DEFAULT_SAMPLE_RATE,
+                            m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
   } else {
-    sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
+    m_sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
   }
 }
 
-void GuiConnector::reinit_keyer() {
-  keyer->init_keyer(m_wpm, static_cast<Mode>(m_mode));
+void GuiConnector::reinitKeyer() {
+  m_keyer->initKeyer(m_wpm, static_cast<Mode>(m_mode));
 }

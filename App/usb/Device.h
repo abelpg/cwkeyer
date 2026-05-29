@@ -20,58 +20,58 @@
 class Device {
   public:
 
-    int vendor_id = 0;
-    int product_id = 0;
+    int vendorId  = 0;
+    int productId = 0;
 
-
-    Device(int vendor_id, int product_id);
-    Device(int vendor_id, int product_id, std::string *path);
-    Device(int vendor_id, int product_id, DeviceInterface * device_interface);
+    Device(int vendorId, int productId);
+    Device(int vendorId, int productId, std::string *path);
+    Device(int vendorId, int productId, DeviceInterface *deviceInterface);
     ~Device();
 
-    friend bool operator== (const Device &left, const Device &right);
-
+    friend bool operator==(const Device &left, const Device &right);
     friend bool operator< (const Device &left, const Device &right);
 
     void setPath(std::string *path);
-    void setInterface(DeviceInterface * device_interface);
-    std::string * getPath();
-    DeviceInterface * getInterface();
+    void setInterface(DeviceInterface *deviceInterface);
+    std::string    *getPath();
+    DeviceInterface *getInterface();
 
     QJsonObject toJson() const {
       QJsonObject jsonObject;
-      jsonObject["vendor_id"] = vendor_id;
-      jsonObject["product_id"] = product_id;
+      jsonObject["vendor_id"]  = vendorId;
+      jsonObject["product_id"] = productId;
 
-      if (path != nullptr) {
-        jsonObject["path"] = QString::fromStdString(*path);
+      if (m_path != nullptr) {
+        jsonObject["path"] = QString::fromStdString(*m_path);
       }
 
-      if (device_interface != nullptr) {
-        jsonObject["interface"] = device_interface->toJson();
+      if (m_interface != nullptr) {
+        jsonObject["interface"] = m_interface->toJson();
       }
 
       return jsonObject;
     };
 
-    static Device * fromJson(QJsonObject jsonObject)  {
-      int vendor_id = jsonObject["vendor_id"].toInt();
-      int product_id = jsonObject["product_id"].toInt();
+    static Device *fromJson(QJsonObject jsonObject) {
+      int vendorId  = jsonObject["vendor_id"].toInt();
+      int productId = jsonObject["product_id"].toInt();
 
       if (jsonObject.contains("path")) {
-        return new Device(vendor_id, product_id, new std::string(jsonObject["path"].toString().toStdString()));
+        return new Device(vendorId, productId,
+                          new std::string(jsonObject["path"].toString().toStdString()));
       }
 
       if (jsonObject.contains("interface")) {
-        return new Device(vendor_id, product_id, DeviceInterface::fromJson(jsonObject["interface"].toObject()));
+        return new Device(vendorId, productId,
+                          DeviceInterface::fromJson(jsonObject["interface"].toObject()));
       }
 
-      return new Device(vendor_id, product_id);
+      return new Device(vendorId, productId);
     }
 
   private:
-    std::string * path = nullptr;
-    DeviceInterface * device_interface = nullptr;
+    std::string     *m_path      = nullptr;
+    DeviceInterface *m_interface = nullptr;
 
 };
 

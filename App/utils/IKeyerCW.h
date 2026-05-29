@@ -15,7 +15,7 @@ enum KeyerItem {
 class IKeyerCW {
   public:
     virtual ~IKeyerCW() = default;
-    virtual void run_cw(KeyerItem item, int duration) = 0;
+    virtual void runCW(KeyerItem item, int duration) = 0;
 
   /**
     *
@@ -34,7 +34,7 @@ class IKeyerCW {
     24 WPM: Dit = 50ms, Dah = 150ms
     30 WPM: Dit = 40ms, Dah = 120ms
     */
-   static int calculate_duration(KeyerItem item, int wpm) {
+   static int calculateDuration(KeyerItem item, int wpm) {
      if (item == DIT) {
        return PARIS_TIME_BASE / wpm;
      } else if (item == DAH) {

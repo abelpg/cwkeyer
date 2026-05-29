@@ -58,7 +58,7 @@ Rectangle {
 
             function onClicked() {
                 btn_detect_device.enabled = false
-                guiConnector.detect_device()
+                guiConnector.detectDevice()
                 btn_detect_device.enabled = true
             }
         }
@@ -76,9 +76,9 @@ Rectangle {
             target: btn_connect
             function onClicked() {
                 if (txt_device.connected) {
-                    guiConnector.disconnect_device()
+                    guiConnector.disconnectDevice()
                 } else {
-                    guiConnector.connect_device()
+                    guiConnector.connectDevice()
                 }
             }
         }

@@ -7,7 +7,7 @@
 #include <iostream>
 class KeyboardListener {
 public:
-  explicit KeyboardListener(IDitDah* dit_dah);
+  explicit KeyboardListener(IDitDah *ditDah);
   ~KeyboardListener();
 
   void setEnabled(bool enabled);
@@ -18,14 +18,13 @@ private:
   void unhook();
 
   static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
-  static IDitDah* s_dit_dah;
-  static bool _dit_pressed;
-  static bool _dah_pressed;
 
-  HHOOK m_hook = nullptr;
-  bool m_enabled = false;
+  static IDitDah *s_ditDah;
+  static bool     s_ditPressed;
+  static bool     s_dahPressed;
 
-
+  HHOOK m_hook    = nullptr;
+  bool  m_enabled = false;
 };
 
 #endif //CWKEYERAPP_KEYBOARDLISTENER_H

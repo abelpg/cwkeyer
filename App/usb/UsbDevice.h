@@ -20,68 +20,53 @@
 typedef std::function<void (boolean)> boolean_callback;
 
 enum ClickValues {
-  CLICK_LEFT = 0x01,
+  CLICK_LEFT  = 0x01,
   CLICK_RIGHT = 0x02,
-  CLICK_BOTH = 0x03
+  CLICK_BOTH  = 0x03
 };
 
-class UsbDevice  {
+class UsbDevice {
   public:
 
     UsbDevice();
-    UsbDevice(IDitDah* dit_dah);
+    UsbDevice(IDitDah *ditDah);
     ~UsbDevice();
 
-    Device * detect_device();
+    Device *detectDevice();
+    Device *initDevice();
+    Device *connectDevice();
+    Device *disconnectDevice();
 
-    Device * init_device();
+    bool connected() const { return m_connected; }
 
-    Device * connect_device();
+    void addDitDah(IDitDah *ditDah);
 
-    Device * disconnect_device();
-
-    bool  connected() const { return _connected; }
-
-    void add_dit_dah(IDitDah* dit_dah);
-
-    template<typename T> static std::string int_to_hex(T i);
+    template<typename T> static std::string intToHex(T i);
 
   private:
 
     static const std::string CONFIG_NAME;
 
-    /**
-     * Usb context.
-     */
-    libusb_context *context = nullptr;
+    libusb_context       *m_context        = nullptr;
+    std::thread           m_threadTask;
+    Device               *m_detectedDevice = nullptr;
+    bool                  m_dit            = false;
+    bool                  m_dah            = false;
+    bool                  m_connected      = false;
+    std::list<IDitDah *>  m_ditDahList;
 
-    std::thread thread_task;
+    void taskRunnable();
 
-    Device *detected_device = nullptr;
+    static void cbInterrupt(libusb_transfer *transfer);
 
-    bool dit, dah, _connected = false;
+    std::set<Device>    manageDevices(Device *deviceToTry);
+    DeviceInterface    *searchDeviceInterfaceAvailable(libusb_device *libusbDevice, Device *deviceToTry);
+    bool                attachDevice(libusb_device_handle *deviceHandle, int interfaceNum);
+    bool                tryToRead(Device *deviceToTry, DeviceInterface *iface);
 
-    std::list<IDitDah*> dit_dah_list;
-
-    ///////////////
-    void task_runnable();
-
-    static void cb_interrupt( libusb_transfer *transfer) ;
-
-    std::set<Device> manage_devices(Device *deviceToTry);
-
-    DeviceInterface * search_device_interface_available(libusb_device *libusb_device, Device * deviceToTry);
-
-    bool attach_device(libusb_device_handle *deviceTemp, int interface);
-
-    bool try_to_read(Device * deviceToTry, DeviceInterface *interface);
-
-    
-    void send_dih_dah(bool ditPressed, bool dahPressed);
-    void send_dit(bool pressed);
-    void send_dah(bool pressed);
-
-
+    void sendDitDah(bool ditPressed, bool dahPressed);
+    void sendDit(bool pressed);
+    void sendDah(bool pressed);
 };
 
 

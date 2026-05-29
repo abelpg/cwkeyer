@@ -1,11 +1,11 @@
 #include "KeyboardListener.h"
 
-IDitDah* KeyboardListener::s_dit_dah = nullptr;
-bool KeyboardListener::_dit_pressed = false;
-bool KeyboardListener::_dah_pressed = false;
+IDitDah *KeyboardListener::s_ditDah    = nullptr;
+bool     KeyboardListener::s_ditPressed = false;
+bool     KeyboardListener::s_dahPressed = false;
 
-KeyboardListener::KeyboardListener(IDitDah* dit_dah) {
-  s_dit_dah = dit_dah;
+KeyboardListener::KeyboardListener(IDitDah *ditDah) {
+  s_ditDah = ditDah;
 }
 
 KeyboardListener::~KeyboardListener() {
@@ -16,8 +16,8 @@ void KeyboardListener::setEnabled(bool enabled) {
   if (m_enabled == enabled) return;
   m_enabled = enabled;
   if (m_enabled) {
-    _dit_pressed = false;
-    _dah_pressed = false;
+    s_ditPressed = false;
+    s_dahPressed = false;
     hook();
   } else {
     unhook();
@@ -41,23 +41,23 @@ void KeyboardListener::unhook() {
 }
 
 LRESULT CALLBACK KeyboardListener::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
-  if (nCode == HC_ACTION && s_dit_dah) {
-    auto* kb = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
-    bool pressed = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
+  if (nCode == HC_ACTION && s_ditDah) {
+    auto *kb     = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
+    bool  pressed = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
     switch (kb->vkCode) {
       case VK_OEM_PLUS:  // +/=
       case VK_RCONTROL:
-        if (pressed != _dah_pressed) {
-          s_dit_dah->on_dah(pressed);
-          _dah_pressed = pressed;
+        if (pressed != s_dahPressed) {
+          s_ditDah->onDah(pressed);
+          s_dahPressed = pressed;
         }
         break;
       case VK_LCONTROL:
       case VK_OEM_1:     // ;/:
-        if (pressed != _dit_pressed) {
-          s_dit_dah->on_dit(pressed);
-          _dit_pressed= pressed;
+        if (pressed != s_ditPressed) {
+          s_ditDah->onDit(pressed);
+          s_ditPressed = pressed;
         }
         break;
       default:
