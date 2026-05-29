@@ -1,122 +1,99 @@
 #include "Keyer.h"
 
-// 1WPM dit = 1200 ms mark, 1200 ms space
-const int Keyer::TIME_BASE = 1200;
-/**
-  *
-    So the word PARIS has been chosen to represent the standard word length for measuring the speed of sending CW.
-    The word PARIS comprises a total of 50 units; one unit is the length of one dit. Those 50 units are made up of 22 mark units and 28 space units.
-    Key Timing Formulas
-    Dit Length () = 1200ms / WPM
-    Dah Length () = 3x Dit Length
-    Inter-element Space = 1 Dit Length
-    Letter Space = 3 Dit Lengths
-    Word Space = 7 Dit Lengths
-    Example Speeds
-    15 WPM: Dit = 80ms, Dah = 240ms
-    20 WPM: Dit = 60ms, Dah = 180ms
-    24 WPM: Dit = 50ms, Dah = 150ms
-    30 WPM: Dit = 40ms, Dah = 120ms
- */
-Keyer::Keyer(IKeyerCW * soundCW){
+
+Keyer::Keyer(IKeyerCW *soundCW) {
   qDebug() << "Keyer constructor called";
-  add_keyerCW(soundCW);
+  addKeyerCW(soundCW);
 }
 
-void Keyer::init_keyer(int wpm, Mode mode) {
-  qDebug() << "Keyer init_keyer called";
-  dit_time = TIME_BASE / wpm;
-  dah_time = dit_time * 3.0;
-  space_time = dit_time;
-  this->mode = mode;
+void Keyer::initKeyer(int wpm, Mode mode) {
+  qDebug() << "Keyer initKeyer called";
+  m_ditTime   = IKeyerCW::calculateDuration(DIT, wpm);
+  m_dahTime   = IKeyerCW::calculateDuration(DAH, wpm);
+  m_spaceTime = IKeyerCW::calculateDuration(INTER_ELEMENT_SPACE, wpm);
+  m_mode      = mode;
 }
 
-
-void Keyer::on_dit(bool pressed) {
-
+void Keyer::onDit(bool pressed) {
   if (pressed) {
-    dit_pressed = true;
-    last_pressed = DIT;
+    m_ditPressed  = true;
+    m_lastPressed = DIT;
     enqueue(DIT);
   } else {
-    dit_pressed = false;
+    m_ditPressed = false;
   }
-
 }
-void Keyer::on_dah(bool pressed) {
+
+void Keyer::onDah(bool pressed) {
   if (pressed) {
-    dah_pressed = true;
-    last_pressed = DAH;
+    m_dahPressed  = true;
+    m_lastPressed = DAH;
     enqueue(DAH);
   } else {
-    dah_pressed = false;
+    m_dahPressed = false;
   }
 }
 
 void Keyer::enqueue(KeyerItem item) {
-  if (queue.size() < 1 || ! pending) {
-    queue.push(item);
-    last_queued = item;
-    if (!pending) {
-      thread_keyer =  std::thread(&Keyer::keyer_call, this);
-      thread_keyer.detach();
-
+  if (m_queue.size() < 1 || !m_pending) {
+    m_queue.push(item);
+    m_lastQueued = item;
+    if (!m_pending) {
+      m_threadKeyer = std::thread(&Keyer::keyerCall, this);
+      m_threadKeyer.detach();
     }
   }
 }
 
-void Keyer::add_keyerCW(IKeyerCW* keyerCW) {
-  keyerCW_list.push_back(keyerCW);
+void Keyer::addKeyerCW(IKeyerCW *keyerCW) {
+  m_keyerCWList.push_back(keyerCW);
 }
 
-
-void Keyer::play_dit_dah(KeyerItem item) {
-
-
+void Keyer::playDitDah(KeyerItem item) {
   if (item == DIT) {
-    for (IKeyerCW* keyerCW : keyerCW_list) {
-      keyerCW->run_cw(dit_time);
+    for (IKeyerCW *keyerCW : m_keyerCWList) {
+      keyerCW->runCW(DIT, m_ditTime);
     }
-
-    Utils::sleep_for(dit_time + space_time);
+    Utils::sleepFor(m_ditTime + m_spaceTime);
   } else if (item == DAH) {
-    for (IKeyerCW* keyerCW : keyerCW_list) {
-      keyerCW->run_cw(dah_time);
+    for (IKeyerCW *keyerCW : m_keyerCWList) {
+      keyerCW->runCW(DAH, m_dahTime);
     }
-    Utils::sleep_for(dah_time + space_time);
+    Utils::sleepFor(m_dahTime + m_spaceTime);
   }
-
-
-
 }
 
-void Keyer::keyer_call() {
-  const bool squeeze = dit_pressed && dah_pressed;
-  pending = queue.size() > 0;
+void Keyer::keyerCall() {
+  const bool squeeze = m_ditPressed && m_dahPressed;
+  m_pending = m_queue.size() > 0;
 
-  if (pending) {
-    last_squeeze = squeeze;
-    KeyerItem item = queue.front();
-    queue.pop();
-    play_dit_dah(item);
+  if (m_pending) {
+    m_lastSqueeze = squeeze;
+    KeyerItem item = m_queue.front();
+    m_queue.pop();
+    playDitDah(item);
 
     // enqueued by pending.
-    keyer_call();
+    keyerCall();
   } else {
     // Process mode
     if (squeeze) {
-      if (mode == ULTIMATIC) {
-        enqueue(last_pressed);
-      } else if (mode == IAMBIC_B || mode == IAMBIC_A) {
-        enqueue(reverse(last_queued));
+      if (m_mode == ULTIMATIC) {
+        enqueue(m_lastPressed);
+      } else if (m_mode == IAMBIC_B || m_mode == IAMBIC_A) {
+        enqueue(reverse(m_lastQueued));
       }
-    } else if (dit_pressed) {
+    } else if (m_ditPressed) {
       enqueue(DIT);
-    } else if (dah_pressed) {
+    } else if (m_dahPressed) {
       enqueue(DAH);
-    } else if (mode == IAMBIC_B && last_squeeze) {
-      enqueue(reverse(last_queued));
-      last_squeeze = false;
+    } else if (m_mode == IAMBIC_B && m_lastSqueeze) {
+      enqueue(reverse(m_lastQueued));
+      m_lastSqueeze = false;
     }
   }
 }
+
+int Keyer::ditTime()   const { return m_ditTime; }
+int Keyer::dahTime()   const { return m_dahTime; }
+int Keyer::spaceTime() const { return m_spaceTime; }

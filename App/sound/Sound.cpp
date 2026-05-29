@@ -4,49 +4,49 @@
 
 Sound::Sound(QObject *parent) : QObject(parent) {
     // Conectar señal->slot en el mismo objeto: siempre QueuedConnection
-    // para garantizar que on_play_requested corre en el hilo de Sound
-    connect(this, &Sound::play_requested,
-            this, &Sound::on_play_requested,
+    // para garantizar que onPlayRequested corre en el hilo de Sound
+    connect(this, &Sound::playRequested,
+            this, &Sound::onPlayRequested,
             Qt::QueuedConnection);
 }
 
 Sound::~Sound() {
     stop();
-    delete sink;
+    delete m_sink;
 }
 
-void Sound::initWithDevice(const QAudioDevice &dev,
+void Sound::initWithDevice(const QAudioDevice &device,
     double frequency, int sampleRate, double amplitude,
     double attackTime, double releaseTime) {
 
-    qDebug() << "Sound::init() freq:" <<frequency << " sampleRate:" << sampleRate << " amplitude:" << amplitude
+    qDebug() << "Sound::initWithDevice() freq:" << frequency
+             << " sampleRate:" << sampleRate << " amplitude:" << amplitude
              << " attackTime:" << attackTime << " releaseTime:" << releaseTime;
 
-    device = dev;   // sobrescribe el miembro
-    // reutiliza el resto de init()
-    this->frequency   = frequency;
-    this->sampleRate  = sampleRate;
-    this->amplitude   = amplitude;
-    this->attackTime  = attackTime;
-    this->releaseTime = releaseTime;
+    m_device      = device;
+    m_frequency   = frequency;
+    m_sampleRate  = sampleRate;
+    m_amplitude   = amplitude;
+    m_attackTime  = attackTime;
+    m_releaseTime = releaseTime;
 
-    attackSamples  = static_cast<int>(sampleRate * attackTime);
-    releaseSamples = static_cast<int>(sampleRate * releaseTime);
-    maxAmplitude   = amplitude * std::numeric_limits<qint16>::max();
-    twoPiF         = 2.0 * M_PI * frequency;
+    m_attackSamples  = static_cast<int>(m_sampleRate * m_attackTime);
+    m_releaseSamples = static_cast<int>(m_sampleRate * m_releaseTime);
+    m_maxAmplitude   = m_amplitude * std::numeric_limits<qint16>::max();
+    m_twoPiF         = 2.0 * M_PI * m_frequency;
 
     QAudioFormat format;
-    format.setSampleRate(sampleRate);
+    format.setSampleRate(m_sampleRate);
     format.setChannelCount(1);
     format.setSampleFormat(QAudioFormat::Int16);
 
-    if (!device.isFormatSupported(format)) {
+    if (!m_device.isFormatSupported(format)) {
         throw std::runtime_error("format not supported");
     }
 
-    delete sink;
-    sink = new QAudioSink(device, format, this);
-    cacheSound.clear();
+    delete m_sink;
+    m_sink = new QAudioSink(m_device, format, this);
+    m_cacheSound.clear();
 }
 
 void Sound::init(double frequency, int sampleRate, double amplitude,
@@ -56,65 +56,65 @@ void Sound::init(double frequency, int sampleRate, double amplitude,
 }
 
 void Sound::setEnabled(bool enable) {
-    _enabled = enable;
+    m_enabled = enable;
     qDebug() << "Sound::setEnabled()" << enable;
 }
 
-QByteArray Sound::generate_buffer(double durationSec) {
-    const int totalSamples = static_cast<int>(sampleRate * durationSec);
+QByteArray Sound::generateBuffer(double durationSec) {
+    const int totalSamples = static_cast<int>(m_sampleRate * durationSec);
     QByteArray buffer;
     buffer.resize(totalSamples * sizeof(qint16));
     qint16 *samples = reinterpret_cast<qint16 *>(buffer.data());
 
     for (int i = 0; i < totalSamples; ++i) {
-        double t = static_cast<double>(i) / sampleRate;
+        double t = static_cast<double>(i) / m_sampleRate;
 
         double env = 1.0;
-        if (i < attackSamples && attackSamples > 0) {
-            env = static_cast<double>(i) / attackSamples;
-        } else if (i >= (totalSamples - releaseSamples) && releaseSamples > 0) {
-            env = static_cast<double>(totalSamples - i) / releaseSamples;
+        if (i < m_attackSamples && m_attackSamples > 0) {
+            env = static_cast<double>(i) / m_attackSamples;
+        } else if (i >= (totalSamples - m_releaseSamples) && m_releaseSamples > 0) {
+            env = static_cast<double>(totalSamples - i) / m_releaseSamples;
         }
 
-        double sample = env * maxAmplitude * std::sin(twoPiF * t);
+        double sample = env * m_maxAmplitude * std::sin(m_twoPiF * t);
         samples[i] = static_cast<qint16>(qBound(-32768.0, sample, 32767.0));
     }
     return buffer;
 }
 
 void Sound::stop() {
-    if (sink && sink->state() != QAudio::StoppedState) {
-        sink->stop();
+    if (m_sink && m_sink->state() != QAudio::StoppedState) {
+        m_sink->stop();
     }
-    if (activeBuffer) {
-        activeBuffer->close();
-        delete activeBuffer;
-        activeBuffer = nullptr;
+    if (m_activeBuffer) {
+        m_activeBuffer->close();
+        delete m_activeBuffer;
+        m_activeBuffer = nullptr;
     }
-    cacheSound.clear();
+    m_cacheSound.clear();
 }
 
 // Ejecutado siempre en el hilo de Sound gracias a QueuedConnection
-void Sound::on_play_requested(int duration) {
-
-    if (_enabled) {
+void Sound::onPlayRequested(int duration) {
+    if (m_enabled) {
         stop();
-        cacheSound.contains(duration) ? cacheSound[duration] : cacheSound[duration] = generate_buffer(duration / 1000.0);
+        if (!m_cacheSound.contains(duration)) {
+            m_cacheSound[duration] = generateBuffer(duration / 1000.0);
+        }
 
-        activeBuffer = new QBuffer();          // sin parent — gestionado por stop()
-        activeBuffer->setData(cacheSound[duration]);
-        activeBuffer->open(QIODevice::ReadOnly);
+        m_activeBuffer = new QBuffer();          // sin parent — gestionado por stop()
+        m_activeBuffer->setData(m_cacheSound[duration]);
+        m_activeBuffer->open(QIODevice::ReadOnly);
 
-        sink->start(activeBuffer);
+        m_sink->start(m_activeBuffer);
     }
-
 }
 
-void Sound::run_cw(int duration) {
-    emit play_requested(duration);
+void Sound::runCW(KeyerItem item, int duration) {
+    emit playRequested(duration);
 }
 
-void Sound::list_devices() {
+void Sound::listDevices() {
     const QList<QAudioDevice> deviceInfos = QMediaDevices::audioOutputs();
     for (const QAudioDevice &deviceInfo : deviceInfos)
         qDebug() << "Device name: " << deviceInfo.id();

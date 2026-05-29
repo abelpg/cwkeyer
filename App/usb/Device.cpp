@@ -1,51 +1,49 @@
-
 #include "Device.h"
 
-bool operator== (const Device &left, const Device &right) {
-  return left.vendor_id == right.vendor_id && left.product_id == right.product_id;
+bool operator==(const Device &left, const Device &right) {
+  return left.vendorId == right.vendorId && left.productId == right.productId;
 }
 
-bool operator< (const Device &left, const Device &right) {
-  return !(left.vendor_id == right.vendor_id && left.product_id == right.product_id) ;
+bool operator<(const Device &left, const Device &right) {
+  return !(left.vendorId == right.vendorId && left.productId == right.productId);
 }
 
-
-Device::Device(int vendor_id, int product_id)   {
-  this->vendor_id = vendor_id;
-  this->product_id = product_id;
+Device::Device(int vendorId, int productId) {
+  this->vendorId  = vendorId;
+  this->productId = productId;
 }
 
-Device::Device(int vendor_id, int product_id, std::string *path)   {
-  this->vendor_id = vendor_id;
-  this->product_id = product_id;
-  this->path = path;
+Device::Device(int vendorId, int productId, std::string *path) {
+  this->vendorId  = vendorId;
+  this->productId = productId;
+  this->m_path    = path;
 }
 
-Device::Device(int vendor_id, int product_id, DeviceInterface * device_interface) {
-  this->vendor_id = vendor_id;
-  this->product_id = product_id;
-  this->device_interface = new DeviceInterface(device_interface);
+Device::Device(int vendorId, int productId, DeviceInterface *deviceInterface) {
+  this->vendorId   = vendorId;
+  this->productId  = productId;
+  this->m_interface = new DeviceInterface(deviceInterface);
 }
 
 void Device::setPath(std::string *path) {
-  this->path = path;
+  this->m_path = path;
 }
 
-void Device::setInterface(DeviceInterface * device_interface) {
-  if (device_interface != nullptr) {
-    this->device_interface = new DeviceInterface(device_interface);
+void Device::setInterface(DeviceInterface *deviceInterface) {
+  if (deviceInterface != nullptr) {
+    this->m_interface = new DeviceInterface(deviceInterface);
   }
 }
 
-DeviceInterface * Device::getInterface() {
-  return device_interface;
+DeviceInterface *Device::getInterface() {
+  return m_interface;
 }
 
-std::string * Device::getPath() {
-  return path;
+std::string *Device::getPath() {
+  return m_path;
 }
 
 Device::~Device() {
-  //delete device_interface;
-  //delete path;
+  //delete m_interface;
+  //delete m_path;
 }

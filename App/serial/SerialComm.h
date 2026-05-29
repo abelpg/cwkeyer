@@ -21,17 +21,16 @@ public:
   bool start(const std::string &portName);
   void stop();
 
-  int started() const { return _started; }
+  bool started() const { return m_started; }
 
-  std::vector<std::string> list_ports();
+  std::vector<std::string> listPorts();
 
-  void run_cw(int duration) override;
+  void runCW(KeyerItem item, int duration) override;
 
 private:
-  HANDLE _hSerial = INVALID_HANDLE_VALUE;
-  std::atomic<bool> _running{false};
-  bool _started = false;
+  HANDLE            m_hSerial = INVALID_HANDLE_VALUE;
+  std::atomic<bool> m_running{false};
+  bool              m_started = false;
 };
 
 #endif //CWKEYERAPP_SERIALCOMM_H
-

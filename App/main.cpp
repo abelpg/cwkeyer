@@ -7,8 +7,6 @@
 #include "gui/GuiConnector.h"
 
 
-
-
 int main(int argc, char *argv[]) {
     set_qt_environment();
 
@@ -16,10 +14,7 @@ int main(int argc, char *argv[]) {
     QQmlApplicationEngine engine;
     QQmlContext *context = engine.rootContext();
 
-
-
     GuiConnector guiConnector = GuiConnector(&app, context->parent());
-    //qmlRegisterType<GuiConnector>("libGui", 1, 0, "GuiConnectorClass");
     context->setContextProperty("guiConnector", &guiConnector);
 
     const QUrl url(mainQmlFile);
@@ -29,10 +24,9 @@ int main(int argc, char *argv[]) {
         if (!obj && url == objUrl) {
             QCoreApplication::exit(-1);
         }
-                    // Only when connect init device
-        guiConnector.init_device();
+        // Only when connect init device
+        guiConnector.initDevice();
     }, Qt::QueuedConnection);
-
 
     engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");
     engine.addImportPath(":/");
@@ -44,17 +38,21 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    QObject *rootObject = engine.rootObjects().first();
 
-    // Here or engine.rootObjects().first()->children().first()
-    QObject * rootObject  = engine.rootObjects().first();
-
+    // When device connected
     QObject::connect(&guiConnector,
-                  SIGNAL(device_updated(QVariant)),rootObject ,
-                  SLOT(deviceUpdated(QVariant)),
-                        Qt::QueuedConnection);
+                     SIGNAL(deviceUpdated(QVariant)), rootObject,
+                     SLOT(deviceUpdated(QVariant)),
+                     Qt::QueuedConnection);
+
+    // Text qso
+    QObject::connect(&guiConnector,
+                     SIGNAL(textCwDecoderUpdated(QVariant)), rootObject,
+                     SLOT(textCwDecoderUpdated(QVariant)),
+                     Qt::QueuedConnection);
 
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &guiConnector, &GuiConnector::quit);
-
 
     return QApplication::exec();
 }

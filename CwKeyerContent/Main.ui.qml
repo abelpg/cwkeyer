@@ -16,23 +16,7 @@ Rectangle {
     height: Constants.height
     color: Constants.backgroundColor
     signal deviceUpdatedWindow(string name, bool connected)
-
-    Button {
-        id: btn_detect_device
-        x: 8
-        y: 8
-        text: qsTr("Detect device")
-
-        Connections {
-            target: btn_detect_device
-
-            function onClicked() {
-                btn_detect_device.enabled = false
-                guiConnector.detect_device()
-                btn_detect_device.enabled = true
-            }
-        }
-    }
+    signal textCwDecoderUpdated(string text)
 
     Connections {
         target: rectangle
@@ -50,21 +34,51 @@ Rectangle {
         }
     }
 
+    Connections {
+        target: rectangle
+        function onTextCwDecoderUpdated(text) {
+            text_cw_decoder.insert(text_cw_decoder.length, text)
+            text_cw_decoder.cursorPosition = text_cw_decoder.length
+            scroll_text_cw_decoder.ScrollBar.vertical.position = 1.0
+                    - scroll_text_cw_decoder.ScrollBar.vertical.size
+        }
+    }
+
+    Button {
+        id: btn_detect_device
+        x: 550
+        y: 8
+        width: 82
+        height: 70
+        text: qsTr("Search\nZadig device")
+        font.pointSize: 9
+
+        Connections {
+            target: btn_detect_device
+
+            function onClicked() {
+                btn_detect_device.enabled = false
+                guiConnector.detectDevice()
+                btn_detect_device.enabled = true
+            }
+        }
+    }
+
     Button {
         id: btn_connect
-        x: 8
-        y: 46
+        x: 11
+        y: 8
         width: 107
-        height: 32
+        height: 70
         text: qsTr("Connect")
 
         Connections {
             target: btn_connect
             function onClicked() {
                 if (txt_device.connected) {
-                    guiConnector.disconnect_device()
+                    guiConnector.disconnectDevice()
                 } else {
-                    guiConnector.connect_device()
+                    guiConnector.connectDevice()
                 }
             }
         }
@@ -92,7 +106,7 @@ Rectangle {
         id: rectangle_text
         x: 200
         y: 8
-        width: 432
+        width: 344
         height: 70
         color: "#00ffffff"
         border.color: "#bbbbbb"
@@ -102,10 +116,10 @@ Rectangle {
             id: txt_device
             x: 3
             y: 3
-            width: 425
+            width: 341
             height: 65
             text: qsTr("")
-            font.pixelSize: 20
+            font.pixelSize: 16
             property bool connected: true
         }
     }
@@ -124,9 +138,13 @@ Rectangle {
             id: input_wpm
             x: 49
             y: 8
+            width: 83
+            height: 32
             editable: true
             to: 50
             from: 10
+            padding: 3
+            font.pointSize: 10
             value: guiConnector.wpm
             onValueChanged: guiConnector.wpm = value
         }
@@ -138,17 +156,10 @@ Rectangle {
             text: qsTr("WPM")
         }
 
-        Label {
-            id: lbl_mode
-            x: 168
-            y: 15
-            text: qsTr("Mode")
-        }
-
         RadioButton {
             id: radio_ultimate
-            x: 225
-            y: 9
+            x: 326
+            y: 8
             text: qsTr("Ultimate")
             checked: guiConnector.mode === 1 // ULTIMATIC = 0x1
             onCheckedChanged: if (checked)
@@ -157,8 +168,8 @@ Rectangle {
 
         RadioButton {
             id: radio_iambic_a
-            x: 328
-            y: 9
+            x: 419
+            y: 8
             text: qsTr("Iambic A")
             checked: guiConnector.mode === 2 // IAMBIC_A = 0x2
             onCheckedChanged: if (checked)
@@ -167,12 +178,34 @@ Rectangle {
 
         RadioButton {
             id: radio_iambic_b
-            x: 433
-            y: 9
+            x: 518
+            y: 8
             text: qsTr("Iambic B")
             checked: guiConnector.mode === 3 // IAMBIC_B = 0x3
             onCheckedChanged: if (checked)
                                   guiConnector.mode = 3
+        }
+
+        Label {
+            id: lbl_wordspace
+            x: 144
+            y: 14
+            text: qsTr("Farnsworth")
+        }
+
+        SpinBox {
+            id: input_wordspace
+            x: 222
+            y: 8
+            width: 83
+            height: 32
+            padding: 3
+            font.pointSize: 10
+            editable: true
+            to: 50
+            from: 10
+            value: guiConnector.farnsWorth
+            onValueChanged: guiConnector.farnsWorth = value
         }
     }
 
@@ -261,9 +294,10 @@ Rectangle {
             id: checkbox_send_keyboard
             x: 359
             y: 8
+            enabled: guiConnector.enabledZadig
             text: qsTr("Send keyboard active")
             checked: guiConnector.enabledKeyboard
-            onToggled: guiConnector.setEnabledKeyboard(checked)
+            onToggled: guiConnector.enabledKeyboard = checked
         }
     }
 
@@ -312,6 +346,67 @@ Rectangle {
             width: 30
             height: 30
             color: guiConnector.enabledCommOut ? "#0fad00" : "#b40202"
+        }
+    }
+
+    CheckBox {
+        id: cw_decoder_active
+        x: 11
+        y: 306
+        text: qsTr("CW Decoder")
+        checked: guiConnector.enabledCwDecoder
+        onToggled: guiConnector.enabledCwDecoder = checked
+    }
+
+    Rectangle {
+        id: rectangle_text_cw_decoder
+        x: 8
+        y: 334
+        width: 624
+        height: 138
+        color: "#00ffffff"
+        border.color: "#bbbbbb"
+        border.width: 2
+
+        ScrollView {
+            id: scroll_text_cw_decoder
+            x: 0
+            y: 0
+            width: 624
+            height: 138
+            ScrollBar.horizontal.interactive: false
+            ScrollBar.vertical.interactive: true
+            clip: true
+
+            TextEdit {
+                id: text_cw_decoder
+                x: 0
+                y: 0
+                width: 624
+                height: 138
+                text: qsTr("")
+                font.pixelSize: 16
+                wrapMode: Text.Wrap
+                overwriteMode: true
+                readOnly: true
+                font.family: "Segoe UI"
+            }
+        }
+    }
+
+    Button {
+        id: btn_clear
+        x: 582
+        y: 310
+        width: 50
+        height: 24
+        text: qsTr("Clear")
+
+        Connections {
+            target: btn_clear
+            function onClicked() {
+                text_cw_decoder.clear()
+            }
         }
     }
 

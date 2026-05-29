@@ -6,6 +6,7 @@ target_sources(${CMAKE_PROJECT_NAME} PUBLIC
 
 add_subdirectory(utils)
 add_subdirectory(configuration)
+add_subdirectory(cwdecoder)
 add_subdirectory(sound)
 add_subdirectory(serial)
 add_subdirectory(keyboard)

@@ -1,4 +1,3 @@
-
 #include "Keyboard.h"
 
 
@@ -15,19 +14,19 @@ static void sendKey(WORD vk, bool pressed) {
 
 Keyboard::Keyboard(QObject *parent) : QObject(parent) {
   // Queued connections → slots run in the receiver's thread (event loop),
-  // so on_dit/on_dah return immediately without blocking.
+  // so onDit/onDah return immediately without blocking.
   connect(this, &Keyboard::ditChanged, this, &Keyboard::pressDit, Qt::QueuedConnection);
   connect(this, &Keyboard::dahChanged, this, &Keyboard::pressDah, Qt::QueuedConnection);
 }
 
 // Called from any thread — just emits a signal and returns immediately
-void Keyboard::on_dit(bool pressed) {
+void Keyboard::onDit(bool pressed) {
   if (m_enabled) {
     emit ditChanged(pressed);
   }
 }
 
-void Keyboard::on_dah(bool pressed) {
+void Keyboard::onDah(bool pressed) {
   if (m_enabled) {
     emit dahChanged(pressed);
   }
@@ -48,4 +47,3 @@ void Keyboard::pressDah(bool pressed) {
 void Keyboard::setEnabled(bool enabled) {
   m_enabled = enabled;
 }
-

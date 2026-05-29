@@ -19,38 +19,27 @@ class HidDevice  {
     HidDevice();
     ~HidDevice();
 
-    Device * detect_device();
+    Device *detectDevice();
+    Device *initDevice();
+    Device *connectDevice();
+    Device *disconnectDevice();
 
-    Device * init_device();
+    bool connected() const { return m_connected; }
 
-    Device * connect_device();
-
-    Device * disconnect_device();
-
-    bool  connected()             const { return _connected; }
-
-    template<typename T> static std::string int_to_hex(T i);
+    template<typename T> static std::string intToHex(T i);
 
   private:
 
     static const std::string CONFIG_NAME;
 
-    std::thread thread_task;
+    std::thread     m_threadTask;
+    hid_device     *m_hidDevice       = nullptr;
+    Device         *m_detectedDevice  = nullptr;
+    Configuration  *m_configuration   = nullptr;
+    bool            m_connected        = false;
 
-    hid_device * hid_device;
-
-    Device *detected_device = nullptr;
-
-    Configuration *configuration = nullptr;
-
-
-    bool _connected = false;
-
-
-    ///////////////
-    void task_runnable();
-
-    std::set<Device> list_devices();
+    void taskRunnable();
+    std::set<Device> listDevices();
 
 };
 

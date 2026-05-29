@@ -13,6 +13,7 @@ target_include_directories(GuiConnector
 
 target_link_libraries(GuiConnector PRIVATE
         LibConfiguration
+        LibCwDecoder
         LibSound
         LibSerial
         LibKeyboard

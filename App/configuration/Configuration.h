@@ -12,6 +12,7 @@ static constexpr const char* CONFIGURATION_FILE_NAME   = "configuration.json";
 static constexpr const char* CFG_AMPLITUDE             = "amplitude";
 static constexpr const char* CFG_FREQUENCY             = "frequency";
 static constexpr const char* CFG_WPM                   = "wpm";
+static constexpr const char* CFG_FARNSWORTH            = "farnsWorth";
 static constexpr const char* CFG_SELECTED_AUDIO_DEVICE = "selected_audio_device";
 static constexpr const char* CFG_MODE                  = "mode";
 static constexpr const char* CFG_COMM_OUT              = "commout";

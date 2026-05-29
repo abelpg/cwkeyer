@@ -27,50 +27,47 @@ class Sound : public QObject, public IKeyerCW {
     void init(double frequency, int sampleRate, double amplitude,
               double attackTime, double releaseTime);
 
-    void initWithDevice(const QAudioDevice &dev, double frequency, int sampleRate,
-                      double amplitude, double attackTime, double releaseTime);
+    void initWithDevice(const QAudioDevice &device, double frequency, int sampleRate,
+                        double amplitude, double attackTime, double releaseTime);
 
     void stop();
-    void list_devices();
+    void listDevices();
 
     // Getters
-    int  enabled()             const { return _enabled; }
+    bool enabled() const { return m_enabled; }
 
     // Override from IKeyerCW
-    void run_cw(int duration) override;   // duration en ms
-
+    void runCW(KeyerItem item, int duration) override;  // duration en ms
 
   public slots:
     void setEnabled(bool enable);
 
   signals:
-    void play_requested(int durationMs);   // emitida desde hilo del keyer
+    void playRequested(int durationMs);      // emitida desde hilo del keyer
 
   private slots:
-    void on_play_requested(int durationMs); // ejecutada en el hilo de Sound
+    void onPlayRequested(int durationMs);    // ejecutada en el hilo de Sound
 
-private:
-  QByteArray generate_buffer(double durationSec);
+  private:
+    QByteArray generateBuffer(double durationSec);
 
-  QAudioSink   *sink      = nullptr;
-  QBuffer      *activeBuffer = nullptr;
-  QAudioDevice  device;
+    QAudioSink  *m_sink         = nullptr;
+    QBuffer     *m_activeBuffer = nullptr;
+    QAudioDevice m_device;
 
-  bool   _enabled       = true;
-  int    sampleRate    = 44100;
-  int    attackSamples = 0;
-  int    releaseSamples= 0;
-  double maxAmplitude  = 0.0;
-  double twoPiF        = 0.0;
-  double frequency     = 0.0;
-  double amplitude     = 0.0;
-  double attackTime    = 0.0;
-  double releaseTime   = 0.0;
+    bool   m_enabled        = true;
+    int    m_sampleRate     = 44100;
+    int    m_attackSamples  = 0;
+    int    m_releaseSamples = 0;
+    double m_maxAmplitude   = 0.0;
+    double m_twoPiF         = 0.0;
+    double m_frequency      = 0.0;
+    double m_amplitude      = 0.0;
+    double m_attackTime     = 0.0;
+    double m_releaseTime    = 0.0;
 
-  // Cache: buffers pre-generados para cada tipo
-  std::map<int, QByteArray> cacheSound;
-
-
+    // Cache: buffers pre-generados para cada tipo
+    std::map<int, QByteArray> m_cacheSound;
 
 };
 
