@@ -282,7 +282,6 @@ void UsbDevice::taskRunnable() {
         libusb_handle_events(m_context);
       }
 
-      libusb_free_transfer(transfer);
       if (detached) {
         rs = libusb_attach_kernel_driver(deviceHandle, m_detectedDevice->getInterface()->interfaceNum);
         assert(rs == LIBUSB_SUCCESS);

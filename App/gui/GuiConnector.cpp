@@ -13,7 +13,7 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
 
   // Create sound manager
   m_sound = new Sound(parent);
-  reinitSound();
+  resetSound();
 
   // Create CwDecoder manager
   m_cwDecoder = new CwDecoder(std::bind(&GuiConnector::onDecodeTextCw, this, std::placeholders::_1));
@@ -21,7 +21,9 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   // Create keyer manager
   m_keyer = new Keyer(m_sound);
   m_keyer->addKeyerCW(m_serialComm);
-  reinitKeyer();
+  m_keyer->addKeyerCW(m_cwDecoder);
+
+  resetKeyer();
 
   // Zadig device with keyboard sending
   m_keyboard = new Keyboard(this);
@@ -33,7 +35,6 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
 }
 
 void GuiConnector::onDecodeTextCw(std::string text) {
-  qDebug() << "Decoded CW text: " << text;
   emit textCwDecoderUpdated(QString::fromStdString(text));
 }
 
@@ -173,7 +174,7 @@ void GuiConnector::setAmplitude(double value) {
   m_amplitude = value;
   Configuration::putValueDouble(CFG_AMPLITUDE, m_amplitude);
   emit amplitudeChanged(m_amplitude);
-  reinitSound();
+  resetSound();
 }
 
 void GuiConnector::setFrequency(double value) {
@@ -182,7 +183,7 @@ void GuiConnector::setFrequency(double value) {
   m_frequency = value;
   emit frequencyChanged(m_frequency);
   Configuration::putValueDouble(CFG_FREQUENCY, m_frequency);
-  reinitSound();
+  resetSound();
 }
 
 void GuiConnector::setWpm(int value) {
@@ -196,7 +197,7 @@ void GuiConnector::setWpm(int value) {
     setFarnsWorth(m_wpm);
   }
 
-  reinitKeyer();
+  resetKeyer();
 }
 
 void GuiConnector::setFarnsWorth(int value) {
@@ -209,6 +210,7 @@ void GuiConnector::setFarnsWorth(int value) {
   if (m_farnsWorth > m_wpm) {
     setWpm(m_farnsWorth);
   }
+  resetCwDecoder();
 }
 
 void GuiConnector::setMode(int value) {
@@ -216,7 +218,7 @@ void GuiConnector::setMode(int value) {
   m_mode = value;
   emit modeChanged(m_mode);
   Configuration::putValueInt(CFG_MODE, m_mode);
-  reinitKeyer();
+  resetKeyer();
 }
 
 void GuiConnector::setSelectedAudioDevice(int index) {
@@ -226,7 +228,7 @@ void GuiConnector::setSelectedAudioDevice(int index) {
   m_selectedAudioDevice = index;
   emit selectedAudioDeviceChanged(m_selectedAudioDevice);
   Configuration::putValueInt(CFG_SELECTED_AUDIO_DEVICE, m_selectedAudioDevice);
-  reinitSound();
+  resetSound();
 }
 
 bool GuiConnector::enabledSound() const {
@@ -270,7 +272,7 @@ bool GuiConnector::enabledCwDecoder() const {
 
 void GuiConnector::setEnabledCwDecoder(bool enabled) {
   if (enabled) {
-    m_cwDecoder->start(m_farnsWorth);
+    m_cwDecoder->start(m_farnsWorth,m_wpm);
   } else {
     m_cwDecoder->stop();
   }
@@ -302,7 +304,7 @@ void GuiConnector::setSelectedCommPort(int index) {
   emit selectedCommPortChanged(m_selectedCommPort);
 }
 
-void GuiConnector::reinitSound() {
+void GuiConnector::resetSound() {
   m_sound->stop();
   if (m_selectedAudioDevice >= 0 && m_selectedAudioDevice < m_audioDeviceList.size()) {
     m_sound->initWithDevice(m_audioDeviceList[m_selectedAudioDevice],
@@ -313,6 +315,15 @@ void GuiConnector::reinitSound() {
   }
 }
 
-void GuiConnector::reinitKeyer() {
+void GuiConnector::resetKeyer() {
   m_keyer->initKeyer(m_wpm, static_cast<Mode>(m_mode));
+  // Always reset cwDecoder
+  resetCwDecoder();
+}
+
+void GuiConnector::resetCwDecoder() {
+  if (m_cwDecoder->started()) {
+    m_cwDecoder->stop();
+    m_cwDecoder->start(m_farnsWorth, m_wpm);
+  }
 }

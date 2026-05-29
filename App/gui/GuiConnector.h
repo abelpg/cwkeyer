@@ -122,8 +122,9 @@ class GuiConnector : public QObject{
     QStringList m_commPorts;
     int         m_selectedCommPort = -1;
 
-    void reinitSound();
-    void reinitKeyer();
+    void resetSound();
+    void resetKeyer();
+    void resetCwDecoder();
     void sendDeviceUpdated(Device *device);
     void loadAudioDevices();
     void loadConfiguration();

@@ -56,17 +56,17 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
 
 
 # En CMakeLists.txt raíz, añadir:
-set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)  # LTO
-
-# Flags de optimización explícitos:
-if(MSVC)
-    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /O2 /GL)
-    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE /LTCG)
-else()
-    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -O2 -flto)
-    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -flto)
-endif()
+#set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)  # LTO
+#
+## Flags de optimización explícitos:
+#if(MSVC)
+#    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /O2 /GL)
+#    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE /LTCG)
+#else()
+#    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -O2 -flto)
+#    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -flto)
+#endif()
 
 # ── CPack / Installer ──────────────────────────────────────────────────────────
 set(CPACK_PACKAGE_NAME              "CwKeyer")
@@ -95,6 +95,10 @@ if(WIN32)
     # set(CPACK_WIX_UPGRADE_GUID   "GENERA-UN-GUID-UNICO-AQUI")
 else()
     set(CPACK_GENERATOR "TGZ")        # Linux/Mac: tar.gz portable
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set_property(TARGET main PROPERTY WIN32_EXECUTABLE true)
 endif()
 
 # Instalar hidapi.dll junto al ejecutable

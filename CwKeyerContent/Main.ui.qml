@@ -387,8 +387,24 @@ Rectangle {
                 font.pixelSize: 16
                 wrapMode: Text.Wrap
                 overwriteMode: true
-                readOnly: false
+                readOnly: true
                 font.family: "Segoe UI"
+            }
+        }
+    }
+
+    Button {
+        id: btn_clear
+        x: 582
+        y: 310
+        width: 50
+        height: 24
+        text: qsTr("Clear")
+
+        Connections {
+            target: btn_clear
+            function onClicked() {
+                text_cw_decoder.clear()
             }
         }
     }
