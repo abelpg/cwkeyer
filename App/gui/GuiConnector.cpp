@@ -323,7 +323,7 @@ void GuiConnector::loadAudioDevices() {
 
 void GuiConnector::loadCommPorts() {
   m_commPorts = QStringList();
-  for (const std::string &port : m_serialComm->listPorts()) {
+  for (const std::string &port : SerialPorts::listPorts()) {
     m_commPorts << QString::fromStdString(port);
   }
   emit commPortsChanged(m_commPorts);

@@ -16,6 +16,7 @@
 #include "../keyboard/Keyboard.h"
 #include "../keyboard/KeyboardListener.h"
 #include "../serial/SerialComm.h"
+#include "../serial/SerialPorts.h"
 #include "../cwdecoder/CwDecoder.h"
 
 static constexpr const int    DEFAULT_WPM         = 25;

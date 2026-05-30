@@ -49,14 +49,14 @@ LRESULT CALLBACK KeyboardListener::LowLevelKeyboardProc(int nCode, WPARAM wParam
       case VK_OEM_PLUS:  // +/=
       case VK_RCONTROL:
         if (pressed != s_dahPressed) {
-          s_ditDah->onDah(pressed);
+          s_ditDah->onDah(pressed, KeyType::AUTOMATIC);
           s_dahPressed = pressed;
         }
         break;
       case VK_LCONTROL:
       case VK_OEM_1:     // ;/:
         if (pressed != s_ditPressed) {
-          s_ditDah->onDit(pressed);
+          s_ditDah->onDit(pressed, KeyType::AUTOMATIC);
           s_ditPressed = pressed;
         }
         break;

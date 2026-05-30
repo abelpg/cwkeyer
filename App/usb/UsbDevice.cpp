@@ -322,13 +322,13 @@ void UsbDevice::cbInterrupt(libusb_transfer *transfer) {
 
 void UsbDevice::sendDah(bool pressed) {
   for (IDitDah *ditDah : m_ditDahList) {
-    ditDah->onDah(pressed);
+    ditDah->onDah(pressed, KeyType::AUTOMATIC);
   }
 }
 
 void UsbDevice::sendDit(bool pressed) {
   for (IDitDah *ditDah : m_ditDahList) {
-    ditDah->onDit(pressed);
+    ditDah->onDit(pressed, KeyType::AUTOMATIC);
   }
 }
 

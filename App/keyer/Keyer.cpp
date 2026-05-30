@@ -14,7 +14,7 @@ void Keyer::initKeyer(int wpm, Mode mode) {
   m_mode      = mode;
 }
 
-void Keyer::onDit(bool pressed) {
+void Keyer::onDit(bool pressed, KeyType keyType) {
   if (pressed) {
     m_ditPressed  = true;
     m_lastPressed = DIT;
@@ -24,7 +24,7 @@ void Keyer::onDit(bool pressed) {
   }
 }
 
-void Keyer::onDah(bool pressed) {
+void Keyer::onDah(bool pressed, KeyType keyType) {
   if (pressed) {
     m_dahPressed  = true;
     m_lastPressed = DAH;

@@ -23,8 +23,6 @@ public:
 
   bool started() const { return m_started; }
 
-  std::vector<std::string> listPorts();
-
   void runCW(KeyerItem item, int duration) override;
 
 private:

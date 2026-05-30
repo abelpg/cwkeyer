@@ -21,8 +21,11 @@ class Keyer : public IDitDah {
   public:
     Keyer(IKeyerCW *soundCW);
     void initKeyer(int wpm, Mode mode);
-    void onDit(bool pressed) override;
-    void onDah(bool pressed) override;
+
+    /**On dit automatic keys**/
+    void onDit(bool pressed, KeyType keyType) override;
+    void onDah(bool pressed, KeyType keyType) override;
+    /****/
 
     int ditTime()   const;
     int dahTime()   const;
