@@ -16,6 +16,7 @@ static constexpr const char* CFG_FARNSWORTH            = "farnsWorth";
 static constexpr const char* CFG_SELECTED_AUDIO_DEVICE = "selected_audio_device";
 static constexpr const char* CFG_MODE                  = "mode";
 static constexpr const char* CFG_COMM_OUT              = "commout";
+static constexpr const char* CFG_COMM_IN               = "commin";
 
 class Configuration {
 

@@ -7,6 +7,8 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   // Create serial manager (needed before loadCommPorts)
   m_serialComm = new SerialComm();
 
+  m_serialCommIn = new SerialComm();
+
   loadAudioDevices();
   loadCommPorts();
   loadConfiguration();
@@ -98,6 +100,11 @@ void GuiConnector::loadConfiguration() {
   if (selCom >= 0 && selCom < m_commPorts.size()) {
     m_selectedCommPort = selCom;
   }
+
+  int selCommIn = Configuration::getValueInt(CFG_COMM_IN);
+  if (selCommIn >= 0 && selCommIn < m_commPorts.size()) {
+    m_selectedCommPortIn = selCommIn;
+  }
 }
 
 void GuiConnector::quit() {
@@ -105,6 +112,7 @@ void GuiConnector::quit() {
   m_sound->stop();
   m_device->disconnectDevice();
   m_serialComm->stop();
+  m_serialCommIn->stop();
 
   delete m_keyer;
   delete m_device;
@@ -261,6 +269,20 @@ void GuiConnector::setEnabledCommOut(bool enabled) {
   emit enabledCommOutChanged(enabled);
 }
 
+bool GuiConnector::enabledCommIn() const {
+  return m_serialCommIn->started();
+}
+
+void GuiConnector::setEnabledCommIn(bool enabled) {
+  if (enabled) {
+    m_serialCommIn->start(m_commPorts[m_selectedCommPortIn].toStdString());
+  } else {
+    m_serialCommIn->stop();
+  }
+  emit enabledCommInChanged(enabled);
+}
+
+
 bool GuiConnector::enabledKeyboard() const {
   return m_keyboard->enabled();
 }
@@ -314,6 +336,15 @@ void GuiConnector::setSelectedCommPort(int index) {
   m_selectedCommPort = index;
   Configuration::putValueInt(CFG_COMM_OUT, m_selectedCommPort);
   emit selectedCommPortChanged(m_selectedCommPort);
+}
+
+void GuiConnector::setSelectedCommPortIn(int index) {
+  if (index < 0 || index >= m_commPorts.size()) return;
+  if (m_selectedCommPortIn == index) return;
+
+  m_selectedCommPortIn = index;
+  Configuration::putValueInt(CFG_COMM_IN, m_selectedCommPortIn);
+  emit selectedCommPortInChanged(m_selectedCommPortIn);
 }
 
 void GuiConnector::resetSound() {
