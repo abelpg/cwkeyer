@@ -23,8 +23,10 @@ class Keyer : public IDitDah {
     void initKeyer(int wpm, Mode mode);
 
     /**On dit automatic keys**/
-    void onDit(bool pressed, KeyType keyType) override;
-    void onDah(bool pressed, KeyType keyType) override;
+    void onDit(bool pressed) override;
+    void onDah(bool pressed) override;
+    void onStraight(bool pressed) override;
+
     /****/
 
     int ditTime()   const;

@@ -15,8 +15,9 @@ class Keyboard : public QObject, public IDitDah {
   public:
     explicit Keyboard(QObject *parent = nullptr);
 
-    void onDit(bool pressed, KeyType keyType) override;
-    void onDah(bool pressed, KeyType keyType) override;
+    void onDit(bool pressed) override;
+    void onDah(bool pressed) override;
+    void onStraight(bool pressed) override;
 
     bool enabled() const { return m_enabled; };
     void setEnabled(bool enabled);

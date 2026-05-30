@@ -20,16 +20,20 @@ Keyboard::Keyboard(QObject *parent) : QObject(parent) {
 }
 
 // Called from any thread — just emits a signal and returns immediately
-void Keyboard::onDit(bool pressed, KeyType keyType) {
+void Keyboard::onDit(bool pressed) {
   if (m_enabled) {
     emit ditChanged(pressed);
   }
 }
 
-void Keyboard::onDah(bool pressed, KeyType keyType) {
+void Keyboard::onDah(bool pressed) {
   if (m_enabled) {
     emit dahChanged(pressed);
   }
+}
+
+void Keyboard::onStraight(bool pressed) {
+  // do nothing
 }
 
 // Executed by the Qt event loop (non-blocking for the caller)

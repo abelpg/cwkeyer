@@ -14,37 +14,34 @@ void Keyer::initKeyer(int wpm, Mode mode) {
   m_mode      = mode;
 }
 
-void Keyer::onDit(bool pressed, KeyType keyType) {
-  if (keyType == KeyType::AUTOMATIC) {
-    if (pressed) {
-      m_ditPressed  = true;
-      m_lastPressed = DIT;
-      enqueue(DIT);
-    } else {
-      m_ditPressed = false;
-    }
-  } else {
+void Keyer::onDit(bool pressed) {
 
+  if (pressed) {
+    m_ditPressed  = true;
+    m_lastPressed = DIT;
+    enqueue(DIT);
+  } else {
+    m_ditPressed = false;
   }
 }
 
-void Keyer::onDah(bool pressed, KeyType keyType) {
-  if (keyType == KeyType::AUTOMATIC) {
-    if (pressed) {
-      m_dahPressed  = true;
-      m_lastPressed = DAH;
-      enqueue(DAH);
-    } else {
-      m_dahPressed = false;
-    }
+void Keyer::onDah(bool pressed) {
+  if (pressed) {
+    m_dahPressed  = true;
+    m_lastPressed = DAH;
+    enqueue(DAH);
   } else {
-    // Send direct
-    for (IKeyerCW *keyerCW : m_keyerCWList) {
-      if (pressed) {
-        keyerCW->startRunCw();
-      } else {
-        keyerCW->stopRunCw();
-      }
+    m_dahPressed = false;
+  }
+}
+
+void Keyer::onStraight(bool pressed) {
+  // Send direct
+  for (IKeyerCW *keyerCW : m_keyerCWList) {
+    if (pressed) {
+      keyerCW->startRunCw();
+    } else {
+      keyerCW->stopRunCw();
     }
   }
 }
