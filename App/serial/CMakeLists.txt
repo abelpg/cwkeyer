@@ -5,6 +5,8 @@ add_library(LibSerial
         SerialComm.h
         SerialPorts.cpp
         SerialPorts.h
+        N1MMProxy.cpp
+        N1MMProxy.h
 )
 
 target_include_directories(LibSerial

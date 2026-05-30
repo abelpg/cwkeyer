@@ -15,7 +15,7 @@ class SerialComm : public IKeyerCW {
 public:
   static constexpr int DEFAULT_BAUD_RATE = 9600;
 
-  explicit SerialComm();
+  explicit SerialComm(bool rtsControl = false, bool dtrControl = true);
   ~SerialComm();
 
   bool start(const std::string &portName);
@@ -30,7 +30,9 @@ public:
 private:
   HANDLE            m_hSerial = INVALID_HANDLE_VALUE;
   std::atomic<bool> m_running{false};
-  bool              m_started = false;
+  bool              m_started    = false;
+  bool              m_rtsControl = false;
+  bool              m_dtrControl = true;
 };
 
 #endif //CWKEYERAPP_SERIALCOMM_H

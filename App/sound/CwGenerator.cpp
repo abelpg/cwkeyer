@@ -40,8 +40,9 @@ QByteArray CwGenerator::generateChunk(int numSamples) {
         if (m_stopping) {
             qint64 elapsed = m_sampleIndex - m_stopSample;
             if (elapsed >= m_releaseSamples) {
+                // Release terminado: silencio, marcar como stopped
                 out[i] = 0;
-                m_stopped = true;
+                m_stopped = true;   // el timer dejará de llamar a generateChunk
                 ++m_sampleIndex;
                 continue;
             }

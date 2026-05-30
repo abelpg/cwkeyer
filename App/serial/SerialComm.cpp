@@ -1,6 +1,7 @@
 #include "SerialComm.h"
 
-SerialComm::SerialComm() {}
+SerialComm::SerialComm(bool rtsControl, bool dtrControl)
+    : m_rtsControl(rtsControl), m_dtrControl(dtrControl) {}
 
 SerialComm::~SerialComm() {
   stop();
@@ -44,12 +45,11 @@ bool SerialComm::start(const std::string &portName) {
     dcb.ByteSize     = 8;
     dcb.StopBits     = ONESTOPBIT;
     dcb.Parity       = NOPARITY;
-    // Control de flujo RTS/CTS (hardware handshaking)
-    dcb.fOutxCtsFlow = TRUE;
-    dcb.fRtsControl  = RTS_CONTROL_DISABLE;
+    dcb.fOutxCtsFlow = m_rtsControl ? TRUE : FALSE;
+    dcb.fRtsControl  = m_rtsControl ? RTS_CONTROL_ENABLE : RTS_CONTROL_DISABLE;
     dcb.fOutX        = FALSE;
     dcb.fInX         = FALSE;
-    dcb.fDtrControl  = DTR_CONTROL_ENABLE;
+    dcb.fDtrControl  = m_dtrControl ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 
     if (!SetCommState(m_hSerial, &dcb)) {
       std::cerr << "SerialComm: SetCommState failed\n";

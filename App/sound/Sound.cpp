@@ -121,27 +121,44 @@ void Sound::onStartCwRequested() {
     stop();
 
     m_cwGenerator->startStream();
-
-    // Modo push: el sink nos da su QIODevice, nosotros escribimos
     m_sinkDevice = m_sink->start();
 
-    // Chunk cada ~20 ms
     const int chunkMs    = 20;
     const int numSamples = m_sampleRate * chunkMs / 1000;
 
+    // Cuántos chunks de silencio escribir para drenar el buffer interno del sink
+    // bufferSize está en bytes: bytes / (2 bytes/muestra) / samplesPerChunk + margen
+    const int drainChunks = (m_sink->bufferSize() / sizeof(qint16)) / numSamples + 3;
+    int silenceChunksLeft = 0;
+
     m_pushTimer = new QTimer(this);
     m_pushTimer->setInterval(chunkMs);
-    connect(m_pushTimer, &QTimer::timeout, this, [this, numSamples]() {
+
+    connect(m_pushTimer, &QTimer::timeout, this, [this, numSamples, drainChunks,
+                                                   silenceChunksLeft]() mutable {
         if (!m_sinkDevice) return;
+
+        if (silenceChunksLeft > 0) {
+            // Drenado: escribir silencio y contar
+            QByteArray silence(numSamples * sizeof(qint16), 0);
+            m_sinkDevice->write(silence);
+            --silenceChunksLeft;
+            if (silenceChunksLeft == 0) {
+                m_pushTimer->stop();
+                m_pushTimer->deleteLater();
+                m_pushTimer  = nullptr;
+                m_sinkDevice = nullptr;
+                m_sink->stop();
+            }
+            return;
+        }
+
         QByteArray chunk = m_cwGenerator->generateChunk(numSamples);
         m_sinkDevice->write(chunk);
 
         if (m_cwGenerator->isStopped()) {
-            m_pushTimer->stop();
-            m_pushTimer->deleteLater();
-            m_pushTimer   = nullptr;
-            m_sinkDevice  = nullptr;
-            m_sink->stop();
+            // Release terminado: iniciar drenado silencioso
+            silenceChunksLeft = drainChunks;
         }
     });
     m_pushTimer->start();
