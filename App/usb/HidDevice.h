@@ -1,17 +1,18 @@
 #ifndef CWKEYERAPP_HIDDEVICE_H
 #define CWKEYERAPP_HIDDEVICE_H
 
-#include <QDebug>
-#include <QObject>
 
+#include <QObject>
+#include <iomanip>
+#include <thread>
 #include <string>
 #include <iostream>
 #include "Device.h"
 #include "hidapi/hidapi.h"
 #include "../utils/Utils.h"
+#include "../utils/Logger.h"
 #include "../configuration/Configuration.h"
-#include <iomanip>
-#include <thread>
+
 
 class HidDevice  {
 

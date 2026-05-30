@@ -38,13 +38,13 @@ void Keyboard::onStraight(bool pressed) {
 
 // Executed by the Qt event loop (non-blocking for the caller)
 void Keyboard::pressDit(bool pressed) {
-  //qDebug() << "Keyboard::pressDit() called with pressed=" << pressed;
+  //log(L_DEBUG) << "Keyboard::pressDit() called with pressed=" << pressed;
   //sendKey(VK_LCONTROL, pressed);   // Left Ctrl
   sendKey(VK_OEM_1, pressed);   // Left Ctrl
 }
 
 void Keyboard::pressDah(bool pressed) {
-  //qDebug() << "Keyboard::pressDah() called with pressed=" << pressed;
+  //log(L_DEBUG) << "Keyboard::pressDah() called with pressed=" << pressed;
   //sendKey(VK_RCONTROL, pressed);   // Right Ctrl
   sendKey(VK_OEM_PLUS, pressed);
 }

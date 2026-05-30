@@ -8,14 +8,14 @@
 ]
 */
 
-#include <QDebug>
+
 #include <string>
 #include <iostream>
 #include <stdio.h>
 #include <QJsonObject>
 #include <list>
+#include "../utils/Logger.h"
 #include "DeviceInterface.h"
-
 
 class Device {
   public:

@@ -5,6 +5,12 @@
 #include <unordered_map>
 #include <string>
 
+static constexpr char NOT_FOUND = '\0';
+static constexpr char SK = '\1';
+static constexpr char BK = '\2';
+static constexpr char CW_ERROR = '\3';
+
+
 /**
  * MorseTable
  *
@@ -31,7 +37,7 @@ public:
      */
     static char decode(const std::string &sequence) {
         auto it = table().find(sequence);
-        return (it != table().end()) ? it->second : '\0';
+        return (it != table().end()) ? it->second : NOT_FOUND;
     }
 
     /** Full decode table: dot-dash sequence → character. */
@@ -96,6 +102,11 @@ public:
             { ".-..-.", '"' },   // quotation mark
             { ".--.-.", '@' },   // at sign (AC)
             { "..--.-", '_' },   // underscore
+
+            // ── Prosigns (ITU-R M.1677) ─────────────────────────────────
+            { "...-.-",  SK }, // end of work (SK)
+            { "-...-.-", BK }, // end of work (BK)
+            { "........", CW_ERROR }, // error (HH)
         };
         return s_table;
     }

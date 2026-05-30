@@ -19,7 +19,7 @@ std::vector<std::string> SerialPorts::listPorts() {
       std::string portName(size - 1, '\0');
       WideCharToMultiByte(CP_UTF8, 0, data, -1, portName.data(), size, nullptr, nullptr);
       ports.push_back(portName);
-      std::cout << "Port available: " << portName << "\n";
+      log(L_DEBUG) << "Port available: " << portName << "\n";
     }
     RegCloseKey(hKey);
   }

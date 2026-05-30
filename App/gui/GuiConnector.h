@@ -1,7 +1,7 @@
 #ifndef CWKEYERAPP_GUICONNECTOR_H
 #define CWKEYERAPP_GUICONNECTOR_H
 
-#include <QDebug>
+
 #include <QApplication>
 #include <QObject>
 #include <iostream>
@@ -9,8 +9,6 @@
 #include <QtMultimedia/QMediaDevices>
 #include <QtMultimedia/QAudioDevice>
 #include "../sound/Sound.h"
-
-
 #include "../usb/UsbDevice.h"
 #include "../keyer/Keyer.h"
 #include "../keyboard/Keyboard.h"
@@ -19,6 +17,7 @@
 #include "../serial/SerialPorts.h"
 #include "../serial/N1MMProxy.h"
 #include "../cwdecoder/CwDecoder.h"
+#include "../utils/Logger.h"
 
 static constexpr const int    DEFAULT_WPM         = 25;
 static constexpr const int    DEFAULT_FARNSWORTH  = 25;

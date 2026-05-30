@@ -7,7 +7,7 @@
 #include <windows.h>
 #endif
 
-#include <QDebug>
+#include "../utils/Logger.h"
 #include "../utils/IDitDah.h"
 
 class Keyboard : public QObject, public IDitDah {

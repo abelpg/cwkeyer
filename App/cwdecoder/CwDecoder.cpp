@@ -39,9 +39,24 @@ void CwDecoder::flushLetter() {
   if (m_currentSequence.empty()) return;
 
   char ch = MorseTable::decode(m_currentSequence);
-  if (ch != '\0') {
-    m_callbackTextDecoded(std::string(1, ch));
+  switch (ch) {
+    case BK:
+      m_callbackTextDecoded("<BK>");
+      break;
+    case SK:
+      m_callbackTextDecoded("<SK>");
+      break;
+    case CW_ERROR:
+      m_callbackTextDecoded("<ERROR>");
+      break;
+    case NOT_FOUND:
+      std::cout << "Decoded sequence '" << m_currentSequence << "' as special code: " << static_cast<int>(ch) << std::endl;
+      break;
+    default:
+      m_callbackTextDecoded(std::string(1, ch));
+      break;
   }
+
   m_currentSequence.clear();
 }
 
@@ -62,8 +77,6 @@ void CwDecoder::timeoutLoop() {
     silenceMs = std::max(silenceMs - m_lastDuration - m_interElementSpace, m_interElementSpace);
 
     if (silenceMs >= m_wordSpace) {
-      // Silence >= word space → flush letter + emit word space
-      std::cout << "Timeout: silence " << silenceMs << " ms >= word space " << m_wordSpace << " ms\n";
       flushLetter();
       m_callbackTextDecoded(" ");
       m_lastDuration = 0;

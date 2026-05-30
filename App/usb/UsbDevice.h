@@ -1,8 +1,6 @@
 #ifndef CWKEYERAPP_USBDEVICE_H
 #define CWKEYERAPP_USBDEVICE_H
 
-#include <QDebug>
-
 
 #include "libusb/libusb.h"
 #include <iomanip>
@@ -16,6 +14,7 @@
 #include "../utils/Utils.h"
 #include "../configuration/Configuration.h"
 #include "../utils/IDitDah.h"
+#include "../utils/Logger.h"
 
 typedef std::function<void (boolean)> boolean_callback;
 

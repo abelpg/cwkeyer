@@ -5,7 +5,9 @@
 
 #include "autogen/environment.h"
 #include "gui/GuiConnector.h"
+#include "utils/Logger.h"
 
+LogLevel loglevel = L_INFO;
 
 int main(int argc, char *argv[]) {
     set_qt_environment();
@@ -31,7 +33,7 @@ int main(int argc, char *argv[]) {
     engine.addImportPath(":/");
     engine.load(url);
 
-    qDebug() << "LOADED";
+    log(L_DEBUG) << "LOADED";
 
     if (engine.rootObjects().isEmpty()) {
         return -1;

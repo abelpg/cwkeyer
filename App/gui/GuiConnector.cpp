@@ -40,7 +40,7 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
 void GuiConnector::onDecodeTextCw(std::string text) {
 
   QString textToSend = QString::fromStdString(text);
-  if (text.compare("=") == 0 ) {
+  if (text == "=" || text == "<SK>" || text == "<BK>" ) {
     textToSend.append("\n");
   }
 
@@ -109,7 +109,7 @@ void GuiConnector::loadConfiguration() {
 }
 
 void GuiConnector::quit() {
-  qDebug() << "Quit called";
+  log(L_DEBUG) << "Quit called";
   m_sound->stop();
   m_device->disconnectDevice();
   m_serialComm->stop();
@@ -294,7 +294,7 @@ bool GuiConnector::enabledZadig() const {
 
 void GuiConnector::setEnabledKeyboard(bool enabled) {
   if (m_keyboardListener->isEnabled() == enabled) {
-    qDebug() << "GuiConnector::setEnabledKeyboard() when listener is enabled";
+    log(L_DEBUG) << "GuiConnector::setEnabledKeyboard() when listener is enabled";
     return;
   }
   m_keyboard->setEnabled(enabled);

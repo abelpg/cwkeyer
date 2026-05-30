@@ -8,6 +8,7 @@
 #include <atomic>
 #include <windows.h>
 #include "../utils/IKeyerCW.h"
+#include "../utils/Logger.h"
 
 class SerialComm : public IKeyerCW {
 

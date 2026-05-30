@@ -60,7 +60,7 @@ bool SerialComm::start(const std::string &portName) {
     }
 
     EscapeCommFunction(m_hSerial, CLRDTR);
-    std::cout << "SerialComm: port opened: " << portName << "\n";
+    log(L_DEBUG) << "SerialComm: port opened: " << portName << "\n";
     m_started = true;
     return true;
   }
@@ -73,7 +73,7 @@ void SerialComm::stop() {
     CloseHandle(m_hSerial);
     m_hSerial = INVALID_HANDLE_VALUE;
     m_started = false;
-    std::cout << "SerialComm: port closed.\n";
+    log(L_DEBUG) << "SerialComm: port closed.\n";
   }
 }
 

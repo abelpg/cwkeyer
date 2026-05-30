@@ -4,7 +4,7 @@
 const std::string UsbDevice::CONFIG_NAME = "device-usb";
 
 UsbDevice::UsbDevice() {
-  qDebug() << "UsbDevice constructor called";
+  log(L_DEBUG) << "UsbDevice constructor called";
   int rc = libusb_init(&m_context);
   assert(rc == LIBUSB_SUCCESS);
   libusb_set_option(m_context, LIBUSB_OPTION_USE_USBDK);
@@ -27,7 +27,7 @@ Device *UsbDevice::initDevice() {
 }
 
 Device *UsbDevice::connectDevice() {
-  qDebug() << "UsbDevice connectDevice called";
+  log(L_DEBUG) << "UsbDevice connectDevice called";
 
   if (m_detectedDevice == nullptr) {
     QJsonObject *value = Configuration::getValue(CONFIG_NAME);
@@ -43,7 +43,7 @@ Device *UsbDevice::connectDevice() {
 
   if (m_detectedDevice == nullptr || !m_connected) {
     Configuration::removeValue(CONFIG_NAME);
-    qDebug() << "Failed to connect to device";
+    log(L_DEBUG) << "Failed to connect to device";
   }
 
   return m_detectedDevice;
@@ -61,12 +61,12 @@ bool UsbDevice::attachDevice(libusb_device_handle *deviceHandle, int interfaceNu
   if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER) &&
       libusb_kernel_driver_active(deviceHandle, interfaceNum) == 1) {
     const int rs = libusb_detach_kernel_driver(deviceHandle, interfaceNum);
-    qDebug() << "Detached" << interfaceNum << "from kernel driver";
+    log(L_DEBUG) << "Detached" << interfaceNum << "from kernel driver";
     return rs == LIBUSB_SUCCESS;
   }
 
   if (!libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
-    qDebug() << "Detaching kernel driver not supported on this platform";
+    log(L_DEBUG) << "Detaching kernel driver not supported on this platform";
   }
   return false;
 }
@@ -81,7 +81,7 @@ bool UsbDevice::tryToRead(Device *deviceToTry, DeviceInterface *iface) {
 
   bool readData = false;
   if (rs == LIBUSB_SUCCESS) {
-    qDebug() << "Claimed interface";
+    log(L_DEBUG) << "Claimed interface";
     int read = 0, counter = 0;
     auto data = new unsigned char[iface->packetSize];
 
@@ -90,21 +90,21 @@ bool UsbDevice::tryToRead(Device *deviceToTry, DeviceInterface *iface) {
                                      data, sizeof(data), &read, 1000) == 0
            && counter++ < 5 && !readData) {
       if (read > 0) {
-        qDebug() << "Can read" << read;
+        log(L_DEBUG) << "Can read" << read;
         readData = true;
       }
     }
   }
 
   libusb_release_interface(deviceHandle, iface->interfaceNum);
-  qDebug() << "released interface";
+  log(L_DEBUG) << "released interface";
   if (detached) {
     rs = libusb_attach_kernel_driver(deviceHandle, iface->interfaceNum);
     assert(rs == LIBUSB_SUCCESS);
-    qDebug() << "Reattached" << iface->interfaceNum << "to kernel driver";
+    log(L_DEBUG) << "Reattached" << iface->interfaceNum << "to kernel driver";
   }
   libusb_close(deviceHandle);
-  qDebug() << "Closed device";
+  log(L_DEBUG) << "Closed device";
   return readData;
 }
 
@@ -123,8 +123,8 @@ std::set<Device> UsbDevice::manageDevices(Device *deviceToTry) {
     rc = libusb_get_device_descriptor(usbDevice, &desc);
     assert(rc == LIBUSB_SUCCESS);
 
-    qDebug() << "DeviceClass: " << (int)desc.bDeviceClass;
-    qDebug() << "IdVendor: "    << intToHex(desc.idVendor)
+    log(L_DEBUG) << "DeviceClass: " << (int)desc.bDeviceClass;
+    log(L_DEBUG) << "IdVendor: "    << intToHex(desc.idVendor)
              << " IdProduct: "  << intToHex(desc.idProduct);
 
     if (deviceToTry != nullptr &&
@@ -163,7 +163,7 @@ DeviceInterface *UsbDevice::searchDeviceInterfaceAvailable(libusb_device *libusb
       auto altSetting = usbIface.altsetting[x];
 
       for (int j = 0; j < altSetting.bNumEndpoints && result == nullptr; j++) {
-        qDebug() << "Adding interface: " << altSetting.bInterfaceNumber
+        log(L_DEBUG) << "Adding interface: " << altSetting.bInterfaceNumber
                  << " " << intToHex(altSetting.endpoint[j].bEndpointAddress)
                  << " " << altSetting.endpoint[j].wMaxPacketSize;
 
@@ -200,7 +200,7 @@ Device *UsbDevice::detectDevice() {
         }
       }
       if (!found) {
-        qDebug() << "Device detected: " << intToHex(dn.vendorId) << " " << intToHex(dn.productId);
+        log(L_DEBUG) << "Device detected: " << intToHex(dn.vendorId) << " " << intToHex(dn.productId);
 
         std::set<Device> finalDevice = manageDevices(&dn);
         for (auto d : finalDevice) {
@@ -219,11 +219,11 @@ Device *UsbDevice::detectDevice() {
 
   if (m_detectedDevice != nullptr) {
     Configuration::putObject(CONFIG_NAME, m_detectedDevice->toJson());
-    qDebug() << " Detected device "
+    log(L_DEBUG) << " Detected device "
              << intToHex(m_detectedDevice->vendorId)
              << " " << intToHex(m_detectedDevice->productId);
   } else {
-    qDebug() << " No device detected";
+    log(L_DEBUG) << " No device detected";
   }
 
   return m_detectedDevice;
@@ -241,7 +241,7 @@ template<typename T> std::string UsbDevice::intToHex(T i) {
 }
 
 UsbDevice::~UsbDevice() {
-  qDebug() << "UsbDevice destructor called";
+  log(L_DEBUG) << "UsbDevice destructor called";
 
   if (m_detectedDevice != nullptr) {
     delete m_detectedDevice;
@@ -250,7 +250,7 @@ UsbDevice::~UsbDevice() {
 }
 
 void UsbDevice::taskRunnable() {
-  qDebug() << "Starting task runnable";
+  log(L_DEBUG) << "Starting task runnable";
 
   if (m_detectedDevice != nullptr) {
     int l_interface = m_detectedDevice->getInterface()->interfaceNum;
@@ -291,7 +291,7 @@ void UsbDevice::taskRunnable() {
       if (detached) {
         rs = libusb_attach_kernel_driver(deviceHandle, l_interface);
         assert(rs == LIBUSB_SUCCESS);
-        qDebug() << "Reattached" << l_interface << "to kernel driver";
+        log(L_DEBUG) << "Reattached" << l_interface << "to kernel driver";
       }
       libusb_release_interface(deviceHandle, l_interface);
       libusb_close(deviceHandle);
@@ -318,7 +318,7 @@ void UsbDevice::cbInterrupt(libusb_transfer *transfer) {
     libusb_submit_transfer(transfer);
 
   } else if (transfer->status == LIBUSB_TRANSFER_TIMED_OUT) {
-    qDebug() << "Transfer timed out, resubmitting...";
+    log(L_DEBUG) << "Transfer timed out, resubmitting...";
     libusb_submit_transfer(transfer);
   } else {
     fprintf(stderr, "Transfer finished with status: %d\n", transfer->status);

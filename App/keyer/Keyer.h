@@ -1,11 +1,13 @@
 #ifndef CWKEYERAPP_KEYER_H
 #define CWKEYERAPP_KEYER_H
 
-#include <QDebug>
 #include <queue>
 #include <thread>
 #include <iostream>
+#include <list>
+
 #include "../utils/Utils.h"
+#include "../utils/Logger.h"
 #include "../utils/IDitDah.h"
 #include "../utils/IKeyerCW.h"
 

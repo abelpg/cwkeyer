@@ -2,12 +2,12 @@
 
 
 Keyer::Keyer(IKeyerCW *soundCW) {
-  qDebug() << "Keyer constructor called";
+  log(L_DEBUG) << "Keyer constructor called";
   addKeyerCW(soundCW);
 }
 
 void Keyer::initKeyer(int wpm, Mode mode) {
-  qDebug() << "Keyer initKeyer called";
+  log(L_DEBUG) << "Keyer initKeyer called";
   m_ditTime   = IKeyerCW::calculateDuration(DIT, wpm);
   m_dahTime   = IKeyerCW::calculateDuration(DAH, wpm);
   m_spaceTime = IKeyerCW::calculateDuration(INTER_ELEMENT_SPACE, wpm);

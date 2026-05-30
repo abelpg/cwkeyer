@@ -15,7 +15,7 @@ void Sound::initWithDevice(const QAudioDevice &device,
     double frequency, int sampleRate, double amplitude,
     double attackTime, double releaseTime) {
 
-    qDebug() << "Sound::initWithDevice() freq:" << frequency
+    log(L_DEBUG) << "Sound::initWithDevice() freq:" << frequency
              << " sampleRate:" << sampleRate << " amplitude:" << amplitude
              << " attackTime:" << attackTime << " releaseTime:" << releaseTime;
 
@@ -57,7 +57,7 @@ void Sound::init(double frequency, int sampleRate, double amplitude,
 
 void Sound::setEnabled(bool enable) {
     m_enabled = enable;
-    qDebug() << "Sound::setEnabled()" << enable;
+    log(L_DEBUG) << "Sound::setEnabled()" << enable;
 }
 
 QByteArray Sound::generateBuffer(double durationSec) {
@@ -189,6 +189,7 @@ void Sound::stopRunCw() {
 
 void Sound::listDevices() {
     const QList<QAudioDevice> deviceInfos = QMediaDevices::audioOutputs();
-    for (const QAudioDevice &deviceInfo : deviceInfos)
-        qDebug() << "Device name: " << deviceInfo.id();
+    for (const QAudioDevice &deviceInfo : deviceInfos) {
+        log(L_DEBUG) <<  "Device Name " << deviceInfo.id().toStdString();
+    }
 }

@@ -6,7 +6,6 @@
         <file>CwKeyer/EventListSimulator.qml</file>
         <file>CwKeyer/qmldir</file>
         <file>CwKeyerContent/App.qml</file>
-        <file>CwKeyerContent/images/CwKeyer.ico</file>
         <file>CwKeyerContent/Main.ui.qml</file>
         <file>qtquickcontrols2.conf</file>
     </qresource>

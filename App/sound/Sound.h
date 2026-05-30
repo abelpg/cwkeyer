@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QTimer>
-#include <QDebug>
+
 #include <QtMultimedia/QMediaDevices>
 #include <QtMultimedia/QAudioDevice>
 #include <QtMultimedia/QAudioSink>
@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include "CwGenerator.h"
 #include "../utils/IKeyerCW.h"
+#include "../utils/Logger.h"
 
 class Sound : public QObject, public IKeyerCW {
   Q_OBJECT
