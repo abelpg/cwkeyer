@@ -75,6 +75,31 @@ void SerialComm::stop() {
   }
 }
 
+void SerialComm::startRunCw() {
+  if (!m_started) {
+    return;
+  }
+
+  if (m_hSerial == INVALID_HANDLE_VALUE) {
+    std::cerr << "SerialComm::runCW: port closed\n";
+    return;
+  }
+  EscapeCommFunction(m_hSerial, SETDTR);
+}
+
+void SerialComm::stopRunCw() {
+  if (!m_started) {
+    return;
+  }
+
+  if (m_hSerial == INVALID_HANDLE_VALUE) {
+    std::cerr << "SerialComm::runCW: port closed\n";
+    return;
+  }
+
+  EscapeCommFunction(m_hSerial, CLRDTR);
+}
+
 
 void SerialComm::runCW(KeyerItem item, int duration) {
   if (!m_started) {

@@ -16,6 +16,8 @@ class IKeyerCW {
   public:
     virtual ~IKeyerCW() = default;
     virtual void runCW(KeyerItem item, int duration) = 0;
+    virtual void startRunCw() = 0;
+    virtual void stopRunCw() = 0;
 
   /**
     *

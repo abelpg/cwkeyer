@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 add_library(LibSound
         Sound.cpp
         Sound.h
+        CwGenerator.cpp
+        CwGenerator.h
 )
 
 target_include_directories(LibSound

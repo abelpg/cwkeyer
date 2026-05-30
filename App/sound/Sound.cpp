@@ -1,13 +1,9 @@
 #include "Sound.h"
-#include <stdexcept>
-
 
 Sound::Sound(QObject *parent) : QObject(parent) {
-    // Conectar señal->slot en el mismo objeto: siempre QueuedConnection
-    // para garantizar que onPlayRequested corre en el hilo de Sound
-    connect(this, &Sound::playRequested,
-            this, &Sound::onPlayRequested,
-            Qt::QueuedConnection);
+    connect(this, &Sound::playRequested,  this, &Sound::onPlayRequested,  Qt::QueuedConnection);
+    connect(this, &Sound::startCwRequested, this, &Sound::onStartCwRequested, Qt::QueuedConnection);
+    connect(this, &Sound::stopCwRequested,  this, &Sound::onStopCwRequested,  Qt::QueuedConnection);
 }
 
 Sound::~Sound() {
@@ -40,12 +36,16 @@ void Sound::initWithDevice(const QAudioDevice &device,
     format.setChannelCount(1);
     format.setSampleFormat(QAudioFormat::Int16);
 
-    if (!m_device.isFormatSupported(format)) {
+    if (!m_device.isFormatSupported(format))
         throw std::runtime_error("format not supported");
-    }
 
     delete m_sink;
     m_sink = new QAudioSink(m_device, format, this);
+
+    delete m_cwGenerator;
+    m_cwGenerator = new CwGenerator(m_sampleRate, m_frequency, m_amplitude,
+                                    m_attackSamples, m_releaseSamples, this);
+
     m_cacheSound.clear();
 }
 
@@ -67,14 +67,12 @@ QByteArray Sound::generateBuffer(double durationSec) {
     qint16 *samples = reinterpret_cast<qint16 *>(buffer.data());
 
     for (int i = 0; i < totalSamples; ++i) {
-        double t = static_cast<double>(i) / m_sampleRate;
-
+        double t   = static_cast<double>(i) / m_sampleRate;
         double env = 1.0;
         if (i < m_attackSamples && m_attackSamples > 0) {
             env = static_cast<double>(i) / m_attackSamples;
-        } else if (i >= (totalSamples - m_releaseSamples) && m_releaseSamples > 0) {
+        } else if (i >= (totalSamples - m_releaseSamples) && m_releaseSamples > 0)
             env = static_cast<double>(totalSamples - i) / m_releaseSamples;
-        }
 
         double sample = env * m_maxAmplitude * std::sin(m_twoPiF * t);
         samples[i] = static_cast<qint16>(qBound(-32768.0, sample, 32767.0));
@@ -83,9 +81,14 @@ QByteArray Sound::generateBuffer(double durationSec) {
 }
 
 void Sound::stop() {
-    if (m_sink && m_sink->state() != QAudio::StoppedState) {
-        m_sink->stop();
+    if (m_pushTimer) {
+        m_pushTimer->stop();
+        m_pushTimer->deleteLater();
+        m_pushTimer  = nullptr;
+        m_sinkDevice = nullptr;
     }
+    if (m_sink && m_sink->state() != QAudio::StoppedState)
+        m_sink->stop();
     if (m_activeBuffer) {
         m_activeBuffer->close();
         delete m_activeBuffer;
@@ -94,24 +97,71 @@ void Sound::stop() {
     m_cacheSound.clear();
 }
 
-// Ejecutado siempre en el hilo de Sound gracias a QueuedConnection
 void Sound::onPlayRequested(int duration) {
-    if (m_enabled) {
-        stop();
-        if (!m_cacheSound.contains(duration)) {
-            m_cacheSound[duration] = generateBuffer(duration / 1000.0);
-        }
-
-        m_activeBuffer = new QBuffer();          // sin parent — gestionado por stop()
-        m_activeBuffer->setData(m_cacheSound[duration]);
-        m_activeBuffer->open(QIODevice::ReadOnly);
-
-        m_sink->start(m_activeBuffer);
+    if (!m_enabled) return;
+    // Si hay un CW continuo activo, detenerlo primero
+    if (m_cwGenerator && !m_cwGenerator->isStopped()) {
+        m_sink->stop();
+        m_cwGenerator->stopStream();
     }
+
+    stop();
+    if (!m_cacheSound.contains(duration)) {
+        m_cacheSound[duration] = generateBuffer(duration / 1000.0);
+    }
+
+    m_activeBuffer = new QBuffer();
+    m_activeBuffer->setData(m_cacheSound[duration]);
+    m_activeBuffer->open(QIODevice::ReadOnly);
+    m_sink->start(m_activeBuffer);
+}
+
+void Sound::onStartCwRequested() {
+    if (!m_enabled || !m_cwGenerator) return;
+    stop();
+
+    m_cwGenerator->startStream();
+
+    // Modo push: el sink nos da su QIODevice, nosotros escribimos
+    m_sinkDevice = m_sink->start();
+
+    // Chunk cada ~20 ms
+    const int chunkMs    = 20;
+    const int numSamples = m_sampleRate * chunkMs / 1000;
+
+    m_pushTimer = new QTimer(this);
+    m_pushTimer->setInterval(chunkMs);
+    connect(m_pushTimer, &QTimer::timeout, this, [this, numSamples]() {
+        if (!m_sinkDevice) return;
+        QByteArray chunk = m_cwGenerator->generateChunk(numSamples);
+        m_sinkDevice->write(chunk);
+
+        if (m_cwGenerator->isStopped()) {
+            m_pushTimer->stop();
+            m_pushTimer->deleteLater();
+            m_pushTimer   = nullptr;
+            m_sinkDevice  = nullptr;
+            m_sink->stop();
+        }
+    });
+    m_pushTimer->start();
+}
+
+void Sound::onStopCwRequested() {
+    if (!m_cwGenerator) return;
+    m_cwGenerator->stopStream();   // el timer seguirá hasta que isStopped() == true
 }
 
 void Sound::runCW(KeyerItem item, int duration) {
     emit playRequested(duration);
+}
+
+void Sound::startRunCw() {
+    emit startCwRequested();
+}
+
+void Sound::stopRunCw() {
+    emit stopCwRequested();
 }
 
 void Sound::listDevices() {

@@ -24,6 +24,8 @@ public:
   bool started() const { return m_started; }
 
   void runCW(KeyerItem item, int duration) override;
+  void startRunCw() override;
+  void stopRunCw() override;
 
 private:
   HANDLE            m_hSerial = INVALID_HANDLE_VALUE;
