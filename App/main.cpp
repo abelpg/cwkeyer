@@ -13,7 +13,6 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     QQmlApplicationEngine engine;
     QQmlContext *context = engine.rootContext();
-
     GuiConnector guiConnector = GuiConnector(&app, context->parent());
     context->setContextProperty("guiConnector", &guiConnector);
 

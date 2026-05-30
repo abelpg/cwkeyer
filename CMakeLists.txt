@@ -25,7 +25,11 @@ find_package(Qt6 6.11 REQUIRED COMPONENTS Core Gui Widgets Qml Quick ShaderTools
 qt_standard_project_setup()
 
 
-qt_add_executable(${CMAKE_PROJECT_NAME})
+
+if(WIN32)
+    list(APPEND app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/CwKeyer.rc")
+endif()
+qt_add_executable(${CMAKE_PROJECT_NAME} ${app_icon_resource_windows})
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -53,7 +57,6 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-
 
 # En CMakeLists.txt raíz, añadir:
 #set(CMAKE_BUILD_TYPE Release)
@@ -121,6 +124,7 @@ install(SCRIPT ${deploy_script})
 include(CPack)
 
 #cmake --build cmake-build-debug --config Release
+#cmake --build cmake-build-debug -t clean
 #cd cmake-build-debug
 #cpack -G NSIS   # o WIX  cpack -G ZIP
 #windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw --qmldir .\qml CwKeyerApp.exe
