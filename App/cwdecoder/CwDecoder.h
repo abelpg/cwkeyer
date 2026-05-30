@@ -42,6 +42,8 @@ private:
    std::function<void(const std::string &)> m_callbackTextDecoded;
 
    void runCW(KeyerItem item, int duration) override;
+   void startRunCw() override  {};
+   void stopRunCw() override  {};
    void flushLetter();        // must be called with m_mutex held
    void timeoutLoop();        // runs in m_timeoutThread
 };

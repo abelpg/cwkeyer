@@ -16,6 +16,8 @@
 #include "../keyboard/Keyboard.h"
 #include "../keyboard/KeyboardListener.h"
 #include "../serial/SerialComm.h"
+#include "../serial/SerialPorts.h"
+#include "../serial/N1MMProxy.h"
 #include "../cwdecoder/CwDecoder.h"
 
 static constexpr const int    DEFAULT_WPM         = 25;
@@ -24,7 +26,7 @@ static constexpr const int    DEFAULT_SAMPLE_RATE = 44100;
 static constexpr const int    DEFAULT_FREQUENCY   = 650;
 static constexpr const double DEFAULT_AMPLITUDE   = 0.5;
 static constexpr const double DEFAULT_ATTACK      = 0.01;
-static constexpr const double DEFAULT_RELEASE     = 0.01;
+static constexpr const double DEFAULT_RELEASE     = 0.009;
 static constexpr const Mode   DEFAULT_MODE        = IAMBIC_B;
 
 
@@ -38,9 +40,11 @@ class GuiConnector : public QObject{
   Q_PROPERTY(int         mode                 READ mode                 WRITE setMode                 NOTIFY modeChanged)
   Q_PROPERTY(int         enabledSound         READ enabledSound         WRITE setEnabledSound         NOTIFY soundEnabledChanged)
   Q_PROPERTY(int         enabledCommOut       READ enabledCommOut       WRITE setEnabledCommOut       NOTIFY enabledCommOutChanged)
+  Q_PROPERTY(int         enabledCommIn        READ enabledCommIn        WRITE setEnabledCommIn        NOTIFY enabledCommInChanged)
   Q_PROPERTY(bool        enabledKeyboard      READ enabledKeyboard      WRITE setEnabledKeyboard      NOTIFY enabledKeyboardChanged)
   Q_PROPERTY(int         selectedAudioDevice  READ selectedAudioDevice  WRITE setSelectedAudioDevice  NOTIFY selectedAudioDeviceChanged)
   Q_PROPERTY(int         selectedCommPort     READ selectedCommPort     WRITE setSelectedCommPort     NOTIFY selectedCommPortChanged)
+  Q_PROPERTY(int         selectedCommPortIn   READ selectedCommPortIn   WRITE setSelectedCommPortIn   NOTIFY selectedCommPortInChanged)
   Q_PROPERTY(bool        enabledCwDecoder     READ enabledCwDecoder     WRITE setEnabledCwDecoder     NOTIFY enabledCwDecoderChanged)
   Q_PROPERTY(QStringList audioDevices         READ audioDevices         NOTIFY audioDevicesChanged)
   Q_PROPERTY(QStringList commPorts            READ commPorts            NOTIFY commPortsChanged)
@@ -59,11 +63,13 @@ class GuiConnector : public QObject{
     int         mode()                const { return m_mode; }
     bool        enabledSound()        const;
     bool        enabledCommOut()      const;
+    bool        enabledCommIn()       const;
     bool        enabledKeyboard()     const;
     bool        enabledCwDecoder()    const;
     bool        enabledZadig()        const;
     QStringList commPorts()           const { return m_commPorts; }
     int         selectedCommPort()    const { return m_selectedCommPort; }
+    int         selectedCommPortIn()  const { return m_selectedCommPortIn; }
 
     Q_INVOKABLE void initDevice();
     Q_INVOKABLE void detectDevice();
@@ -80,9 +86,11 @@ class GuiConnector : public QObject{
     void setMode(int value);
     void setEnabledSound(bool enabled);
     void setEnabledCommOut(bool enabled);
+    void setEnabledCommIn(bool enabled);
     void setEnabledKeyboard(bool enabled);
     void setEnabledCwDecoder(bool enabled);
     void setSelectedCommPort(int index);
+    void setSelectedCommPortIn(int index);
 
   signals:
     void textCwDecoderUpdated(QVariant varData);
@@ -97,7 +105,9 @@ class GuiConnector : public QObject{
     void soundEnabledChanged(bool enabled);
     void commPortsChanged(QStringList ports);
     void selectedCommPortChanged(int index);
+    void selectedCommPortInChanged(int index);
     void enabledCommOutChanged(bool enabled);
+    void enabledCommInChanged(bool enabled);
     void enabledKeyboardChanged(bool enabled);
     void enabledCwDecoderChanged(bool enabled);
     void enabledZadigChanged(bool enabled);
@@ -107,6 +117,7 @@ class GuiConnector : public QObject{
     UsbDevice        *m_device;
     Keyer            *m_keyer;
     SerialComm       *m_serialComm;
+    N1MMProxy        *m_serialCommIn;
     Keyboard         *m_keyboard;
     KeyboardListener *m_keyboardListener;
     QApplication     *m_app;
@@ -123,7 +134,8 @@ class GuiConnector : public QObject{
     int                  m_mode               = static_cast<int>(Mode::IAMBIC_B);
 
     QStringList m_commPorts;
-    int         m_selectedCommPort = -1;
+    int         m_selectedCommPort   = -1;
+    int         m_selectedCommPortIn = -1;
 
     void resetSound();
     void resetKeyer();

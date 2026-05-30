@@ -17,6 +17,7 @@ class Keyboard : public QObject, public IDitDah {
 
     void onDit(bool pressed) override;
     void onDah(bool pressed) override;
+    void onStraight(bool pressed) override;
 
     bool enabled() const { return m_enabled; };
     void setEnabled(bool enabled);

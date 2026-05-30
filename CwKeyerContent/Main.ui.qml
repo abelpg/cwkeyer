@@ -332,7 +332,7 @@ Rectangle {
             id: select_comm_out
             x: 165
             y: 8
-            width: 160
+            width: 120
             height: 32
             model: guiConnector.commPorts
             currentIndex: guiConnector.selectedCommPort
@@ -346,6 +346,42 @@ Rectangle {
             width: 30
             height: 30
             color: guiConnector.enabledCommOut ? "#0fad00" : "#b40202"
+        }
+
+        Button {
+            id: btn_comm_in
+            x: 334
+            y: 10
+            text: qsTr("Comm CW In")
+            Connections {
+                target: btn_comm_in
+                function onClicked() {
+                    if (guiConnector.enabledCommIn) {
+                        guiConnector.setEnabledCommIn(false)
+                    } else {
+                        guiConnector.setEnabledCommIn(true)
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            id: comm_in_connected
+            x: 460
+            y: 10
+            width: 30
+            height: 30
+            color: guiConnector.enabledCommIn ? "#0fad00" : "#b40202"
+        }
+        ComboBox {
+            id: select_comm_in
+            x: 496
+            y: 8
+            width: 120
+            height: 32
+            model: guiConnector.commPorts
+            currentIndex: guiConnector.selectedCommPortIn
+            onCurrentIndexChanged: guiConnector.selectedCommPortIn = currentIndex
         }
     }
 

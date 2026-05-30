@@ -1,6 +1,10 @@
 #include "SerialComm.h"
 
-SerialComm::SerialComm() {}
+SerialComm::SerialComm(bool rtsControl, bool dtrControl, bool overlapped)
+    : m_rtsControl(rtsControl), m_dtrControl(dtrControl), m_overlapped(overlapped) {
+  // Nothing
+}
+
 
 SerialComm::~SerialComm() {
   stop();
@@ -12,8 +16,6 @@ bool SerialComm::start(const std::string &portName) {
       stop();
     }
 
-    // En Windows los puertos >= COM10 necesitan el prefijo \\.\
-
     std::string fullPort = "\\\\.\\" + portName;
 
     m_hSerial = CreateFileA(
@@ -21,7 +23,7 @@ bool SerialComm::start(const std::string &portName) {
         GENERIC_READ | GENERIC_WRITE,
         0, nullptr,
         OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
+        m_overlapped? FILE_FLAG_OVERLAPPED: FILE_ATTRIBUTE_NORMAL,
         nullptr
     );
 
@@ -44,12 +46,11 @@ bool SerialComm::start(const std::string &portName) {
     dcb.ByteSize     = 8;
     dcb.StopBits     = ONESTOPBIT;
     dcb.Parity       = NOPARITY;
-    // Control de flujo RTS/CTS (hardware handshaking)
-    dcb.fOutxCtsFlow = TRUE;
-    dcb.fRtsControl  = RTS_CONTROL_DISABLE;
+    dcb.fOutxCtsFlow = m_rtsControl ? TRUE : FALSE;
+    dcb.fRtsControl  = m_rtsControl ? RTS_CONTROL_ENABLE : RTS_CONTROL_DISABLE;
     dcb.fOutX        = FALSE;
     dcb.fInX         = FALSE;
-    dcb.fDtrControl  = DTR_CONTROL_ENABLE;
+    dcb.fDtrControl  = m_dtrControl ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 
     if (!SetCommState(m_hSerial, &dcb)) {
       std::cerr << "SerialComm: SetCommState failed\n";
@@ -57,6 +58,7 @@ bool SerialComm::start(const std::string &portName) {
       m_hSerial = INVALID_HANDLE_VALUE;
       return false;
     }
+
     EscapeCommFunction(m_hSerial, CLRDTR);
     std::cout << "SerialComm: port opened: " << portName << "\n";
     m_started = true;
@@ -75,36 +77,26 @@ void SerialComm::stop() {
   }
 }
 
-std::vector<std::string> SerialComm::listPorts() {
-  std::vector<std::string> ports;
-  HKEY hKey;
-  if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-                    L"HARDWARE\\DEVICEMAP\\SERIALCOMM",
-                    0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-    WCHAR valueName[256], data[256];
-    DWORD index = 0, nameLen, dataLen, type;
-    while (true) {
-      nameLen = 256; dataLen = 256 * sizeof(WCHAR);
-      LONG ret = RegEnumValueW(hKey, index++, valueName, &nameLen,
-                               nullptr, &type,
-                               reinterpret_cast<LPBYTE>(data), &dataLen);
-      if (ret != ERROR_SUCCESS) break;
-      int size = WideCharToMultiByte(CP_UTF8, 0, data, -1, nullptr, 0, nullptr, nullptr);
-      std::string portName(size - 1, '\0');
-      WideCharToMultiByte(CP_UTF8, 0, data, -1, portName.data(), size, nullptr, nullptr);
-      ports.push_back(portName);
-      std::cout << "Port available: " << portName << "\n";
-    }
-    RegCloseKey(hKey);
+void SerialComm::startRunCw() {
+  if (!m_started) return;
+  if (m_hSerial == INVALID_HANDLE_VALUE) {
+    std::cerr << "SerialComm::runCW: port closed\n";
+    return;
   }
-  return ports;
+  EscapeCommFunction(m_hSerial, SETDTR);
+}
+
+void SerialComm::stopRunCw() {
+  if (!m_started) return;
+  if (m_hSerial == INVALID_HANDLE_VALUE) {
+    std::cerr << "SerialComm::runCW: port closed\n";
+    return;
+  }
+  EscapeCommFunction(m_hSerial, CLRDTR);
 }
 
 void SerialComm::runCW(KeyerItem item, int duration) {
-  if (!m_started) {
-    return;
-  }
-
+  if (!m_started) return;
   if (m_hSerial == INVALID_HANDLE_VALUE) {
     std::cerr << "SerialComm::runCW: port closed\n";
     return;

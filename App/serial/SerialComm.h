@@ -2,7 +2,6 @@
 #define CWKEYERAPP_SERIALCOMM_H
 
 #include <string>
-#include <vector>
 #include <chrono>
 #include <thread>
 #include <iostream>
@@ -15,22 +14,27 @@ class SerialComm : public IKeyerCW {
 public:
   static constexpr int DEFAULT_BAUD_RATE = 9600;
 
-  explicit SerialComm();
+  explicit SerialComm(bool rtsControl = false, bool dtrControl = false,  bool overlapped = false);
   ~SerialComm();
 
-  bool start(const std::string &portName);
-  void stop();
+  virtual bool start(const std::string &portName);
+  virtual void stop();
 
   bool started() const { return m_started; }
 
-  std::vector<std::string> listPorts();
-
   void runCW(KeyerItem item, int duration) override;
+  void startRunCw() override;
+  void stopRunCw() override;
+
+protected:
+  HANDLE            m_hSerial    = INVALID_HANDLE_VALUE;
+  std::atomic<bool> m_running{false};
 
 private:
-  HANDLE            m_hSerial = INVALID_HANDLE_VALUE;
-  std::atomic<bool> m_running{false};
-  bool              m_started = false;
+  bool m_started    = false;
+  bool m_rtsControl = false;
+  bool m_dtrControl = false;
+  bool m_overlapped  = false;
 };
 
 #endif //CWKEYERAPP_SERIALCOMM_H

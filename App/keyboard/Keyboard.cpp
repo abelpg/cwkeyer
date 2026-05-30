@@ -32,6 +32,10 @@ void Keyboard::onDah(bool pressed) {
   }
 }
 
+void Keyboard::onStraight(bool pressed) {
+  // do nothing
+}
+
 // Executed by the Qt event loop (non-blocking for the caller)
 void Keyboard::pressDit(bool pressed) {
   //qDebug() << "Keyboard::pressDit() called with pressed=" << pressed;

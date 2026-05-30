@@ -15,6 +15,7 @@ void Keyer::initKeyer(int wpm, Mode mode) {
 }
 
 void Keyer::onDit(bool pressed) {
+
   if (pressed) {
     m_ditPressed  = true;
     m_lastPressed = DIT;
@@ -31,6 +32,17 @@ void Keyer::onDah(bool pressed) {
     enqueue(DAH);
   } else {
     m_dahPressed = false;
+  }
+}
+
+void Keyer::onStraight(bool pressed) {
+  // Send direct
+  for (IKeyerCW *keyerCW : m_keyerCWList) {
+    if (pressed) {
+      keyerCW->startRunCw();
+    } else {
+      keyerCW->stopRunCw();
+    }
   }
 }
 

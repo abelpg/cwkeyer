@@ -38,7 +38,6 @@ Device *UsbDevice::connectDevice() {
 
   if (m_detectedDevice != nullptr && !m_connected) {
     m_threadTask = std::thread(&UsbDevice::taskRunnable, this);
-    m_threadTask.detach();
     Utils::sleepFor(500);
   }
 
@@ -51,8 +50,9 @@ Device *UsbDevice::connectDevice() {
 }
 
 Device *UsbDevice::disconnectDevice() {
-  if (m_detectedDevice && m_connected) {
+  if (m_connected) {
     m_connected = false;
+    m_threadTask.join();
   }
   return m_detectedDevice;
 }
@@ -242,6 +242,7 @@ template<typename T> std::string UsbDevice::intToHex(T i) {
 
 UsbDevice::~UsbDevice() {
   qDebug() << "UsbDevice destructor called";
+
   if (m_detectedDevice != nullptr) {
     delete m_detectedDevice;
   }
@@ -252,24 +253,29 @@ void UsbDevice::taskRunnable() {
   qDebug() << "Starting task runnable";
 
   if (m_detectedDevice != nullptr) {
+    int l_interface = m_detectedDevice->getInterface()->interfaceNum;
+    int l_packeSize = m_detectedDevice->getInterface()->packetSize;
+    int l_endpoint = m_detectedDevice->getInterface()->endpoint;
+
+
     libusb_device_handle *deviceHandle =
         libusb_open_device_with_vid_pid(m_context,
                                         m_detectedDevice->vendorId,
                                         m_detectedDevice->productId);
 
-    bool detached = attachDevice(deviceHandle, m_detectedDevice->getInterface()->interfaceNum);
+    bool detached = attachDevice(deviceHandle, l_interface);
 
-    int rs = libusb_claim_interface(deviceHandle, m_detectedDevice->getInterface()->interfaceNum);
+    int rs = libusb_claim_interface(deviceHandle, l_interface);
     if (rs == LIBUSB_SUCCESS) {
       libusb_transfer *transfer = libusb_alloc_transfer(0);
-      unsigned char    buffer[m_detectedDevice->getInterface()->packetSize];
+      unsigned char    buffer[l_packeSize];
 
       libusb_fill_interrupt_transfer(
           transfer,
           deviceHandle,
-          m_detectedDevice->getInterface()->endpoint,
+          l_endpoint,
           buffer,
-          m_detectedDevice->getInterface()->packetSize,
+          l_packeSize,
           cbInterrupt,
           this,
           1000
@@ -283,11 +289,11 @@ void UsbDevice::taskRunnable() {
       }
 
       if (detached) {
-        rs = libusb_attach_kernel_driver(deviceHandle, m_detectedDevice->getInterface()->interfaceNum);
+        rs = libusb_attach_kernel_driver(deviceHandle, l_interface);
         assert(rs == LIBUSB_SUCCESS);
-        qDebug() << "Reattached" << m_detectedDevice->getInterface()->interfaceNum << "to kernel driver";
+        qDebug() << "Reattached" << l_interface << "to kernel driver";
       }
-      libusb_release_interface(deviceHandle, m_detectedDevice->getInterface()->interfaceNum);
+      libusb_release_interface(deviceHandle, l_interface);
       libusb_close(deviceHandle);
     }
   }
