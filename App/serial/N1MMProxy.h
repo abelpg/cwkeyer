@@ -22,8 +22,9 @@ public:
 private:
   void dsrMonitorLoop();
 
-  IDitDah          *m_ditDah = nullptr;
-  std::thread       m_dsrThread;
+  IDitDah *m_ditDah   = nullptr;
+  std::thread m_dsrThread;
+  HANDLE      m_stopEvent = nullptr;  // manual-reset event to unblock the loop
 };
 
 #endif //CWKEYERAPP_N1MMPROXY_H

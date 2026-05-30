@@ -25,8 +25,8 @@ static constexpr const int    DEFAULT_FARNSWORTH  = 25;
 static constexpr const int    DEFAULT_SAMPLE_RATE = 44100;
 static constexpr const int    DEFAULT_FREQUENCY   = 650;
 static constexpr const double DEFAULT_AMPLITUDE   = 0.5;
-static constexpr const double DEFAULT_ATTACK      = 0.005;
-static constexpr const double DEFAULT_RELEASE     = 0.005;
+static constexpr const double DEFAULT_ATTACK      = 0.01;
+static constexpr const double DEFAULT_RELEASE     = 0.009;
 static constexpr const Mode   DEFAULT_MODE        = IAMBIC_B;
 
 
