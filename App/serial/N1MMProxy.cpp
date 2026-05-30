@@ -1,7 +1,7 @@
 #include "N1MMProxy.h"
 
 N1MMProxy::N1MMProxy(IDitDah *ditDah)
-    : SerialComm(false, false), m_ditDah(ditDah) {}
+    : SerialComm(false, false, true), m_ditDah(ditDah) {}
 
 N1MMProxy::~N1MMProxy() {
   stop();

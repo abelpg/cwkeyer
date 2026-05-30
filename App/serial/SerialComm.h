@@ -14,7 +14,7 @@ class SerialComm : public IKeyerCW {
 public:
   static constexpr int DEFAULT_BAUD_RATE = 9600;
 
-  explicit SerialComm(bool rtsControl = false, bool dtrControl = false);
+  explicit SerialComm(bool rtsControl = false, bool dtrControl = false,  bool overlapped = false);
   ~SerialComm();
 
   virtual bool start(const std::string &portName);
@@ -34,6 +34,7 @@ private:
   bool m_started    = false;
   bool m_rtsControl = false;
   bool m_dtrControl = false;
+  bool m_overlapped  = false;
 };
 
 #endif //CWKEYERAPP_SERIALCOMM_H

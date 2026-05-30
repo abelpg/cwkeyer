@@ -1,7 +1,10 @@
 #include "SerialComm.h"
 
-SerialComm::SerialComm(bool rtsControl, bool dtrControl)
-    : m_rtsControl(rtsControl), m_dtrControl(dtrControl) {}
+SerialComm::SerialComm(bool rtsControl, bool dtrControl, bool overlapped)
+    : m_rtsControl(rtsControl), m_dtrControl(dtrControl), m_overlapped(overlapped) {
+  // Nothing
+}
+
 
 SerialComm::~SerialComm() {
   stop();
@@ -20,7 +23,7 @@ bool SerialComm::start(const std::string &portName) {
         GENERIC_READ | GENERIC_WRITE,
         0, nullptr,
         OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
+        m_overlapped? FILE_FLAG_OVERLAPPED: FILE_ATTRIBUTE_NORMAL,
         nullptr
     );
 
