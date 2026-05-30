@@ -17,6 +17,7 @@
 #include "../keyboard/KeyboardListener.h"
 #include "../serial/SerialComm.h"
 #include "../serial/SerialPorts.h"
+#include "../serial/N1MMProxy.h"
 #include "../cwdecoder/CwDecoder.h"
 
 static constexpr const int    DEFAULT_WPM         = 25;
@@ -24,8 +25,8 @@ static constexpr const int    DEFAULT_FARNSWORTH  = 25;
 static constexpr const int    DEFAULT_SAMPLE_RATE = 44100;
 static constexpr const int    DEFAULT_FREQUENCY   = 650;
 static constexpr const double DEFAULT_AMPLITUDE   = 0.5;
-static constexpr const double DEFAULT_ATTACK      = 0.01;
-static constexpr const double DEFAULT_RELEASE     = 0.01;
+static constexpr const double DEFAULT_ATTACK      = 0.005;
+static constexpr const double DEFAULT_RELEASE     = 0.005;
 static constexpr const Mode   DEFAULT_MODE        = IAMBIC_B;
 
 
@@ -116,7 +117,7 @@ class GuiConnector : public QObject{
     UsbDevice        *m_device;
     Keyer            *m_keyer;
     SerialComm       *m_serialComm;
-    SerialComm       *m_serialCommIn;
+    N1MMProxy        *m_serialCommIn;
     Keyboard         *m_keyboard;
     KeyboardListener *m_keyboardListener;
     QApplication     *m_app;

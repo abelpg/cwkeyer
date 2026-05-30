@@ -13,8 +13,6 @@ bool SerialComm::start(const std::string &portName) {
       stop();
     }
 
-    // En Windows los puertos >= COM10 necesitan el prefijo \\.\
-
     std::string fullPort = "\\\\.\\" + portName;
 
     m_hSerial = CreateFileA(
@@ -57,6 +55,7 @@ bool SerialComm::start(const std::string &portName) {
       m_hSerial = INVALID_HANDLE_VALUE;
       return false;
     }
+
     EscapeCommFunction(m_hSerial, CLRDTR);
     std::cout << "SerialComm: port opened: " << portName << "\n";
     m_started = true;
@@ -76,10 +75,7 @@ void SerialComm::stop() {
 }
 
 void SerialComm::startRunCw() {
-  if (!m_started) {
-    return;
-  }
-
+  if (!m_started) return;
   if (m_hSerial == INVALID_HANDLE_VALUE) {
     std::cerr << "SerialComm::runCW: port closed\n";
     return;
@@ -88,24 +84,16 @@ void SerialComm::startRunCw() {
 }
 
 void SerialComm::stopRunCw() {
-  if (!m_started) {
-    return;
-  }
-
+  if (!m_started) return;
   if (m_hSerial == INVALID_HANDLE_VALUE) {
     std::cerr << "SerialComm::runCW: port closed\n";
     return;
   }
-
   EscapeCommFunction(m_hSerial, CLRDTR);
 }
 
-
 void SerialComm::runCW(KeyerItem item, int duration) {
-  if (!m_started) {
-    return;
-  }
-
+  if (!m_started) return;
   if (m_hSerial == INVALID_HANDLE_VALUE) {
     std::cerr << "SerialComm::runCW: port closed\n";
     return;

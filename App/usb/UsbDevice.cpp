@@ -51,7 +51,7 @@ Device *UsbDevice::connectDevice() {
 }
 
 Device *UsbDevice::disconnectDevice() {
-  if (m_detectedDevice && m_connected) {
+  if (m_connected) {
     m_connected = false;
   }
   return m_detectedDevice;

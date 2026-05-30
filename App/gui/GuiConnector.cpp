@@ -7,7 +7,6 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   // Create serial manager (needed before loadCommPorts)
   m_serialComm = new SerialComm();
 
-  m_serialCommIn = new SerialComm();
 
   loadAudioDevices();
   loadCommPorts();
@@ -24,8 +23,10 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   m_keyer = new Keyer(m_sound);
   m_keyer->addKeyerCW(m_serialComm);
   m_keyer->addKeyerCW(m_cwDecoder);
-
   resetKeyer();
+
+  // add N1MMProxy straight
+  m_serialCommIn = new N1MMProxy(m_keyer);
 
   // Zadig device with keyboard sending
   m_keyboard = new Keyboard(this);

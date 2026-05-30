@@ -381,6 +381,7 @@ Rectangle {
             height: 32
             model: guiConnector.commPorts
             currentIndex: guiConnector.selectedCommPortIn
+            onCurrentIndexChanged: guiConnector.selectedCommPortIn = currentIndex
         }
     }
 
