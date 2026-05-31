@@ -15,8 +15,6 @@ qt6_add_qml_module(CwKeyer
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
         "Constants.qml"
-        "EventListModel.qml"
-        "EventListSimulator.qml"
 )
 
 

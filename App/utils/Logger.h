@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <chrono>
+#include <thread>
 enum LogLevel {
   L_ERROR, L_WARNING, L_INFO, L_DEBUG
 };
@@ -12,7 +14,10 @@ enum LogLevel {
 class Logger {
 public:
   Logger(LogLevel logLevel = L_ERROR) {
-    m_buffer << logLevel << " :"
+    m_buffer << "[" << logLevel << "]"
+        << "[" << std::chrono::system_clock::now() <<"] "
+        << "[" << std::this_thread::get_id() << "]"
+        << " : "
         << std::string(
             logLevel > L_DEBUG
             ? (logLevel - L_DEBUG) * 4

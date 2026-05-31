@@ -1,5 +1,4 @@
 
-
 /*
 This is a UI file (.ui.qml) that is intended to be edited in Qt Design Studio only.
 It is supposed to be strictly declarative and only uses a subset of QML. If you edit
@@ -51,6 +50,10 @@ Rectangle {
         width: 82
         height: 70
         text: qsTr("Search\nZadig device")
+        ToolTip.delay: 1000
+        ToolTip.timeout: 5000
+        ToolTip.visible: hovered
+        ToolTip.text: qsTr("With device disconnected. Click on button, connect device and program detect it.")
         font.pointSize: 9
 
         Connections {
@@ -295,7 +298,11 @@ Rectangle {
             x: 359
             y: 8
             enabled: guiConnector.enabledZadig
-            text: qsTr("Send keyboard active")
+            text: qsTr("Send device signal to keyboard")
+            ToolTip.delay: 1000
+            ToolTip.timeout: 5000
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("On devices Zadig, use this to interactuate with morseinvaders, vband and other webs.")
             checked: guiConnector.enabledKeyboard
             onToggled: guiConnector.enabledKeyboard = checked
         }
@@ -316,6 +323,10 @@ Rectangle {
             x: 8
             y: 8
             text: qsTr("Comm CW Out")
+            ToolTip.delay: 1000
+            ToolTip.timeout: 5000
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("This port connect to CW port of Thetis or another radio sending signal as 9200 bauds in DTR")
             Connections {
                 target: btn_comm_out
                 function onClicked() {
@@ -353,6 +364,10 @@ Rectangle {
             x: 334
             y: 10
             text: qsTr("Comm CW In")
+            ToolTip.delay: 1000
+            ToolTip.timeout: 5000
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Receive CW signal listen to DSR. For example N1MM can connect to this port and program reproduce sound and send signal to CW Out")
             Connections {
                 target: btn_comm_in
                 function onClicked() {

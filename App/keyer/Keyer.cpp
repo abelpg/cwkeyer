@@ -12,15 +12,17 @@ void Keyer::initKeyer(int wpm, Mode mode) {
   m_dahTime   = IKeyerCW::calculateDuration(DAH, wpm);
   m_spaceTime = IKeyerCW::calculateDuration(INTER_ELEMENT_SPACE, wpm);
   m_mode      = mode;
+  m_mutex     = new std::mutex();
 }
 
 void Keyer::onDit(bool pressed) {
-
   if (pressed) {
     m_ditPressed  = true;
     m_lastPressed = DIT;
+    log(L_DEBUG) << "Enqueue DIT";
     enqueue(DIT);
   } else {
+    log(L_DEBUG) << "Stop DIT";
     m_ditPressed = false;
   }
 }
@@ -29,8 +31,10 @@ void Keyer::onDah(bool pressed) {
   if (pressed) {
     m_dahPressed  = true;
     m_lastPressed = DAH;
+    log(L_DEBUG) << "Enqueue DAH";
     enqueue(DAH);
   } else {
+    log(L_DEBUG) << "Stop DAH";
     m_dahPressed = false;
   }
 }
@@ -48,6 +52,8 @@ void Keyer::onStraight(bool pressed) {
 
 void Keyer::enqueue(KeyerItem item) {
   if (m_queue.size() < 1 || !m_pending) {
+    log(L_DEBUG) << "Push item" << item;
+    m_mutex->lock();
     m_queue.push(item);
     m_lastQueued = item;
     if (!m_pending) {
@@ -77,12 +83,15 @@ void Keyer::playDitDah(KeyerItem item) {
 
 void Keyer::keyerCall() {
   const bool squeeze = m_ditPressed && m_dahPressed;
-  m_pending = m_queue.size() > 0;
+  m_pending = !m_queue.empty();
+  m_mutex->unlock(); // Problema del squeeze, si se pulsa a la vez DIT y DAH provocaba doble encolamiento. Se usa mutex para evitar esto.
 
   if (m_pending) {
     m_lastSqueeze = squeeze;
+    m_mutex->lock();
     KeyerItem item = m_queue.front();
     m_queue.pop();
+    m_mutex->unlock();
     playDitDah(item);
 
     // enqueued by pending.

@@ -5,12 +5,15 @@
 
 #include "autogen/environment.h"
 #include "gui/GuiConnector.h"
+#include <windows.h>
 #include "utils/Logger.h"
 
 LogLevel loglevel = L_INFO;
 
 int main(int argc, char *argv[]) {
     set_qt_environment();
+
+    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
     QApplication app(argc, argv);
     QQmlApplicationEngine engine;

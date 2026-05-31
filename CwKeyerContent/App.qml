@@ -10,7 +10,7 @@ Window {
     minimumWidth: 640
     maximumHeight: 480
     maximumWidth: 640
-    title: "CwKeyer"
+    title: "CwKeyer - EA1FXG"
 
 
     function deviceUpdated(msg) {        
