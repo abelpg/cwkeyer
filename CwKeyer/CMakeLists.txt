@@ -6,6 +6,8 @@ set_source_files_properties(Constants.qml
         QT_QML_SINGLETON_TYPE true
 )
 
+
+
 qt_add_library(CwKeyer STATIC)
 qt6_add_qml_module(CwKeyer
     URI "CwKeyer"
