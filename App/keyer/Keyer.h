@@ -5,6 +5,7 @@
 #include <thread>
 #include <iostream>
 #include <list>
+#include <mutex>
 
 #include "../utils/Utils.h"
 #include "../utils/Logger.h"
@@ -51,6 +52,7 @@ class Keyer : public IDitDah {
     KeyerItem m_lastQueued;
     Mode      m_mode = IAMBIC_B;
 
+    std::mutex*            m_mutex;           // protects calling m_queue
     std::queue<KeyerItem>  m_queue;
     std::thread            m_threadKeyer;
     std::list<IKeyerCW *>  m_keyerCWList;

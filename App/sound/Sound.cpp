@@ -87,33 +87,37 @@ void Sound::stop() {
         m_pushTimer  = nullptr;
         m_sinkDevice = nullptr;
     }
-    if (m_sink && m_sink->state() != QAudio::StoppedState)
+
+    if (m_sink) {
+        m_sink->reset();   // vacía los buffers internos de Qt/hardware
+    }
+    if (m_sink && m_sink->state() != QAudio::StoppedState) {
         m_sink->stop();
+    }
     if (m_activeBuffer) {
         m_activeBuffer->close();
         delete m_activeBuffer;
         m_activeBuffer = nullptr;
     }
-    m_cacheSound.clear();
+    // No borramos m_cacheSound para reutilizar los buffers ya generados
 }
 
 void Sound::onPlayRequested(int duration) {
     if (!m_enabled) return;
-    // Si hay un CW continuo activo, detenerlo primero
-    if (m_cwGenerator && !m_cwGenerator->isStopped()) {
-        m_sink->stop();
-        m_cwGenerator->stopStream();
-    }
 
+    // stop() detiene el timer de push, para el sink y hace reset() de los buffers
     stop();
+
     if (!m_cacheSound.contains(duration)) {
         m_cacheSound[duration] = generateBuffer(duration / 1000.0);
     }
 
+    log(L_DEBUG) << "Sound::onPlayRequested() INIT" << duration;
     m_activeBuffer = new QBuffer();
     m_activeBuffer->setData(m_cacheSound[duration]);
     m_activeBuffer->open(QIODevice::ReadOnly);
     m_sink->start(m_activeBuffer);
+    log(L_DEBUG) << "Sound::onPlayRequested() END" << duration;
 }
 
 void Sound::onStartCwRequested() {
