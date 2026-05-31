@@ -16,35 +16,23 @@ void Keyer::initKeyer(int wpm, Mode mode) {
 }
 
 void Keyer::onDit(bool pressed) {
-  auto startTime = std::chrono::steady_clock::now();
   if (pressed) {
     m_ditPressed  = true;
     m_lastPressed = DIT;
-    log(L_DEBUG) << "Dit pressed";
     enqueue(DIT);
   } else {
-    log(L_DEBUG) << "Dit released";
     m_ditPressed = false;
   }
-  auto endTime = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration<double, std::milli>(endTime - startTime); // or std::micro, std::giga, etc
-  log(L_DEBUG) << "onDah " << pressed << " " << duration.count() << " milliseconds.\n";
 }
 
 void Keyer::onDah(bool pressed) {
-  auto startTime = std::chrono::steady_clock::now();
   if (pressed) {
     m_dahPressed  = true;
     m_lastPressed = DAH;
-    log(L_DEBUG) << "Dah pressed";
     enqueue(DAH);
   } else {
-    log(L_DEBUG) << "Dah released";
     m_dahPressed = false;
   }
-  auto endTime = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration<double, std::milli>(endTime - startTime); // or std::micro, std::giga, etc
-  log(L_DEBUG) << "onDah " << pressed << " " << duration.count() << " milliseconds.\n";
 }
 
 void Keyer::onStraight(bool pressed) {
@@ -61,7 +49,7 @@ void Keyer::onStraight(bool pressed) {
 void Keyer::enqueue(KeyerItem item) {
   m_mutex->lock();
   if (m_queue.size() < 1 || !m_pending) {
-    log(L_DEBUG) << "enqueue item" << item  <<" qsize: " << m_queue.size() << " pending " << m_pending;
+
     m_queue.push(item);
     m_lastQueued = item;
     if (!m_pending) {
