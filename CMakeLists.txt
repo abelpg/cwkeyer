@@ -77,7 +77,7 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
 #endif()
 
 # ── CPack / Installer ──────────────────────────────────────────────────────────
-set(CPACK_PACKAGE_NAME              "CwKeyer - EA1FXG")
+set(CPACK_PACKAGE_NAME              "CwKeyer")
 set(CPACK_PACKAGE_VENDOR            "EA1FXG")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CW Keyer Application")
 set(CPACK_PACKAGE_VERSION           "1.2.1")
