@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <functional>
-
+#include <thread>
 #include "Device.h"
 #include "../utils/Utils.h"
 #include "../configuration/Configuration.h"
