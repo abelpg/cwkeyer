@@ -28,11 +28,13 @@ qt_standard_project_setup()
 
 if(WIN32)
     list(APPEND app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/CwKeyer.rc")
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE true)
-    endif()
 endif()
-qt_add_executable(${CMAKE_PROJECT_NAME} ${app_icon_resource_windows})
+
+if(WIN32 AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"))
+    qt_add_executable(${CMAKE_PROJECT_NAME} WIN32 ${app_icon_resource_windows})
+else()
+    qt_add_executable(${CMAKE_PROJECT_NAME} ${app_icon_resource_windows})
+endif()
 
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
@@ -79,7 +81,7 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
 set(CPACK_PACKAGE_NAME              "CwKeyer")
 set(CPACK_PACKAGE_VENDOR            "EA1FXG")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CW Keyer Application")
-set(CPACK_PACKAGE_VERSION           "1.2.0")
+set(CPACK_PACKAGE_VERSION           "1.2.1")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "CwKeyer")
 
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)   # crea carpeta raíz dentro del ZIP

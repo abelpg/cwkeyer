@@ -328,17 +328,13 @@ void UsbDevice::cbInterrupt(libusb_transfer *transfer) {
 
 void UsbDevice::sendDah(bool pressed) {
   for (IDitDah *ditDah : m_ditDahList) {
-    std::thread([ditDah, pressed]() {
-      ditDah->onDah(pressed);
-    }).detach();
+    ditDah->onDah(pressed);
   }
 }
 
 void UsbDevice::sendDit(bool pressed) {
   for (IDitDah *ditDah : m_ditDahList) {
-    std::thread([ditDah, pressed]() {
-      ditDah->onDit(pressed);
-    }).detach();
+    ditDah->onDit(pressed);
   }
 }
 
