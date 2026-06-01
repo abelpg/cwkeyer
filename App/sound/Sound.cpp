@@ -87,14 +87,19 @@ void Sound::stop() {
         m_pushTimer  = nullptr;
         m_sinkDevice = nullptr;
     }
-    if (m_sink && m_sink->state() != QAudio::StoppedState)
+
+    if (m_sink) {
+        m_sink->reset();   // vacía los buffers internos de Qt/hardware
+    }
+    if (m_sink && m_sink->state() != QAudio::StoppedState) {
         m_sink->stop();
+    }
     if (m_activeBuffer) {
         m_activeBuffer->close();
         delete m_activeBuffer;
         m_activeBuffer = nullptr;
     }
-    m_cacheSound.clear();
+    // No borramos m_cacheSound para reutilizar los buffers ya generados
 }
 
 void Sound::onPlayRequested(int duration) {
