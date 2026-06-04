@@ -1,7 +1,8 @@
 #ifndef CWKEYERAPP_UTILS_H
 #define CWKEYERAPP_UTILS_H
 
-#include <unistd.h>
+#include <chrono>
+#include <thread>
 #include <set>
 
 class Utils {

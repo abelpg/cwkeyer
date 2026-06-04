@@ -22,9 +22,14 @@ public:
 private:
   void dsrMonitorLoop();
 
-  IDitDah *m_ditDah   = nullptr;
+  IDitDah    *m_ditDah   = nullptr;
   std::thread m_dsrThread;
+
+#ifdef _WIN32
   HANDLE      m_stopEvent = nullptr;  // manual-reset event to unblock the loop
+#else
+  int         m_stopPipe[2] = {-1, -1}; // pipe: write end signals stop
+#endif
 };
 
 #endif //CWKEYERAPP_N1MMPROXY_H

@@ -107,11 +107,13 @@ endif()
 
 
 
-# Instalar hidapi.dll junto al ejecutable
+# Instalar hidapi.dll junto al ejecutable (solo Windows)
+if(WIN32)
 install(FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/App/usb/libusb/libusb-1.0.dll"
         DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+endif()
 
 # Instalar DLLs de Qt (usando windeployqt o instalando manualmente)
 # Opción automática con Qt helper (Qt 6.3+):

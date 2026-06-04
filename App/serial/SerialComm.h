@@ -6,7 +6,11 @@
 #include <thread>
 #include <iostream>
 #include <atomic>
-#include <windows.h>
+#ifdef _WIN32
+#  include <windows.h>
+#else
+#  include <termios.h>
+#endif
 #include "../utils/IKeyerCW.h"
 #include "../utils/Logger.h"
 
@@ -15,7 +19,7 @@ class SerialComm : public IKeyerCW {
 public:
   static constexpr int DEFAULT_BAUD_RATE = 9600;
 
-  explicit SerialComm(bool rtsControl = false, bool dtrControl = false,  bool overlapped = false);
+  explicit SerialComm(bool rtsControl = false, bool dtrControl = false, bool overlapped = false);
   ~SerialComm();
 
   virtual bool start(const std::string &portName);
@@ -28,14 +32,18 @@ public:
   void stopRunCw() override;
 
 protected:
-  HANDLE            m_hSerial    = INVALID_HANDLE_VALUE;
+#ifdef _WIN32
+  HANDLE            m_hSerial = INVALID_HANDLE_VALUE;
+#else
+  int               m_hSerial = -1;
+#endif
   std::atomic<bool> m_running{false};
 
 private:
   bool m_started    = false;
   bool m_rtsControl = false;
   bool m_dtrControl = false;
-  bool m_overlapped  = false;
+  bool m_overlapped = false;
 };
 
 #endif //CWKEYERAPP_SERIALCOMM_H
