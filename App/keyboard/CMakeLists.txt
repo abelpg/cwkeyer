@@ -16,6 +16,7 @@ endif()
 add_library(LibKeyboard
         Keyboard.h
         KeyboardListener.h
+        KeyboardListener.cpp
         ${KEYBOARD_IMPL}
 )
 
