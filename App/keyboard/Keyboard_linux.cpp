@@ -1,33 +1,18 @@
 #include "Keyboard.h"
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Platform-specific key injection helpers
-// ─────────────────────────────────────────────────────────────────────────────
-#ifdef _WIN32
-
-static void sendKey(WORD vk, bool pressed) {
-  INPUT input{};
-  input.type           = INPUT_KEYBOARD;
-  input.ki.wVk         = vk;
-  input.ki.wScan       = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
-  input.ki.dwFlags     = KEYEVENTF_SCANCODE;
-  if (!pressed) input.ki.dwFlags |= KEYEVENTF_KEYUP;
-  SendInput(1, &input, sizeof(INPUT));
-}
-
-#else // Linux — uinput virtual keyboard
-
 #include <linux/uinput.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
 #include <sys/ioctl.h>
+#include <time.h>
 
-// Linux key codes matching the Windows VK roles:
-//   DIT  → KEY_SEMICOLON  (VK_OEM_1)
-//   DAH  → KEY_EQUAL      (VK_OEM_PLUS)
-static constexpr int LINUX_KEY_DIT = KEY_SEMICOLON;
-static constexpr int LINUX_KEY_DAH = KEY_EQUAL;
+// ── Linux key injection via uinput virtual keyboard ──────────────────────────
+// Requires access to /dev/uinput:
+//   sudo usermod -aG uinput $USER
+//   or udev rule: KERNEL=="uinput", GROUP="uinput", MODE="0660"
+
+static constexpr int LINUX_KEY_DIT = KEY_SEMICOLON; // matches VK_OEM_1
+static constexpr int LINUX_KEY_DAH = KEY_EQUAL;      // matches VK_OEM_PLUS
 
 static int g_uinputFd = -1;
 
@@ -58,7 +43,7 @@ static void setupUInput() {
   ioctl(g_uinputFd, UI_DEV_CREATE);
 
   // Give the kernel a moment to register the device
-  struct timespec ts{ 0, 80'000'000L }; // 80 ms
+  struct timespec ts{ 0, 80'000'000L };
   nanosleep(&ts, nullptr);
 }
 
@@ -76,24 +61,16 @@ static void sendKey(int keyCode, bool pressed) {
   uinputEmit(g_uinputFd, EV_SYN, SYN_REPORT, 0);
 }
 
-#endif // platform
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Keyboard class
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Keyboard class ───────────────────────────────────────────────────────────
 
 Keyboard::Keyboard(QObject *parent) : QObject(parent) {
-#ifndef _WIN32
   setupUInput();
-#endif
   connect(this, &Keyboard::ditChanged, this, &Keyboard::pressDit, Qt::QueuedConnection);
   connect(this, &Keyboard::dahChanged, this, &Keyboard::pressDah, Qt::QueuedConnection);
 }
 
 Keyboard::~Keyboard() {
-#ifndef _WIN32
   teardownUInput();
-#endif
 }
 
 void Keyboard::onDit(bool pressed) {
@@ -104,26 +81,17 @@ void Keyboard::onDah(bool pressed) {
   if (m_enabled) emit dahChanged(pressed);
 }
 
-void Keyboard::onStraight(bool pressed) {
-  // do nothing
-}
+void Keyboard::onStraight(bool /*pressed*/) {}
 
 void Keyboard::pressDit(bool pressed) {
-#ifdef _WIN32
-  sendKey(VK_OEM_1, pressed);
-#else
   sendKey(LINUX_KEY_DIT, pressed);
-#endif
 }
 
 void Keyboard::pressDah(bool pressed) {
-#ifdef _WIN32
-  sendKey(VK_OEM_PLUS, pressed);
-#else
   sendKey(LINUX_KEY_DAH, pressed);
-#endif
 }
 
 void Keyboard::setEnabled(bool enabled) {
   m_enabled = enabled;
 }
+

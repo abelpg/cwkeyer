@@ -1,10 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
 
+# ── Platform-specific source selection ───────────────────────────────────────
+if(WIN32)
+    set(KEYBOARD_IMPL
+            Keyboard_win.cpp
+            KeyboardListener_win.cpp
+    )
+else()
+    set(KEYBOARD_IMPL
+            Keyboard_linux.cpp
+            KeyboardListener_linux.cpp
+    )
+endif()
+
 add_library(LibKeyboard
-        Keyboard.cpp
         Keyboard.h
-        KeyboardListener.cpp
         KeyboardListener.h
+        ${KEYBOARD_IMPL}
 )
 
 target_include_directories(LibKeyboard
@@ -16,8 +28,6 @@ target_link_libraries(LibKeyboard PRIVATE
         Qt${QT_VERSION_MAJOR}::Core
 )
 
-# On Linux, uinput and evdev need no extra libs (kernel headers only),
-# but we need pthreads (usually pulled in via Qt already).
 if(UNIX AND NOT APPLE)
     target_link_libraries(LibKeyboard PRIVATE pthread)
 endif()

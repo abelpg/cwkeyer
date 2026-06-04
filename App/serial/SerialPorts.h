@@ -3,10 +3,6 @@
 
 #include <vector>
 #include <string>
-#include <iostream>
-#ifdef _WIN32
-#  include <windows.h>
-#endif
 #include "../utils/Logger.h"
 
 class SerialPorts {
