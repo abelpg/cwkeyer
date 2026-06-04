@@ -16,8 +16,6 @@
 #include "../utils/IDitDah.h"
 #include "../utils/Logger.h"
 
-typedef std::function<void (boolean)> boolean_callback;
-
 enum ClickValues {
   CLICK_LEFT  = 0x01,
   CLICK_RIGHT = 0x02,
