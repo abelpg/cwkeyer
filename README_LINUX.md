@@ -106,6 +106,9 @@ cmake --build build-linux --parallel
 mkdir -p AppDir/usr/bin
 cp build-linux/CwKeyerApp AppDir/usr/bin/
 
+# Eliminar plugins SQL no necesarios
+#rm -f AppDir/usr/plugins/sqldrivers/libqsqlmimer.so
+#rm -rf AppDir/usr/plugins/sqldrivers/
 
 export QMAKE=/opt/Qt/6.11.1/gcc_64/bin/qmake
 export QML_SOURCES_PATHS=$PWD  # para que incluya los QML
@@ -116,7 +119,7 @@ export EXCLUDE_LIBS="libqsqlmimer.so"
     --desktop-file CwKeyer.desktop \
     --icon-file CwKeyer.png \
     --plugin qt \
-    --output appimage
+    --output appimage \
     --exclude-library "libqsqlmimer*" \
     --exclude-library "libqsqlodbc*" \
     --exclude-library "libqsqlpsql*" \
