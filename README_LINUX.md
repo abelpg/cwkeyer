@@ -36,7 +36,7 @@ Select: **Qt 6.11 → Desktop gcc 64-bit** and add modules **Qt Multimedia** and
 **Option B — aqtinstall (no Qt account required)**
 ```bash
 pip install aqtinstall
-aqt install-qt linux desktop 6.11.0 gcc_64 \
+aqt install-qt linux desktop 6.11.1 gcc_64 \
     -m qtmultimedia qtquick3d
 ```
 
@@ -50,7 +50,7 @@ cd ~/CwKeyer
 # Configure — adjust the Qt path to match your installation
 cmake -B build-linux \
       -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_PREFIX_PATH=/opt/Qt/6.11.0/gcc_64 \
+      -DCMAKE_PREFIX_PATH=/opt/Qt/6.11.1/gcc_64 \
       -G Ninja
 
 # Build
@@ -90,6 +90,70 @@ newgrp input
 ```
 
 ---
+
+## 6. Optional package dependencies
+```bash
+wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+chmod +x linuxdeploy*.AppImage
+
+cmake -B build-linux \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_PREFIX_PATH=/opt/Qt/6.11.1/gcc_64 \
+      -G Ninja
+cmake --build build-linux --parallel
+
+mkdir -p AppDir/usr/bin
+cp build-linux/CwKeyerApp AppDir/usr/bin/
+
+
+export QMAKE=/opt/Qt/6.11.1/gcc_64/bin/qmake
+export QML_SOURCES_PATHS=$PWD  # para que incluya los QML
+./linuxdeploy-x86_64.AppImage \
+    --appdir AppDir \
+    --executable AppDir/usr/bin/CwKeyerApp \
+    --desktop-file CwKeyer.desktop \
+    --icon-file CwKeyer.png \
+    --plugin qt \
+    --output appimage
+
+```
+
+## 6. Run package
+```bash
+
+apt install \
+    libfontconfig1-dev \
+    libfreetype-dev \
+    libgtk-3-dev \
+    libx11-dev \
+    libx11-xcb-dev \
+    libxcb-cursor-dev \
+    libxcb-glx0-dev \
+    libxcb-icccm4-dev \
+    libxcb-image0-dev \
+    libxcb-keysyms1-dev \
+    libxcb-randr0-dev \
+    libxcb-render-util0-dev \
+    libxcb-shape0-dev \
+    libxcb-shm0-dev \
+    libxcb-sync-dev \
+    libxcb-util-dev \
+    libxcb-xfixes0-dev \
+    libxcb-xkb-dev \
+    libxcb1-dev \
+    libxext-dev \
+    libxfixes-dev \
+    libxi-dev \
+    libxkbcommon-dev \
+    libxkbcommon-x11-dev \
+    libxrender-dev \
+    ffmpeg \
+    libopengl0 \
+    libxcb-cursor0 \
+    libxcb-cursor-dev \
+    qml6-module-qtquick-controls
+```
 
 ## Dependency Summary
 

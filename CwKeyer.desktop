@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=CwKeyer
+Comment=CW Keyer for ham radio operators
+Exec=CwKeyerApp
+Icon=CwKeyer
+Categories=HamRadio;Utility;
+Terminal=false
+StartupNotify=true
