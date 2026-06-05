@@ -109,6 +109,7 @@ cp build-linux/CwKeyerApp AppDir/usr/bin/
 
 export QMAKE=/opt/Qt/6.11.1/gcc_64/bin/qmake
 export QML_SOURCES_PATHS=$PWD  # para que incluya los QML
+export EXCLUDE_LIBS="libqsqlmimer.so"
 ./linuxdeploy-x86_64.AppImage \
     --appdir AppDir \
     --executable AppDir/usr/bin/CwKeyerApp \
@@ -116,6 +117,10 @@ export QML_SOURCES_PATHS=$PWD  # para que incluya los QML
     --icon-file CwKeyer.png \
     --plugin qt \
     --output appimage
+    --exclude-library "libqsqlmimer*" \
+    --exclude-library "libqsqlodbc*" \
+    --exclude-library "libqsqlpsql*" \
+    --exclude-library "libqsqlite*"
 
 ```
 
