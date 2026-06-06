@@ -37,7 +37,6 @@ class KeyboardListener  {
   static DWORD m_dit_key;
 #else
   std::thread m_eventThread;
-  std::atomic<bool> m_running{false};
 #endif
 
   static IDitDah *s_ditDah;
