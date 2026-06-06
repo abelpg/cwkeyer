@@ -1,10 +1,18 @@
-#include <cmath>
+
 
 #include "KeyboardListener.h"
 
 
+extern "C" {
+  #include <X11/Xlib.h>
+  #include <X11/extensions/record.h>
+}
 
 #define CHECK(EVENT) if (*pDatum == EVENT) std::cout << #EVENT
+::Display*       m_pDisplay = nullptr;
+::XRecordRange*  m_pRange = nullptr;
+::XRecordContext m_context = 0;
+
 
 void Handle(XPointer, XRecordInterceptData* pRecord) {
   using XRecordDatum = char;
@@ -21,6 +29,8 @@ void Handle(XPointer, XRecordInterceptData* pRecord) {
 }
 
 void KeyboardListener::hook() {
+
+  log(L_DEBUG) << "KeyboardListener::hook() called";
   if (m_pDisplay != nullptr) {
     return;
   }
@@ -50,9 +60,12 @@ void KeyboardListener::hook() {
 
   ::XRecordEnableContextAsync(m_pDisplay, m_context, Handle, nullptr); // use with/without `...Async()`
 
-  // ::XRecordProcessReplies(m_pDisplay);
+  log(L_DEBUG) << "KeyboardListener::hook() called 2";
+
+  ::XRecordProcessReplies(m_pDisplay);
   ::XFlush(m_pDisplay);
-  ::XSync(m_pDisplay, true);
+  //::XSync(m_pDisplay, true);
+  log(L_DEBUG) << "KeyboardListener::hook() called end";
 }
 
 void KeyboardListener::unhook() {

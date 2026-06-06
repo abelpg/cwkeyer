@@ -10,11 +10,7 @@
 #include "../Utils/Logger.h"
 
 #ifdef _WIN32
-#  include <windows.h>
-#else
-// add in .pro file "linux: QT += x11extras" and "linux: LIBS += -lX11 -lXtst"
-#include <X11/Xlib.h>
-#include <X11/extensions/record.h>
+  #include <windows.h>
 #endif
 
 class KeyboardListener  {
@@ -35,10 +31,6 @@ class KeyboardListener  {
   HHOOK m_hook = nullptr;
   static DWORD m_dah_key;
   static DWORD m_dit_key;
-#else
-  Display*       m_pDisplay = nullptr;
-  XRecordRange*  m_pRange = nullptr;
-  XRecordContext m_context = 0;
 #endif
 
   static IDitDah *s_ditDah;

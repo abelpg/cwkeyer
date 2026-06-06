@@ -15,6 +15,7 @@ KeyboardListener::~KeyboardListener() {
 void KeyboardListener::setEnabled(bool enabled) {
   if (m_enabled == enabled) return;
   m_enabled = enabled;
+  log(L_DEBUG) << " KeyboardListener :" << (enabled?"Enabled":"Disabled");
   if (m_enabled) {
     s_ditPressed = false;
     s_dahPressed = false;
