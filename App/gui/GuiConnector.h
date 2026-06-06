@@ -91,7 +91,6 @@ class GuiConnector : public QObject{
     void setEnabledCwDecoder(bool enabled);
     void setSelectedCommPort(int index);
     void setSelectedCommPortIn(int index);
-    bool eventFilter(QObject *object, QEvent *event) override;
 
   signals:
     void textCwDecoderUpdated(QVariant varData);

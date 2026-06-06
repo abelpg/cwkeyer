@@ -17,7 +17,7 @@
   #include <windows.h>
 #endif
 
-class KeyboardListener : public QAbstractNativeEventFilter {
+class KeyboardListener  {
 
   public:
     explicit KeyboardListener(IDitDah *ditDah);
@@ -25,7 +25,6 @@ class KeyboardListener : public QAbstractNativeEventFilter {
 
     void setEnabled(bool enabled);
     bool isEnabled() const;
-    bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) override;
 
   private:
     void hook();
