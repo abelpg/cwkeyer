@@ -28,3 +28,20 @@ void KeyboardListener::setEnabled(bool enabled) {
 bool KeyboardListener::isEnabled() const {
   return m_enabled;
 }
+
+
+void KeyboardListener::setDahPressed(bool pressed) {
+  if (pressed != s_dahPressed) {
+    //s_ditDah->onDah(pressed);
+    log(L_DEBUG) << "Dah " << pressed;
+    s_dahPressed = pressed;
+  }
+}
+
+void KeyboardListener::setDitPressed(bool pressed) {
+  if (pressed != s_ditPressed) {
+    //s_ditDah->onDit(pressed);
+    log(L_DEBUG) << "Dit " << pressed;
+    s_ditPressed = pressed;
+  }
+}

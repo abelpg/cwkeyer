@@ -26,18 +26,16 @@ LRESULT CALLBACK KeyboardListener::lowLevelKeyboard(int nCode, WPARAM wParam, LP
     switch (kb->vkCode) {
       case VK_OEM_PLUS:   // +/=
       case VK_RCONTROL:
-        if (pressed != s_dahPressed && (m_dah_key == 0 || kb->vkCode == m_dah_key)) {
+        if (m_dah_key == 0 || kb->vkCode == m_dah_key) {
           m_dah_key = kb->vkCode;
-          s_ditDah->onDah(pressed);
-          s_dahPressed = pressed;
+          setDahPressed(pressed);
         }
         break;
       case VK_LCONTROL:
       case VK_OEM_1:      // ;/:
-        if (pressed != s_ditPressed && (m_dit_key == 0 || kb->vkCode == m_dit_key)) {
+        if (m_dit_key == 0 || kb->vkCode == m_dit_key) {
           m_dit_key = kb->vkCode;
-          s_ditDah->onDit(pressed);
-          s_ditPressed = pressed;
+          setDitPressed(pressed);
         }
         break;
       default:

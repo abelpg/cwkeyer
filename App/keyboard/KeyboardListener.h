@@ -25,10 +25,15 @@ class KeyboardListener  {
 
     void setEnabled(bool enabled);
     bool isEnabled() const;
+    static void setDahPressed(bool pressed);
+    static void setDitPressed(bool pressed);
+#ifndef _WIN32
+  static std::atomic<bool> s_ditReleaseCancelled;
+  static std::atomic<bool> s_dahReleaseCancelled;
+  static constexpr int RELEASE_DELAY_MS = 20;
+  std::atomic<bool> m_running{false};
+#endif
 
-    static IDitDah *s_ditDah;
-    static bool     s_ditPressed;
-    static bool     s_dahPressed;
   private:
     void hook();
     void unhook();
@@ -42,7 +47,9 @@ class KeyboardListener  {
   std::thread m_eventThread;
 #endif
 
-
+  static IDitDah *s_ditDah;
+  static bool     s_ditPressed;
+  static bool     s_dahPressed;
   bool m_enabled = false;
 };
 
