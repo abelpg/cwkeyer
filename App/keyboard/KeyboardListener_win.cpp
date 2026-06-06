@@ -8,7 +8,7 @@ DWORD KeyboardListener::m_dit_key = 0x00;
 
 void KeyboardListener::hook() {
   if (!m_hook)
-    m_hook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, nullptr, 0);
+    m_hook = SetWindowsHookEx(WH_KEYBOARD_LL, lowLevelKeyboard, nullptr, 0);
 }
 
 void KeyboardListener::unhook() {
@@ -18,7 +18,7 @@ void KeyboardListener::unhook() {
   }
 }
 
-LRESULT CALLBACK KeyboardListener::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK KeyboardListener::lowLevelKeyboard(int nCode, WPARAM wParam, LPARAM lParam) {
   if (nCode == HC_ACTION && s_ditDah) {
     auto *kb      = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
     bool  pressed = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);

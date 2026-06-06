@@ -1,35 +1,30 @@
-
-
 #include "KeyboardListener.h"
 
-
-extern "C" {
-  #include <X11/Xlib.h>
-  #include <X11/extensions/record.h>
-}
+#include <X11/Xlib.h>
+#include <X11/extensions/record.h>
+#include <chrono>
 
 #define CHECK(EVENT) if (*pDatum == EVENT) std::cout << #EVENT
-::Display*       m_pDisplay = nullptr;
-::XRecordRange*  m_pRange = nullptr;
+
+::Display* m_pDisplay = nullptr;
+::XRecordRange* m_pRange = nullptr;
 ::XRecordContext m_context = 0;
 
-
-void Handle(XPointer, XRecordInterceptData* pRecord) {
+void handle_event(XPointer, XRecordInterceptData* pRecord) {
   using XRecordDatum = char;
 
-  log(L_DEBUG) << pRecord->category << "---" << pRecord->data;
-  if (auto* const pDatum = reinterpret_cast<XRecordDatum*>(pRecord->data)) {
-    CHECK(KeyPress);
-    else CHECK(KeyRelease);
-    else CHECK(ButtonPress);
-    else CHECK(ButtonRelease);
-  }
+  log(L_DEBUG) << "handle " << pRecord->category << "---" << pRecord->data;
+  // if (auto* const pDatum = reinterpret_cast<XRecordDatum*>(pRecord->data)) {
+  //   CHECK(KeyPress);
+  //   else CHECK(KeyRelease);
+  //   else CHECK(ButtonPress);
+  //   else CHECK(ButtonRelease);
+  // }
 
-  ::XRecordFreeData(pRecord);
+  //::XRecordFreeData(pRecord);
 }
 
 void KeyboardListener::hook() {
-
   log(L_DEBUG) << "KeyboardListener::hook() called";
   if (m_pDisplay != nullptr) {
     return;
@@ -58,11 +53,8 @@ void KeyboardListener::hook() {
     return;
   }
 
-  ::XRecordEnableContextAsync(m_pDisplay, m_context, Handle, nullptr); // use with/without `...Async()`
-
-  log(L_DEBUG) << "KeyboardListener::hook() called 2";
-
-  ::XRecordProcessReplies(m_pDisplay);
+  ::XRecordEnableContextAsync(m_pDisplay, m_context, handle_event, nullptr); // use with/without `...Async()`
+  //::XRecordProcessReplies(m_pDisplay);
   ::XFlush(m_pDisplay);
   //::XSync(m_pDisplay, true);
   log(L_DEBUG) << "KeyboardListener::hook() called end";
@@ -71,8 +63,18 @@ void KeyboardListener::hook() {
 void KeyboardListener::unhook() {
   log(L_DEBUG) << "KeyboardListener::unhook() called";
 
+  m_running = false;
+
   if (m_pDisplay != nullptr && m_context != 0) {
     ::XRecordDisableContext(m_pDisplay, m_context);
+    ::XFlush(m_pDisplay);
+  }
+
+  if (m_eventThread.joinable()) {
+    m_eventThread.join();
+  }
+
+  if (m_pDisplay != nullptr && m_context != 0) {
     ::XRecordFreeContext(m_pDisplay, m_context);
     m_context = 0;
   }

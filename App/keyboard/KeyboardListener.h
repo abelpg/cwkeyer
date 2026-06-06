@@ -27,10 +27,13 @@ class KeyboardListener  {
     void unhook();
 
 #ifdef _WIN32
-  static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+  static LRESULT CALLBACK lowLevelKeyboard(int nCode, WPARAM wParam, LPARAM lParam);
   HHOOK m_hook = nullptr;
   static DWORD m_dah_key;
   static DWORD m_dit_key;
+#else
+  std::thread m_eventThread;
+  std::atomic<bool> m_running{false};
 #endif
 
   static IDitDah *s_ditDah;
