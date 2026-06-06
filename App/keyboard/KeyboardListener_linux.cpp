@@ -6,9 +6,9 @@
 
 #define CHECK(EVENT) if (*pDatum == EVENT) std::cout << #EVENT
 
-::Display*       m_pDisplay = nullptr;
-::XRecordRange*  m_pRange = nullptr;
-::XRecordContext m_context = 0;
+Display* m_controlDisplay = nullptr;
+XRecordRange* m_pRange = nullptr;
+XRecordContext m_context = 0;
 
 void handle_event(XPointer, XRecordInterceptData* pRecord) {
   using XRecordDatum = char;
@@ -21,42 +21,32 @@ void handle_event(XPointer, XRecordInterceptData* pRecord) {
   //   else CHECK(ButtonRelease);
   // }
 
-  //::XRecordFreeData(pRecord);
+  ::XRecordFreeData(pRecord);
 }
 
 void KeyboardListener::hook() {
   log(L_DEBUG) << "KeyboardListener::hook() called";
-  if (m_pDisplay != nullptr) {
-    return;
-  }
+  if (m_context != 0) return;
 
-  m_pDisplay = ::XOpenDisplay(nullptr);
-  if (m_pDisplay == nullptr) {
-    return;
-  }
+  m_controlDisplay = XOpenDisplay(nullptr);
+  if (!m_controlDisplay) { /* cleanup + return */ }
 
   XRecordClientSpec clients = XRecordAllClients;
-  m_pRange = ::XRecordAllocRange();
-  if (m_pRange == nullptr) {
-    ::XCloseDisplay(m_pDisplay);
-    m_pDisplay = nullptr;
-    return;
-  }
+  m_pRange = XRecordAllocRange();
+  if (!m_pRange) { /* cleanup + return */ }
 
-  m_pRange->device_events = XRecordRange8{KeyPress, ButtonRelease};
-  m_context = ::XRecordCreateContext(m_pDisplay, 0, &clients, 1, &m_pRange, 1);
-  if (m_context == 0) {
-    ::XFree(m_pRange);
-    m_pRange = nullptr;
-    ::XCloseDisplay(m_pDisplay);
-    m_pDisplay = nullptr;
-    return;
-  }
+  m_pRange->device_events.first = KeyPress;
+  m_pRange->device_events.last  = KeyRelease; // o ButtonRelease si quieres mouse
+  m_context = XRecordCreateContext(m_controlDisplay, 0, &clients, 1, &m_pRange, 1);
+  if (m_context == 0) { /* cleanup + return */ }
 
-  ::XRecordEnableContextAsync(m_pDisplay, m_context, handle_event, nullptr); // use with/without `...Async()`
-  //::XRecordProcessReplies(m_pDisplay);
-  ::XFlush(m_pDisplay);
-  //::XSync(m_pDisplay, true);
+  m_running = true;
+  m_eventThread = std::thread([this]() {
+    // Bloquea y llama handle_event repetidamente
+    ::XRecordEnableContext(m_controlDisplay, m_context, handle_event, nullptr);
+    // Sale cuando deshabilitas el contexto
+  });
+
   log(L_DEBUG) << "KeyboardListener::hook() called end";
 }
 
@@ -65,27 +55,27 @@ void KeyboardListener::unhook() {
 
   m_running = false;
 
-  if (m_pDisplay != nullptr && m_context != 0) {
-    ::XRecordDisableContext(m_pDisplay, m_context);
-    ::XFlush(m_pDisplay);
+  if (m_controlDisplay && m_context) {
+    ::XRecordDisableContext(m_controlDisplay, m_context);
+    ::XFlush(m_controlDisplay);
   }
 
   if (m_eventThread.joinable()) {
     m_eventThread.join();
   }
 
-  if (m_pDisplay != nullptr && m_context != 0) {
-    ::XRecordFreeContext(m_pDisplay, m_context);
+  if (m_controlDisplay && m_context) {
+    ::XRecordFreeContext(m_controlDisplay, m_context);
     m_context = 0;
   }
 
-  if (m_pRange != nullptr) {
+  if (m_pRange) {
     ::XFree(m_pRange);
     m_pRange = nullptr;
   }
 
-  if (m_pDisplay != nullptr) {
-    ::XCloseDisplay(m_pDisplay);
-    m_pDisplay = nullptr;
+  if (m_controlDisplay) {
+    ::XCloseDisplay(m_controlDisplay);
+    m_controlDisplay = nullptr;
   }
 }
