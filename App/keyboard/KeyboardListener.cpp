@@ -12,6 +12,11 @@ KeyboardListener::~KeyboardListener() {
   unhook();
 }
 
+bool KeyboardListener:: nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) {
+  log(L_DEBUG) << "KeyboardListener::nativeEventFilter called with eventType=" << *eventType;
+  return false;
+}
+
 void KeyboardListener::setEnabled(bool enabled) {
   if (m_enabled == enabled) return;
   m_enabled = enabled;

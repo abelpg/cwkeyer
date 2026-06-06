@@ -6,8 +6,8 @@
 
 #define CHECK(EVENT) if (*pDatum == EVENT) std::cout << #EVENT
 
-::Display* m_pDisplay = nullptr;
-::XRecordRange* m_pRange = nullptr;
+::Display*       m_pDisplay = nullptr;
+::XRecordRange*  m_pRange = nullptr;
 ::XRecordContext m_context = 0;
 
 void handle_event(XPointer, XRecordInterceptData* pRecord) {

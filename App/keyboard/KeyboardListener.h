@@ -3,17 +3,21 @@
 #define CWKEYERAPP_KEYBOARDLISTENER_H
 
 #include "../utils/IDitDah.h"
+#include <QAbstractNativeEventFilter>
+#include <QByteArray>
+
 #include <iostream>
 #include <thread>
 #include <atomic>
 #include <vector>
+
 #include "../Utils/Logger.h"
 
 #ifdef _WIN32
   #include <windows.h>
 #endif
 
-class KeyboardListener  {
+class KeyboardListener : public QAbstractNativeEventFilter {
 
   public:
     explicit KeyboardListener(IDitDah *ditDah);
@@ -21,6 +25,7 @@ class KeyboardListener  {
 
     void setEnabled(bool enabled);
     bool isEnabled() const;
+    bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) override;
 
   private:
     void hook();

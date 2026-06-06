@@ -36,7 +36,13 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   // VBand / Vail listener if zadig device is not active
   m_keyboardListener = new KeyboardListener(m_keyer);
 
+  app->installNativeEventFilter(m_keyboardListener);
+
   log(L_DEBUG) << "GuiConnector constructor finished";
+}
+
+bool GuiConnector::eventFilter(QObject *object, QEvent *event) {
+  log(L_DEBUG) << "GuiConnector::eventFilter " << event->type();
 }
 
 void GuiConnector::onDecodeTextCw(std::string text) {

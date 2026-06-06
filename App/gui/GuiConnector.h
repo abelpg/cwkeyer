@@ -6,6 +6,7 @@
 #include <QObject>
 #include <iostream>
 #include <QVariant>
+#include <QKeyEvent>
 #include <QtMultimedia/QMediaDevices>
 #include <QtMultimedia/QAudioDevice>
 #include "../sound/Sound.h"
@@ -90,6 +91,7 @@ class GuiConnector : public QObject{
     void setEnabledCwDecoder(bool enabled);
     void setSelectedCommPort(int index);
     void setSelectedCommPortIn(int index);
+    bool eventFilter(QObject *object, QEvent *event) override;
 
   signals:
     void textCwDecoderUpdated(QVariant varData);

@@ -26,6 +26,8 @@ int main(int argc, char *argv[]) {
     GuiConnector guiConnector = GuiConnector(&app, context->parent());
     context->setContextProperty("guiConnector", &guiConnector);
 
+    //app.installEventFilter(&guiConnector);
+
     const QUrl url(mainQmlFile);
     QObject::connect(
                 &engine, &QQmlApplicationEngine::objectCreated, &app,
