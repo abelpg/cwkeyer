@@ -160,7 +160,8 @@ apt install \
     libopengl0 \
     libxcb-cursor0 \
     libxcb-cursor-dev \
-    qml6-module-qtquick-controls
+    qml6-module-qtquick-controls \
+    libevdev-dev
 ```
 
 ## Dependency Summary

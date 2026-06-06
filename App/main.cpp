@@ -11,7 +11,7 @@
 #include <windows.h>
 #endif
 
-LogLevel loglevel = L_INFO;
+LogLevel loglevel = L_DEBUG;
 
 int main(int argc, char *argv[]) {
     set_qt_environment();

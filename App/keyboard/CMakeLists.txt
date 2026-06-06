@@ -30,5 +30,9 @@ target_link_libraries(LibKeyboard PRIVATE
 )
 
 if(UNIX AND NOT APPLE)
-    target_link_libraries(LibKeyboard PRIVATE pthread)
+    target_link_libraries(LibKeyboard
+            PRIVATE
+            X11
+            Xtst
+    )
 endif()
