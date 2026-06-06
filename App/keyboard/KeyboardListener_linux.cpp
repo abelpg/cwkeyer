@@ -1,22 +1,38 @@
 #include "KeyboardListener.h"
 
-#include <X11/Xlib.h>
-#include <X11/Xlibint.h>
-#include <X11/extensions/record.h>
+#include<X11/Xlib.h>
+#include<X11/extensions/record.h>
 
+static constexpr int  DEVICE1_DIT              = 0x22;
+static constexpr int  DEVICE2_DIT              = 0x25;
+static constexpr int  DEVICE1_DAH              = 0x23;
+static constexpr int  DEVICE2_DAH              = 0x6D;
 
 Display* m_controlDisplay = nullptr;
 XRecordRange* m_pRange = nullptr;
 XRecordContext m_context = 0;
 
-void handle_event(XPointer, XRecordInterceptData* pRecord) {
-  using XRecordDatum = char;
 
-  if (pRecord->data_len > 0 ) {
-    auto* const pDatum = reinterpret_cast<XRecordDatum*>(pRecord->data);
-    log(L_DEBUG) << "KeyPress event detected " << pDatum;
+void handle_event(XPointer closure, XRecordInterceptData* pRecord) {
+  KeyboardListener* self = reinterpret_cast<KeyboardListener*>(closure);
 
+  if (pRecord->category == XRecordFromServer && pRecord->data_len > 0) {
+    const unsigned char type    = pRecord->data[0];  // KeyPress=2, KeyRelease=3
+    const unsigned char keyCode = pRecord->data[1];  // keycode de la tecla
 
+    const char* action = (type == KeyPress) ? "KeyPress" : "KeyRelease";
+    log(L_DEBUG) << action << " keycode=0x"
+                 << std::hex << std::uppercase
+                 << std::setw(2) << std::setfill('0')
+                 << static_cast<int>(keyCode);
+
+    if (keyCode == DEVICE1_DIT) {
+      //self->s_ditDah->onDit(type == KeyPress);
+      self->s_ditPressed = (type == KeyPress);
+    } else if (keyCode == DEVICE2_DAH) {
+      //self->s_ditDah->onDah(type == KeyPress);
+      self->s_dahPressed = (type == KeyPress);
+    }
   }
 
   ::XRecordFreeData(pRecord);
@@ -37,7 +53,7 @@ void KeyboardListener::hook() {
   m_context = XRecordCreateContext(m_controlDisplay, 0, &clients, 1, &m_pRange, 1);
   if (m_context == 0) { /* cleanup + return */ }
 
-  XRecordEnableContextAsync(m_controlDisplay, m_context, handle_event, nullptr); // use with/without `...Async()`
+  XRecordEnableContextAsync(m_controlDisplay, m_context, handle_event, reinterpret_cast<XPointer>(this)); // use with/without `...Async()`
 
   XRecordProcessReplies(m_controlDisplay);
   XFlush(m_controlDisplay);

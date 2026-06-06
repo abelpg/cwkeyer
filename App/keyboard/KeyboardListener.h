@@ -26,6 +26,9 @@ class KeyboardListener  {
     void setEnabled(bool enabled);
     bool isEnabled() const;
 
+    static IDitDah *s_ditDah;
+    static bool     s_ditPressed;
+    static bool     s_dahPressed;
   private:
     void hook();
     void unhook();
@@ -39,9 +42,6 @@ class KeyboardListener  {
   std::thread m_eventThread;
 #endif
 
-  static IDitDah *s_ditDah;
-  static bool     s_ditPressed;
-  static bool     s_dahPressed;
 
   bool m_enabled = false;
 };
