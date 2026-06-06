@@ -4,21 +4,20 @@
 #include <X11/XKBlib.h>
 #include<X11/extensions/record.h>
 #include <chrono>
+#include <thread>
 
+#include <mutex>
 static constexpr int  DEVICE1_DIT              = 0x22;
 static constexpr int  DEVICE2_DIT              = 0x25;
 static constexpr int  DEVICE1_DAH              = 0x23;
 static constexpr int  DEVICE2_DAH              = 0x6D;
 
-
-std::atomic<bool> KeyboardListener::s_ditReleaseCancelled{false};
-std::atomic<bool> KeyboardListener::s_dahReleaseCancelled{false};
+static constexpr int  RELEASE_DELAY_MS = 20;
 
 Display* m_controlDisplay = nullptr;   // para control (hook/unhook)
 Display* m_dataDisplay    = nullptr;   // para recibir eventos (thread)
 XRecordRange* m_pRange = nullptr;
 XRecordContext m_context = 0;
-
 
 void log_key(std::string name, char type, char keyCode) {
 
@@ -31,6 +30,7 @@ void handle_event(XPointer closure, XRecordInterceptData* pRecord) {
   KeyboardListener* self = reinterpret_cast<KeyboardListener*>(closure);
 
   if (pRecord->category == XRecordFromServer && pRecord->data_len > 0) {
+
     const unsigned char type    = pRecord->data[0];
     const unsigned char keyCode = pRecord->data[1];
 
@@ -57,6 +57,7 @@ void handle_event(XPointer closure, XRecordInterceptData* pRecord) {
 }
 
 void KeyboardListener::hook() {
+
   log(L_DEBUG) << "KeyboardListener::hook() called";
   if (m_context != 0) return;
 
@@ -72,7 +73,7 @@ void KeyboardListener::hook() {
     /* cleanup + return */
   }
 
-  m_pRange->device_events = XRecordRange8{Timer, KeyRelease};
+  m_pRange->device_events = XRecordRange8{KeyPress, KeyRelease};
   m_context = XRecordCreateContext(m_controlDisplay, 0, &clients, 1, &m_pRange, 1);
   if (m_context == 0) {
     return;
@@ -94,7 +95,10 @@ void KeyboardListener::hook() {
      // usa m_dataDisplay para recibir, m_controlDisplay queda libre para control
     while (m_running) {
       //XRecordEnableContext(m_dataDisplay, m_context, handle_event, reinterpret_cast<XPointer>(this));
+
       XRecordProcessReplies (m_dataDisplay);
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     log(L_DEBUG) << "m_running stop";
   });

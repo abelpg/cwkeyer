@@ -28,10 +28,8 @@ class KeyboardListener  {
     static void setDahPressed(bool pressed);
     static void setDitPressed(bool pressed);
 #ifndef _WIN32
-  static std::atomic<bool> s_ditReleaseCancelled;
-  static std::atomic<bool> s_dahReleaseCancelled;
-  static constexpr int RELEASE_DELAY_MS = 20;
   std::atomic<bool> m_running{false};
+  
 #endif
 
   private:
