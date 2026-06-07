@@ -31,17 +31,24 @@ bool KeyboardListener::isEnabled() const {
 
 
 void KeyboardListener::setDahPressed(bool pressed) {
+
   if (pressed != s_dahPressed) {
-    //s_ditDah->onDah(pressed);
-    log(L_DEBUG) << "Dah " << pressed;
+    uint64_t now = ::nowMs();
     s_dahPressed = pressed;
+    s_ditDah->onDah(pressed);
+
+    log(L_DEBUG) << "Dah " << pressed << " " << time << "ms";
   }
 }
 
 void KeyboardListener::setDitPressed(bool pressed) {
+
   if (pressed != s_ditPressed) {
-    //s_ditDah->onDit(pressed);
-    log(L_DEBUG) << "Dit " << pressed;
+    uint64_t now = ::nowMs();
     s_ditPressed = pressed;
+    s_ditDah->onDit(pressed);
+
+    uint64_t time = nowMs() - now;
+    log(L_DEBUG) << "Dit " << pressed << " " << time << "ms";
   }
 }

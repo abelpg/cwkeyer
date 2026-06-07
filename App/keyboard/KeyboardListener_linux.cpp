@@ -5,23 +5,30 @@
 #include<X11/extensions/record.h>
 #include <chrono>
 #include <thread>
-
+#include <atomic>
+#include <array>
 #include <mutex>
+
 static constexpr int  DEVICE1_DIT              = 0x22;
 static constexpr int  DEVICE2_DIT              = 0x25;
 static constexpr int  DEVICE1_DAH              = 0x23;
 static constexpr int  DEVICE2_DAH              = 0x6D;
 
-static constexpr int  RELEASE_DELAY_MS = 20;
+static constexpr int  RELEASE_DELAY_MS = 60;
 
 Display* m_controlDisplay = nullptr;   // para control (hook/unhook)
 Display* m_dataDisplay    = nullptr;   // para recibir eventos (thread)
 XRecordRange* m_pRange = nullptr;
 XRecordContext m_context = 0;
 
+static std::array<std::atomic<uint64_t>, 256> g_releaseDeadlineMs{};
+static std::mutex g_stateMutex;
+
+
 void log_key(std::string name, char type, char keyCode) {
 
-  log(L_DEBUG) << name  << type << " keycode=0x"
+  log(L_DEBUG) << name  << (type == KeyPress?  "Pressed" : "Released")
+               << " keycode=0x"
                << std::hex << std::setw(2) << std::setfill('0')
                << static_cast<int>(keyCode);
 }
@@ -35,21 +42,27 @@ void handle_event(XPointer closure, XRecordInterceptData* pRecord) {
     const unsigned char keyCode = pRecord->data[1];
 
     log_key("Current: ", type, keyCode);
-
-
     // const unsigned char nextType    = pRecord->data[32];  // siguiente evento
     // const unsigned char nextKeyCode = pRecord->data[33];
     // log_key("Next: ", type, keyCode);
 
+    g_releaseDeadlineMs[keyCode].store(0, std::memory_order_release);
 
-    if (type == KeyPress || type == KeyRelease) {
-      const bool pressed = (type == KeyPress);
-      if (keyCode == DEVICE1_DIT || keyCode == DEVICE2_DIT) {
-        self->setDitPressed(pressed);
-      } else if (keyCode == DEVICE1_DAH || keyCode == DEVICE2_DAH) {
-        self->setDahPressed(pressed);
-      }
+
+    // Programa release diferido de ESTA tecla
+    const uint64_t dl = nowMs() + RELEASE_DELAY_MS;
+    g_releaseDeadlineMs[keyCode].store(dl, std::memory_order_release);
+
+    if (keyCode == DEVICE1_DIT || keyCode == DEVICE2_DIT) self->setDitPressed(type == KeyPress);
+    if (keyCode == DEVICE1_DAH || keyCode == DEVICE2_DAH) self->setDahPressed(type == KeyPress);
+
+
+    if (type == KeyPress) {
+      // Programa release diferido de ESTA tecla
+      const uint64_t dl = nowMs() + RELEASE_DELAY_MS;
+      g_releaseDeadlineMs[keyCode].store(dl, std::memory_order_release);
     }
+
 
   }
 
@@ -92,13 +105,32 @@ void KeyboardListener::hook() {
   m_running = true;
   m_eventThread = std::thread([this]() {
      log(L_DEBUG) << "m_running start";
-     // usa m_dataDisplay para recibir, m_controlDisplay queda libre para control
-    while (m_running) {
-      //XRecordEnableContext(m_dataDisplay, m_context, handle_event, reinterpret_cast<XPointer>(this));
 
+   // XRecordEnableContext(m_dataDisplay, m_context, handle_event, reinterpret_cast<XPointer>(this));
+    while (m_running) {
       XRecordProcessReplies (m_dataDisplay);
 
+      const uint64_t t = nowMs();
+      auto tryRelease = [&](unsigned char kc, bool isDit) {
+        uint64_t dl = g_releaseDeadlineMs[kc].load(std::memory_order_acquire);
+        if (dl != 0 && t >= dl) {
+          // Consume deadline una sola vez
+          if (g_releaseDeadlineMs[kc].compare_exchange_strong(dl, 0, std::memory_order_acq_rel)) {
+            if (isDit) this->setDitPressed(false);
+            else       this->setDahPressed(false);
+          }
+        }
+      };
+
+      tryRelease(DEVICE1_DIT, true);
+      tryRelease(DEVICE2_DIT, true);
+      tryRelease(DEVICE1_DAH, false);
+      tryRelease(DEVICE2_DAH, false);
+
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      // if (m_dataDisplay) {
+      //   XFlush(m_dataDisplay);
+      // }
     }
     log(L_DEBUG) << "m_running stop";
   });
