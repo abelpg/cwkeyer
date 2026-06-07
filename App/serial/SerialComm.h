@@ -6,6 +6,9 @@
 #include <thread>
 #include <iostream>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
 #ifdef _WIN32
 #  include <windows.h>
 #else
@@ -25,7 +28,7 @@ public:
   virtual bool start(const std::string &portName);
   virtual void stop();
 
-  bool started() const { return m_started; }
+  bool started() const { return m_running; }
 
   void runCW(KeyerItem item, int duration) override;
   void startRunCw() override;
@@ -40,10 +43,20 @@ protected:
   std::atomic<bool> m_running{false};
 
 private:
-  bool m_started    = false;
+  struct CwRequest {
+    KeyerItem item;
+    int       duration;
+  };
+
   bool m_rtsControl = false;
   bool m_dtrControl = false;
   bool m_overlapped = false;
+  std::thread              m_workerThread;
+  std::mutex               m_queueMutex;
+  std::condition_variable  m_queueCv;
+  std::queue<CwRequest>    m_queue;
+
+  void processQueue();
 };
 
 #endif //CWKEYERAPP_SERIALCOMM_H

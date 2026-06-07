@@ -18,6 +18,7 @@ void Keyer::stopKeyer() {
   if (m_started) {
     log(L_INFO) << "Keyer started. reset thread";
     m_started = false;
+    m_coditionVar.notify_all();
     if (m_threadKeyer != nullptr && m_threadKeyer->joinable()) {
       m_threadKeyer->join();
     }
@@ -103,10 +104,10 @@ void Keyer::playDitDah(KeyerItem item) {
 }
 
 void Keyer::keyerCall() {
-  while (true) {
+  while (m_started) {
     // Wait until queue is not empty to avoid spurious wakeups
     std::unique_lock lock(*m_mutex);
-    m_coditionVar.wait(lock, [this]() { return !m_queue.empty(); });
+    m_coditionVar.wait(lock, [this]() { return !m_queue.empty() ||  !m_started; });
 
     if (m_queue.empty()) {
       // To break

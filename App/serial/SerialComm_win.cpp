@@ -11,7 +11,7 @@ SerialComm::~SerialComm() {
 }
 
 bool SerialComm::start(const std::string &portName) {
-  if (m_started) return false;
+  if (m_running) return false;
   if (m_hSerial != INVALID_HANDLE_VALUE) stop();
 
   std::string fullPort = "\\\\.\\" + portName;
@@ -58,22 +58,33 @@ bool SerialComm::start(const std::string &portName) {
 
   EscapeCommFunction(m_hSerial, CLRDTR);
   log(L_DEBUG) << "SerialComm: port opened: " << portName << "\n";
-  m_started = true;
+  m_running = true;
+  m_workerThread = std::thread(&SerialComm::processQueue, this);
   return true;
 }
 
 void SerialComm::stop() {
-  if (m_hSerial != INVALID_HANDLE_VALUE && m_started) {
+  if (m_running) {
+
+    m_running = false;
+    m_queueCv.notify_all();
+
+    if (m_workerThread.joinable()) {
+      m_workerThread.join();
+    }
+  }
+
+  if (m_hSerial != INVALID_HANDLE_VALUE) {
     EscapeCommFunction(m_hSerial, CLRRTS);
+    EscapeCommFunction(m_hSerial, CLRDTR);
     CloseHandle(m_hSerial);
     m_hSerial = INVALID_HANDLE_VALUE;
-    m_started = false;
     log(L_DEBUG) << "SerialComm: port closed.\n";
   }
 }
 
 void SerialComm::startRunCw() {
-  if (!m_started) return;
+  if (!m_running) return;
   if (m_hSerial == INVALID_HANDLE_VALUE) {
     std::cerr << "SerialComm::startRunCw: port closed\n";
     return;
@@ -82,7 +93,7 @@ void SerialComm::startRunCw() {
 }
 
 void SerialComm::stopRunCw() {
-  if (!m_started) return;
+  if (!m_running) return;
   if (m_hSerial == INVALID_HANDLE_VALUE) {
     std::cerr << "SerialComm::stopRunCw: port closed\n";
     return;
@@ -90,17 +101,42 @@ void SerialComm::stopRunCw() {
   EscapeCommFunction(m_hSerial, CLRDTR);
 }
 
-void SerialComm::runCW(KeyerItem /*item*/, int duration) {
-  if (!m_started) return;
+void SerialComm::runCW(KeyerItem item, int duration) {
+  if (!m_running) return;
   if (m_hSerial == INVALID_HANDLE_VALUE) {
     std::cerr << "SerialComm::runCW: port closed\n";
     return;
   }
-  HANDLE hSerial = m_hSerial;
-  std::thread([hSerial, duration]() {
-      EscapeCommFunction(hSerial, SETDTR);
-      std::this_thread::sleep_for(std::chrono::milliseconds(duration));
-      EscapeCommFunction(hSerial, CLRDTR);
-  }).detach();
+
+  std::lock_guard lock(m_queueMutex);
+  m_queue.push({item, duration});
+  m_queueCv.notify_one();
+}
+
+void SerialComm::processQueue() {
+  while (m_running) {
+    CwRequest request{};
+
+      log(L_DEBUG) << "Waitt: ";
+      std::unique_lock lock(m_queueMutex);
+      m_queueCv.wait(lock, [this]() { return !m_running || !m_queue.empty(); });
+      log(L_DEBUG) << "SerialComm::processQueue: " << request.item ;
+      if (m_queue.empty()) {
+        continue;
+      }
+
+      request = m_queue.front();
+      m_queue.pop();
+
+
+    if (m_hSerial == INVALID_HANDLE_VALUE) {
+      continue;
+    }
+
+    log(L_DEBUG) << "SerialComm::processQueue: " << request.item << "\n";
+    EscapeCommFunction(m_hSerial, SETDTR);
+    std::this_thread::sleep_for(std::chrono::milliseconds(request.duration));
+    EscapeCommFunction(m_hSerial, CLRDTR);
+  }
 }
 
