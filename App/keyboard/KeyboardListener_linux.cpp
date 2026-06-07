@@ -97,8 +97,8 @@ void KeyboardListener::eventLoopWithTimer() {
         sendTimerEventToControlDisplay();
         nextTimerTick = now + std::chrono::milliseconds(TIMER_EVENT_INTERVAL_MS);
       }
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }
 
