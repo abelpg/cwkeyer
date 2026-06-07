@@ -97,10 +97,7 @@ wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/lin
 wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
 chmod +x linuxdeploy*.AppImage
 
-cmake -B build-linux \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_PREFIX_PATH=/opt/Qt/6.11.1/gcc_64 \
-      -G Ninja
+cmake -B build-linux -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/Qt/6.11.1/gcc_64 -G Ninja
 cmake --build build-linux --parallel
 
 mkdir -p AppDir/usr/bin
@@ -117,13 +114,18 @@ export EXCLUDE_LIBS="libqsqlmimer.so"
     --appdir AppDir \
     --executable AppDir/usr/bin/CwKeyerApp \
     --desktop-file CwKeyer.desktop \
+    --create-desktop-file \
     --icon-file CwKeyer.png \
+    --icon-filename=CwKeyer 
     --plugin qt \
     --output appimage \
     --exclude-library "libqsqlmimer*" \
     --exclude-library "libqsqlodbc*" \
     --exclude-library "libqsqlpsql*" \
     --exclude-library "libqsqlite*"
+
+
+tar -czf CwKeyer-linux.tar.gz AppDir
 
 ```
 
