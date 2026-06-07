@@ -3,9 +3,6 @@
 #define CWKEYERAPP_KEYBOARDLISTENER_H
 
 #include "../utils/IDitDah.h"
-#include <QAbstractNativeEventFilter>
-#include <QByteArray>
-
 #include <iostream>
 #include <thread>
 #include <atomic>

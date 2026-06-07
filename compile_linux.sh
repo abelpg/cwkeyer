@@ -1,5 +1,8 @@
 #!/bin/bash
 set -e
+rm -rf build-linux
+cmake -B build-linux -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/Qt/6.11.1/gcc_64 -G Ninja
+cmake --build build-linux --parallel
 
 rm -rf AppDir
 

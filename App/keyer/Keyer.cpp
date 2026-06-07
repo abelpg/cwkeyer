@@ -10,7 +10,6 @@ Keyer::Keyer(IKeyerCW *soundCW) {
 Keyer::~Keyer() {
   stopKeyer();
 
-  delete m_mutex;
   delete m_threadKeyer;
 }
 
