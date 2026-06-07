@@ -28,10 +28,10 @@ bool KeyboardListener::isEnabled() const {
 
 
 void KeyboardListener::setDahPressed(bool pressed, int key) {
-
-  if (m_dit_key != 0 && m_dit_key != key) {
+  if (m_dah_key != 0 && m_dah_key != key) {
     return;
   }
+  m_dah_key = key;
 
   if (pressed != s_dahPressed) {
     s_lastDahChanged = ::nowMs();
@@ -41,9 +41,11 @@ void KeyboardListener::setDahPressed(bool pressed, int key) {
 }
 
 void KeyboardListener::setDitPressed(bool pressed, int key) {
-  if (m_dah_key != 0 && m_dah_key != key) {
+  if (m_dit_key != 0 && m_dit_key != key) {
     return;
   }
+  m_dit_key = key;
+
   if (pressed != s_ditPressed) {
     s_lastDitChanged = ::nowMs();
     s_ditPressed = pressed;

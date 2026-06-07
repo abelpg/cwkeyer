@@ -9,7 +9,6 @@
 #include <atomic>
 #include <array>
 #include <mutex>
-#include <qcoreevent.h>
 
 static constexpr int  DEVICE1_DIT              = 0x22;
 static constexpr int  DEVICE2_DIT              = 0x25;
@@ -52,7 +51,6 @@ void handle_event(XPointer closure, XRecordInterceptData* pRecord) {
     // const unsigned char nextKeyCode = pRecord->data[33];
     // log_key("Next: ", type, keyCode);
 
-
     if (keyCode == DEVICE1_DIT || keyCode == DEVICE2_DIT) self->setDitPressed(type == KeyPress, keyCode);
     if (keyCode == DEVICE1_DAH || keyCode == DEVICE2_DAH) self->setDahPressed(type == KeyPress, keyCode);
 
@@ -80,23 +78,21 @@ void handle_event(XPointer closure, XRecordInterceptData* pRecord) {
 
   XSendEvent(m_controlDisplay, root, False, SubstructureNotifyMask | SubstructureRedirectMask, &ev);
   XFlush(m_controlDisplay);
+  log(L_DEBUG) << "Sent timer event to control display";
 }
 
 
 void KeyboardListener::eventLoopWithTimer() {
   if (!m_dataDisplay) return;
 
-  auto nextTimerTick = std::chrono::steady_clock::now() + std::chrono::milliseconds(TIMER_EVENT_INTERVAL_MS);
-
   while (m_running) {
     // Call to process events.
     XRecordProcessReplies(m_dataDisplay);
 
     if (s_ditPressed || s_dahPressed) {
-      const auto now = std::chrono::steady_clock::now();
-      if (now >= nextTimerTick) {
+      uint64_t now = nowMs();
+      if (now >= s_lastDitChanged + TIMER_EVENT_INTERVAL_MS || now >= s_lastDahChanged + TIMER_EVENT_INTERVAL_MS) {
         sendTimerEventToControlDisplay();
-        nextTimerTick = now + std::chrono::milliseconds(TIMER_EVENT_INTERVAL_MS);
       }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(1));

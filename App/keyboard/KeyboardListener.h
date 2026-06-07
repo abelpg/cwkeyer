@@ -42,8 +42,6 @@ class KeyboardListener  {
   static LRESULT CALLBACK lowLevelKeyboard(int nCode, WPARAM wParam, LPARAM lParam);
   static KeyboardListener* s_instance;  // Instancia estática singleton
   HHOOK m_hook = nullptr;
-  DWORD m_dah_key=0;
-  DWORD m_dit_key=0;
 #else
   std::thread m_eventThread;
   void eventLoopWithTimer();
@@ -56,6 +54,8 @@ class KeyboardListener  {
   uint64_t s_lastDitChanged = 0;
   uint64_t s_lastDahChanged = 0;
   bool     m_enabled        = false;
+  int      m_dah_key        = 0;
+  int      m_dit_key        = 0;
 };
 
 #endif //CWKEYERAPP_KEYBOARDLISTENER_H
