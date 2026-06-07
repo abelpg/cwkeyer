@@ -16,7 +16,7 @@ SerialComm::~SerialComm() {
 }
 
 bool SerialComm::start(const std::string &portName) {
-  if (m_started) return false;
+  if (m_running) return false;
 
   m_hSerial = ::open(portName.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
   if (m_hSerial < 0) {
@@ -57,25 +57,25 @@ bool SerialComm::start(const std::string &portName) {
   ioctl(m_hSerial, TIOCMSET, &status);
 
   log(L_DEBUG) << "SerialComm: port opened: " << portName << "\n";
-  m_started = true;
+  m_running = true;
   return true;
 }
 
 void SerialComm::stop() {
-  if (m_hSerial >= 0 && m_started) {
+  if (m_hSerial >= 0 && m_running) {
     int status = 0;
     ioctl(m_hSerial, TIOCMGET, &status);
     status &= ~(TIOCM_RTS | TIOCM_DTR);
     ioctl(m_hSerial, TIOCMSET, &status);
     ::close(m_hSerial);
     m_hSerial = -1;
-    m_started = false;
+    m_running = false;
     log(L_DEBUG) << "SerialComm: port closed.\n";
   }
 }
 
 void SerialComm::startRunCw() {
-  if (!m_started) return;
+  if (!m_running) return;
   if (m_hSerial < 0) { std::cerr << "SerialComm::startRunCw: port closed\n"; return; }
   int status = 0;
   ioctl(m_hSerial, TIOCMGET, &status);
@@ -84,7 +84,7 @@ void SerialComm::startRunCw() {
 }
 
 void SerialComm::stopRunCw() {
-  if (!m_started) return;
+  if (!m_running) return;
   if (m_hSerial < 0) { std::cerr << "SerialComm::stopRunCw: port closed\n"; return; }
   int status = 0;
   ioctl(m_hSerial, TIOCMGET, &status);
@@ -93,7 +93,7 @@ void SerialComm::stopRunCw() {
 }
 
 void SerialComm::runCW(KeyerItem /*item*/, int duration) {
-  if (!m_started) return;
+  if (!m_running) return;
   if (m_hSerial < 0) { std::cerr << "SerialComm::runCW: port closed\n"; return; }
   int fd = m_hSerial;
   std::thread([fd, duration]() {
