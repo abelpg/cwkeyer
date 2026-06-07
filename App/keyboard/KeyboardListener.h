@@ -45,6 +45,8 @@ class KeyboardListener  {
   static DWORD m_dit_key;
 #else
   std::thread m_eventThread;
+  void eventLoopWithTimer();
+  void sendTimerEventToControlDisplay();
 #endif
 
   static IDitDah *s_ditDah;
