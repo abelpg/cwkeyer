@@ -3,20 +3,42 @@
 
 Keyer::Keyer(IKeyerCW *soundCW) {
   log(L_DEBUG) << "Keyer constructor called";
+  m_mutex     = new std::mutex();
   addKeyerCW(soundCW);
+}
+
+Keyer::~Keyer() {
+  stopKeyer();
+
+  delete m_mutex;
+  delete m_threadKeyer;
+}
+
+void Keyer::stopKeyer() {
+  if (m_started) {
+    log(L_INFO) << "Keyer started. reset thread";
+    m_started = false;
+    if (m_threadKeyer != nullptr && m_threadKeyer->joinable()) {
+      m_threadKeyer->join();
+    }
+    log(L_INFO) << "Keyer stopped. reset thread";
+    delete m_threadKeyer;
+    m_threadKeyer = nullptr;
+  }
 }
 
 void Keyer::initKeyer(int wpm, Mode mode) {
   log(L_DEBUG) << "Keyer initKeyer called";
+  stopKeyer();
+
   m_ditTime   = IKeyerCW::calculateDuration(DIT, wpm);
   m_dahTime   = IKeyerCW::calculateDuration(DAH, wpm);
   m_spaceTime = IKeyerCW::calculateDuration(INTER_ELEMENT_SPACE, wpm);
   m_mode      = mode;
-  m_mutex     = new std::mutex();
 
+  m_started = true;
   m_threadKeyer    = new std::thread(&Keyer::keyerCall, this);
   m_threadKeyer->detach();
-
 }
 
 void Keyer::onDit(bool pressed) {
@@ -56,16 +78,9 @@ void Keyer::onStraight(bool pressed) {
 
 void Keyer::enqueue(KeyerItem item) {
   if (m_queue.size() < 1 ) {
-    log(L_DEBUG) << "Push item" << item;
-    //std::unique_lock lock(*m_mutex);
     m_lastQueued = item;
     m_queue.push(item);
     m_coditionVar.notify_one();
-    log(L_DEBUG) << "Pushed" << item;
-    // if (!m_pending) {
-    //   m_threadKeyer = std::thread(&Keyer::keyerCall, this);
-    //   m_threadKeyer.detach();
-    // }
   }
 }
 
@@ -89,19 +104,20 @@ void Keyer::playDitDah(KeyerItem item) {
 
 void Keyer::keyerCall() {
   while (true) {
-    std::unique_lock lock(*m_mutex);
     // Wait until queue is not empty to avoid spurious wakeups
-    log(L_DEBUG) << "Waiting for item in queue...";
+    std::unique_lock lock(*m_mutex);
     m_coditionVar.wait(lock, [this]() { return !m_queue.empty(); });
-    log(L_DEBUG) << "Item in queue, processing...";
 
+    if (m_queue.empty()) {
+      // To break
+      continue;
+    }
     uint64_t startTime = nowMs();
     KeyerItem item = std::move(m_queue.front());
     m_queue.pop();
     const bool squeeze = m_ditPressed && m_dahPressed;
     playDitDah(item);
     log(L_DEBUG) << "After play:" << (nowMs() - startTime) << "ms";
-
 
     // Process mode
     if (squeeze) {
@@ -119,6 +135,7 @@ void Keyer::keyerCall() {
     log(L_DEBUG) << "Keyer call duration:" << (nowMs() - startTime) << "ms";
 
   }
+  log(L_INFO) << "Keyer thread end";
 }
 
 int Keyer::ditTime()   const { return m_ditTime; }

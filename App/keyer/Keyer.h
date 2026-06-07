@@ -24,7 +24,9 @@ class Keyer : public IDitDah {
 
   public:
     Keyer(IKeyerCW *soundCW);
+    ~Keyer();
     void initKeyer(int wpm, Mode mode);
+    void stopKeyer();
 
     /**On dit automatic keys**/
     void onDit(bool pressed) override;
@@ -54,8 +56,9 @@ class Keyer : public IDitDah {
     std::list<IKeyerCW *>   m_keyerCWList;
     std::mutex*             m_mutex;           // protects calling m_queue
     std::queue<KeyerItem>   m_queue;
-    std::thread*            m_threadKeyer;
+    std::thread*            m_threadKeyer = nullptr;
     std::condition_variable m_coditionVar;
+    bool                    m_started = false;
 
     void enqueue(KeyerItem item);
     void keyerCall();
