@@ -6,6 +6,7 @@
 #include <iostream>
 #include <list>
 #include <mutex>
+#include <condition_variable>
 
 #include "../utils/Utils.h"
 #include "../utils/Logger.h"
@@ -46,16 +47,15 @@ class Keyer : public IDitDah {
 
     bool      m_ditPressed  = false;
     bool      m_dahPressed  = false;
-    bool      m_pending     = false;
-    bool      m_lastSqueeze = false;
     KeyerItem m_lastPressed;
     KeyerItem m_lastQueued;
     Mode      m_mode = IAMBIC_B;
 
-    std::mutex*            m_mutex;           // protects calling m_queue
-    std::queue<KeyerItem>  m_queue;
-    std::thread            m_threadKeyer;
-    std::list<IKeyerCW *>  m_keyerCWList;
+    std::list<IKeyerCW *>   m_keyerCWList;
+    std::mutex*             m_mutex;           // protects calling m_queue
+    std::queue<KeyerItem>   m_queue;
+    std::thread*            m_threadKeyer;
+    std::condition_variable m_coditionVar;
 
     void enqueue(KeyerItem item);
     void keyerCall();

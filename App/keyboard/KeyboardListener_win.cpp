@@ -25,7 +25,7 @@ LRESULT CALLBACK KeyboardListener::lowLevelKeyboard(int nCode, WPARAM wParam, LP
   if (nCode == HC_ACTION && s_instance->s_ditDah) {
     auto *kb      = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
     bool  pressed = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
-    log(L_DEBUG) << "KeyboardListener: vkCode=" << kb->vkCode << " pressed=" << pressed;
+
     switch (kb->vkCode) {
       case VK_OEM_PLUS:   // +/=
       case VK_RCONTROL:

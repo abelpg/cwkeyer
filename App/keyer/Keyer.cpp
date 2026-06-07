@@ -13,6 +13,10 @@ void Keyer::initKeyer(int wpm, Mode mode) {
   m_spaceTime = IKeyerCW::calculateDuration(INTER_ELEMENT_SPACE, wpm);
   m_mode      = mode;
   m_mutex     = new std::mutex();
+
+  m_threadKeyer    = new std::thread(&Keyer::keyerCall, this);
+  m_threadKeyer->detach();
+
 }
 
 void Keyer::onDit(bool pressed) {
@@ -51,15 +55,17 @@ void Keyer::onStraight(bool pressed) {
 }
 
 void Keyer::enqueue(KeyerItem item) {
-  if (m_queue.size() < 1 || !m_pending) {
+  if (m_queue.size() < 1 ) {
     log(L_DEBUG) << "Push item" << item;
-    m_mutex->lock();
-    m_queue.push(item);
+    //std::unique_lock lock(*m_mutex);
     m_lastQueued = item;
-    if (!m_pending) {
-      m_threadKeyer = std::thread(&Keyer::keyerCall, this);
-      m_threadKeyer.detach();
-    }
+    m_queue.push(item);
+    m_coditionVar.notify_one();
+    log(L_DEBUG) << "Pushed" << item;
+    // if (!m_pending) {
+    //   m_threadKeyer = std::thread(&Keyer::keyerCall, this);
+    //   m_threadKeyer.detach();
+    // }
   }
 }
 
@@ -82,21 +88,21 @@ void Keyer::playDitDah(KeyerItem item) {
 }
 
 void Keyer::keyerCall() {
-  const bool squeeze = m_ditPressed && m_dahPressed;
-  m_pending = !m_queue.empty();
-  m_mutex->unlock(); // Problema del squeeze, si se pulsa a la vez DIT y DAH provocaba doble encolamiento. Se usa mutex para evitar esto.
+  while (true) {
+    std::unique_lock lock(*m_mutex);
+    // Wait until queue is not empty to avoid spurious wakeups
+    log(L_DEBUG) << "Waiting for item in queue...";
+    m_coditionVar.wait(lock, [this]() { return !m_queue.empty(); });
+    log(L_DEBUG) << "Item in queue, processing...";
 
-  if (m_pending) {
-    m_lastSqueeze = squeeze;
-    m_mutex->lock();
-    KeyerItem item = m_queue.front();
+    uint64_t startTime = nowMs();
+    KeyerItem item = std::move(m_queue.front());
     m_queue.pop();
-    m_mutex->unlock();
+    const bool squeeze = m_ditPressed && m_dahPressed;
     playDitDah(item);
+    log(L_DEBUG) << "After play:" << (nowMs() - startTime) << "ms";
 
-    // enqueued by pending.
-    keyerCall();
-  } else {
+
     // Process mode
     if (squeeze) {
       if (m_mode == ULTIMATIC) {
@@ -108,10 +114,10 @@ void Keyer::keyerCall() {
       enqueue(DIT);
     } else if (m_dahPressed) {
       enqueue(DAH);
-    } else if (m_mode == IAMBIC_B && m_lastSqueeze) {
-      enqueue(reverse(m_lastQueued));
-      m_lastSqueeze = false;
     }
+
+    log(L_DEBUG) << "Keyer call duration:" << (nowMs() - startTime) << "ms";
+
   }
 }
 
