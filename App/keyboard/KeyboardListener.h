@@ -27,8 +27,8 @@ class KeyboardListener  {
 
     void setEnabled(bool enabled);
     bool isEnabled() const;
-    static void setDahPressed(bool pressed);
-    static void setDitPressed(bool pressed);
+    void setDahPressed(bool pressed, int key);
+    void setDitPressed(bool pressed, int key);
 #ifndef _WIN32
   std::atomic<bool> m_running{false};
   
@@ -40,19 +40,22 @@ class KeyboardListener  {
 
 #ifdef _WIN32
   static LRESULT CALLBACK lowLevelKeyboard(int nCode, WPARAM wParam, LPARAM lParam);
+  static KeyboardListener* s_instance;  // Instancia estática singleton
   HHOOK m_hook = nullptr;
-  static DWORD m_dah_key;
-  static DWORD m_dit_key;
+  DWORD m_dah_key=0;
+  DWORD m_dit_key=0;
 #else
   std::thread m_eventThread;
   void eventLoopWithTimer();
   void sendTimerEventToControlDisplay();
 #endif
 
-  static IDitDah *s_ditDah;
-  static bool     s_ditPressed;
-  static bool     s_dahPressed;
-  bool m_enabled = false;
+  IDitDah *s_ditDah         = nullptr;
+  bool     s_ditPressed     = false;
+  bool     s_dahPressed     = false;
+  uint64_t s_lastDitChanged = 0;
+  uint64_t s_lastDahChanged = 0;
+  bool     m_enabled        = false;
 };
 
 #endif //CWKEYERAPP_KEYBOARDLISTENER_H

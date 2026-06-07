@@ -9,6 +9,7 @@
 #include <atomic>
 #include <array>
 #include <mutex>
+#include <qcoreevent.h>
 
 static constexpr int  DEVICE1_DIT              = 0x22;
 static constexpr int  DEVICE2_DIT              = 0x25;
@@ -52,8 +53,8 @@ void handle_event(XPointer closure, XRecordInterceptData* pRecord) {
     // log_key("Next: ", type, keyCode);
 
 
-    if (keyCode == DEVICE1_DIT || keyCode == DEVICE2_DIT) self->setDitPressed(type == KeyPress);
-    if (keyCode == DEVICE1_DAH || keyCode == DEVICE2_DAH) self->setDahPressed(type == KeyPress);
+    if (keyCode == DEVICE1_DIT || keyCode == DEVICE2_DIT) self->setDitPressed(type == KeyPress, keyCode);
+    if (keyCode == DEVICE1_DAH || keyCode == DEVICE2_DAH) self->setDahPressed(type == KeyPress, keyCode);
 
   }
 

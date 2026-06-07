@@ -1,8 +1,5 @@
 #include "KeyboardListener.h"
 
-IDitDah *KeyboardListener::s_ditDah    = nullptr;
-bool     KeyboardListener::s_ditPressed = false;
-bool     KeyboardListener::s_dahPressed = false;
 
 KeyboardListener::KeyboardListener(IDitDah *ditDah) {
   s_ditDah = ditDah;
@@ -30,25 +27,26 @@ bool KeyboardListener::isEnabled() const {
 }
 
 
-void KeyboardListener::setDahPressed(bool pressed) {
+void KeyboardListener::setDahPressed(bool pressed, int key) {
+
+  if (m_dit_key != 0 && m_dit_key != key) {
+    return;
+  }
 
   if (pressed != s_dahPressed) {
-    uint64_t now = ::nowMs();
+    s_lastDahChanged = ::nowMs();
     s_dahPressed = pressed;
     s_ditDah->onDah(pressed);
-
-    log(L_DEBUG) << "Dah " << pressed << " " << time << "ms";
   }
 }
 
-void KeyboardListener::setDitPressed(bool pressed) {
-
+void KeyboardListener::setDitPressed(bool pressed, int key) {
+  if (m_dah_key != 0 && m_dah_key != key) {
+    return;
+  }
   if (pressed != s_ditPressed) {
-    uint64_t now = ::nowMs();
+    s_lastDitChanged = ::nowMs();
     s_ditPressed = pressed;
     s_ditDah->onDit(pressed);
-
-    uint64_t time = nowMs() - now;
-    log(L_DEBUG) << "Dit " << pressed << " " << time << "ms";
   }
 }

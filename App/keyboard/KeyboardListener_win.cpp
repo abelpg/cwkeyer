@@ -3,40 +3,37 @@
 
 // ── Windows global low-level keyboard hook ───────────────────────────────────
 
-DWORD KeyboardListener::m_dah_key = 0x00;
-DWORD KeyboardListener::m_dit_key = 0x00;
+
+KeyboardListener* KeyboardListener::s_instance = nullptr;  // Inicializar el puntero estático
 
 void KeyboardListener::hook() {
-  if (!m_hook)
+  if (!m_hook) {
+    s_instance = this;  // Guardar referencia a esta instancia
     m_hook = SetWindowsHookEx(WH_KEYBOARD_LL, lowLevelKeyboard, nullptr, 0);
+  }
 }
 
 void KeyboardListener::unhook() {
   if (m_hook) {
     UnhookWindowsHookEx(m_hook);
     m_hook = nullptr;
+    s_instance = nullptr;
   }
 }
 
 LRESULT CALLBACK KeyboardListener::lowLevelKeyboard(int nCode, WPARAM wParam, LPARAM lParam) {
-  if (nCode == HC_ACTION && s_ditDah) {
+  if (nCode == HC_ACTION && s_instance->s_ditDah) {
     auto *kb      = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
     bool  pressed = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
     log(L_DEBUG) << "KeyboardListener: vkCode=" << kb->vkCode << " pressed=" << pressed;
     switch (kb->vkCode) {
       case VK_OEM_PLUS:   // +/=
       case VK_RCONTROL:
-        if (m_dah_key == 0 || kb->vkCode == m_dah_key) {
-          m_dah_key = kb->vkCode;
-          setDahPressed(pressed);
-        }
+        s_instance->setDahPressed(pressed,kb->vkCode);
         break;
       case VK_LCONTROL:
       case VK_OEM_1:      // ;/:
-        if (m_dit_key == 0 || kb->vkCode == m_dit_key) {
-          m_dit_key = kb->vkCode;
-          setDitPressed(pressed);
-        }
+        s_instance->setDitPressed(pressed,kb->vkCode);
         break;
       default:
         break;
