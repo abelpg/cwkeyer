@@ -1,5 +1,7 @@
-
 #include "SerialPorts.h"
+#include <windows.h>
+
+// ── Windows: enumerate COM ports from the Registry ───────────────────────────
 
 std::vector<std::string> SerialPorts::listPorts() {
   std::vector<std::string> ports;
@@ -25,3 +27,4 @@ std::vector<std::string> SerialPorts::listPorts() {
   }
   return ports;
 }
+

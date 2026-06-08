@@ -80,11 +80,11 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
 set(CPACK_PACKAGE_NAME              "CwKeyer")
 set(CPACK_PACKAGE_VENDOR            "EA1FXG")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CW Keyer Application")
-set(CPACK_PACKAGE_VERSION           "1.2.1")
+set(CPACK_PACKAGE_VERSION           "1.2.2-BETA")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "CwKeyer")
 
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)   # crea carpeta raíz dentro del ZIP
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-win64-portable")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-portable")
 
 # Icono / licencia (opcionales pero recomendados)
 #set(CPACK_RESOURCE_FILE_LICENSE     "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
@@ -107,11 +107,13 @@ endif()
 
 
 
-# Instalar hidapi.dll junto al ejecutable
+# Instalar hidapi.dll junto al ejecutable (solo Windows)
+if(WIN32)
 install(FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/App/usb/libusb/libusb-1.0.dll"
         DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+endif()
 
 # Instalar DLLs de Qt (usando windeployqt o instalando manualmente)
 # Opción automática con Qt helper (Qt 6.3+):

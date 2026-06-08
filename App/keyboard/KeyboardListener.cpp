@@ -1,8 +1,5 @@
 #include "KeyboardListener.h"
 
-IDitDah *KeyboardListener::s_ditDah    = nullptr;
-bool     KeyboardListener::s_ditPressed = false;
-bool     KeyboardListener::s_dahPressed = false;
 
 KeyboardListener::KeyboardListener(IDitDah *ditDah) {
   s_ditDah = ditDah;
@@ -15,6 +12,7 @@ KeyboardListener::~KeyboardListener() {
 void KeyboardListener::setEnabled(bool enabled) {
   if (m_enabled == enabled) return;
   m_enabled = enabled;
+  log(L_DEBUG) << " KeyboardListener :" << (enabled?"Enabled":"Disabled");
   if (m_enabled) {
     s_ditPressed = false;
     s_dahPressed = false;
@@ -28,41 +26,29 @@ bool KeyboardListener::isEnabled() const {
   return m_enabled;
 }
 
-void KeyboardListener::hook() {
-  if (!m_hook)
-    m_hook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, nullptr, 0);
-}
 
-void KeyboardListener::unhook() {
-  if (m_hook) {
-    UnhookWindowsHookEx(m_hook);
-    m_hook = nullptr;
+void KeyboardListener::setDahPressed(bool pressed, int key) {
+  if (m_dah_key != 0 && m_dah_key != key) {
+    return;
+  }
+  m_dah_key = key;
+
+  if (pressed != s_dahPressed) {
+    s_lastDahChanged = ::nowMs();
+    s_dahPressed = pressed;
+    s_ditDah->onDah(pressed);
   }
 }
 
-LRESULT CALLBACK KeyboardListener::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
-  if (nCode == HC_ACTION && s_ditDah) {
-    auto *kb     = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
-    bool  pressed = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
-
-    switch (kb->vkCode) {
-      case VK_OEM_PLUS:  // +/=
-      case VK_RCONTROL:
-        if (pressed != s_dahPressed) {
-          s_ditDah->onDah(pressed);
-          s_dahPressed = pressed;
-        }
-        break;
-      case VK_LCONTROL:
-      case VK_OEM_1:     // ;/:
-        if (pressed != s_ditPressed) {
-          s_ditDah->onDit(pressed);
-          s_ditPressed = pressed;
-        }
-        break;
-      default:
-        break;
-    }
+void KeyboardListener::setDitPressed(bool pressed, int key) {
+  if (m_dit_key != 0 && m_dit_key != key) {
+    return;
   }
-  return CallNextHookEx(nullptr, nCode, wParam, lParam);
+  m_dit_key = key;
+
+  if (pressed != s_ditPressed) {
+    s_lastDitChanged = ::nowMs();
+    s_ditPressed = pressed;
+    s_ditDah->onDit(pressed);
+  }
 }
