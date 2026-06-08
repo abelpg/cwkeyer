@@ -80,7 +80,7 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
 set(CPACK_PACKAGE_NAME              "CwKeyer")
 set(CPACK_PACKAGE_VENDOR            "EA1FXG")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CW Keyer Application")
-set(CPACK_PACKAGE_VERSION           "1.2.1")
+set(CPACK_PACKAGE_VERSION           "1.2.2-BETA")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "CwKeyer")
 
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)   # crea carpeta raíz dentro del ZIP
