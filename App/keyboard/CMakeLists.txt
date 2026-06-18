@@ -1,10 +1,23 @@
 cmake_minimum_required(VERSION 3.16)
 
+# ── Platform-specific source selection ───────────────────────────────────────
+if(WIN32)
+    set(KEYBOARD_IMPL
+            Keyboard_win.cpp
+            KeyboardListener_win.cpp
+    )
+else()
+    set(KEYBOARD_IMPL
+            Keyboard_linux.cpp
+            KeyboardListener_linux.cpp
+    )
+endif()
+
 add_library(LibKeyboard
-        Keyboard.cpp
         Keyboard.h
-        KeyboardListener.cpp
         KeyboardListener.h
+        KeyboardListener.cpp
+        ${KEYBOARD_IMPL}
 )
 
 target_include_directories(LibKeyboard
@@ -15,3 +28,11 @@ target_include_directories(LibKeyboard
 target_link_libraries(LibKeyboard PRIVATE
         Qt${QT_VERSION_MAJOR}::Core
 )
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(LibKeyboard
+            PRIVATE
+            X11
+            Xtst
+    )
+endif()

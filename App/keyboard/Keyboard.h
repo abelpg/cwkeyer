@@ -14,6 +14,7 @@ class Keyboard : public QObject, public IDitDah {
   Q_OBJECT
   public:
     explicit Keyboard(QObject *parent = nullptr);
+    ~Keyboard();
 
     void onDit(bool pressed) override;
     void onDah(bool pressed) override;

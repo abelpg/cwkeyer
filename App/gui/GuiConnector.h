@@ -6,6 +6,7 @@
 #include <QObject>
 #include <iostream>
 #include <QVariant>
+#include <QKeyEvent>
 #include <QtMultimedia/QMediaDevices>
 #include <QtMultimedia/QAudioDevice>
 #include "../sound/Sound.h"

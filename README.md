@@ -695,3 +695,17 @@ Examples:
 | libusb          | USB HID paddle reading (interrupt transfers)       |
 | hidapi          | HID device access (alternative, `HidDevice`)       |
 | Windows API     | Serial port (DTR/DSR), keyboard hook, registry     |
+
+## Compilation & Packaging
+```bash
+wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+chmod +x linuxdeploy*.AppImage
+
+cmake cmake --build build-release -t clean
+cmake -B build-release  -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=C:\Qt\6.11.1\mingw_64\bin  -G Ninja
+cmake --build build-release --config Release
+
+cd build-release
+cpack -G ZIP
+```

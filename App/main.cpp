@@ -5,21 +5,28 @@
 
 #include "autogen/environment.h"
 #include "gui/GuiConnector.h"
-#include <windows.h>
 #include "utils/Logger.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 LogLevel loglevel = L_INFO;
 
 int main(int argc, char *argv[]) {
     set_qt_environment();
 
+#ifdef _WIN32
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+#endif
 
     QApplication app(argc, argv);
     QQmlApplicationEngine engine;
     QQmlContext *context = engine.rootContext();
     GuiConnector guiConnector = GuiConnector(&app, context->parent());
     context->setContextProperty("guiConnector", &guiConnector);
+
+    //app.installEventFilter(&guiConnector);
 
     const QUrl url(mainQmlFile);
     QObject::connect(

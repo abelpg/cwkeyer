@@ -3,16 +3,42 @@
 
 Keyer::Keyer(IKeyerCW *soundCW) {
   log(L_DEBUG) << "Keyer constructor called";
+  m_mutex     = new std::mutex();
   addKeyerCW(soundCW);
+}
+
+Keyer::~Keyer() {
+  stopKeyer();
+
+  delete m_threadKeyer;
+}
+
+void Keyer::stopKeyer() {
+  if (m_started) {
+    log(L_INFO) << "Keyer started. reset thread";
+    m_started = false;
+    m_coditionVar.notify_all();
+    if (m_threadKeyer != nullptr && m_threadKeyer->joinable()) {
+      m_threadKeyer->join();
+    }
+    log(L_INFO) << "Keyer stopped. reset thread";
+    delete m_threadKeyer;
+    m_threadKeyer = nullptr;
+  }
 }
 
 void Keyer::initKeyer(int wpm, Mode mode) {
   log(L_DEBUG) << "Keyer initKeyer called";
+  stopKeyer();
+
   m_ditTime   = IKeyerCW::calculateDuration(DIT, wpm);
   m_dahTime   = IKeyerCW::calculateDuration(DAH, wpm);
   m_spaceTime = IKeyerCW::calculateDuration(INTER_ELEMENT_SPACE, wpm);
   m_mode      = mode;
-  m_mutex     = new std::mutex();
+
+  m_started = true;
+  m_threadKeyer    = new std::thread(&Keyer::keyerCall, this);
+  m_threadKeyer->detach();
 }
 
 void Keyer::onDit(bool pressed) {
@@ -51,15 +77,10 @@ void Keyer::onStraight(bool pressed) {
 }
 
 void Keyer::enqueue(KeyerItem item) {
-  if (m_queue.size() < 1 || !m_pending) {
-    log(L_DEBUG) << "Push item" << item;
-    m_mutex->lock();
-    m_queue.push(item);
+  if (m_queue.size() < 1 ) {
     m_lastQueued = item;
-    if (!m_pending) {
-      m_threadKeyer = std::thread(&Keyer::keyerCall, this);
-      m_threadKeyer.detach();
-    }
+    m_queue.push(item);
+    m_coditionVar.notify_one();
   }
 }
 
@@ -82,21 +103,22 @@ void Keyer::playDitDah(KeyerItem item) {
 }
 
 void Keyer::keyerCall() {
-  const bool squeeze = m_ditPressed && m_dahPressed;
-  m_pending = !m_queue.empty();
-  m_mutex->unlock(); // Problema del squeeze, si se pulsa a la vez DIT y DAH provocaba doble encolamiento. Se usa mutex para evitar esto.
+  while (m_started) {
+    // Wait until queue is not empty to avoid spurious wakeups
+    std::unique_lock lock(*m_mutex);
+    m_coditionVar.wait(lock, [this]() { return !m_queue.empty() ||  !m_started; });
 
-  if (m_pending) {
-    m_lastSqueeze = squeeze;
-    m_mutex->lock();
-    KeyerItem item = m_queue.front();
+    if (m_queue.empty()) {
+      // To break
+      continue;
+    }
+    uint64_t startTime = nowMs();
+    KeyerItem item = std::move(m_queue.front());
     m_queue.pop();
-    m_mutex->unlock();
+    const bool squeeze = m_ditPressed && m_dahPressed;
     playDitDah(item);
+    log(L_DEBUG) << "After play:" << (nowMs() - startTime) << "ms";
 
-    // enqueued by pending.
-    keyerCall();
-  } else {
     // Process mode
     if (squeeze) {
       if (m_mode == ULTIMATIC) {
@@ -108,11 +130,12 @@ void Keyer::keyerCall() {
       enqueue(DIT);
     } else if (m_dahPressed) {
       enqueue(DAH);
-    } else if (m_mode == IAMBIC_B && m_lastSqueeze) {
-      enqueue(reverse(m_lastQueued));
-      m_lastSqueeze = false;
     }
+
+    log(L_DEBUG) << "Keyer call duration:" << (nowMs() - startTime) << "ms";
+
   }
+  log(L_INFO) << "Keyer thread end";
 }
 
 int Keyer::ditTime()   const { return m_ditTime; }
