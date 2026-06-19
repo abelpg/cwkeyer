@@ -24,7 +24,7 @@ static constexpr const int    DEFAULT_WPM         = 25;
 static constexpr const int    DEFAULT_FARNSWORTH  = 25;
 static constexpr const int    DEFAULT_SAMPLE_RATE = 44100;
 static constexpr const int    DEFAULT_FREQUENCY   = 650;
-static constexpr const int    DEFAULT_REMOTE_PORT = 12060;
+static constexpr const int    DEFAULT_REMOTE_PORT = 50005;
 static constexpr const double DEFAULT_AMPLITUDE   = 0.5;
 static constexpr const double DEFAULT_ATTACK      = 0.005;
 static constexpr const double DEFAULT_RELEASE     = 0.005;
@@ -144,7 +144,7 @@ class GuiConnector : public QObject{
     QStringList          m_audioDevices;
     QList<QAudioDevice>  m_audioDeviceList;
     int                  m_selectedAudioDevice = 0;
-    int                  m_mode               = static_cast<int>(Mode::IAMBIC_B);
+    int                  m_mode                = static_cast<int>(Mode::IAMBIC_B);
 
     QStringList m_commPorts;
     int         m_selectedCommPort   = -1;

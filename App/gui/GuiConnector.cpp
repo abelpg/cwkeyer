@@ -135,13 +135,15 @@ void GuiConnector::quit() {
 }
 
 void GuiConnector::initDevice() {
+
   Device *deviceConnected = m_device->initDevice();
 
   if (deviceConnected == nullptr) {
     m_keyboardListener->setEnabled(true);
   }
-
   sendDeviceUpdated(deviceConnected);
+
+
 }
 
 void GuiConnector::connectDevice() {
@@ -266,6 +268,7 @@ bool GuiConnector::enabledSound() const {
 
 void GuiConnector::setEnabledSound(bool enabled) {
   m_sound->setEnabled(enabled);
+  Configuration::putValueBool(CFG_ENABLED_SOUND, enabled);
   emit soundEnabledChanged(enabled);
 }
 
@@ -393,6 +396,10 @@ void GuiConnector::resetSound() {
                             m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
   } else {
     m_sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
+  }
+
+  if (Configuration::hasValue(CFG_ENABLED_SOUND)) {
+    m_sound->setEnabled(Configuration::getValueBool(CFG_ENABLED_SOUND));
   }
 }
 

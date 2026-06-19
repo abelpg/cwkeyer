@@ -50,6 +50,21 @@ QJsonObject * Configuration::getValue(std::string key) {
   return object;
 }
 
+bool Configuration::hasValue(std::string key) {
+  QFile file(CONFIGURATION_FILE_NAME);
+  if (!file.exists()) {
+    return false;
+  }
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    throw std::runtime_error("Could not open file");
+  }
+
+  QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  file.close();
+
+  return doc.object().contains(QString::fromStdString(key));
+}
+
 int Configuration::getValueInt(std::string key) {
   QFile file(CONFIGURATION_FILE_NAME);
   if (!file.exists()) {
