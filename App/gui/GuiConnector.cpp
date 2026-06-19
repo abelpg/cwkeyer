@@ -35,6 +35,12 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
 
   // VBand / Vail listener if zadig device is not active
   m_keyboardListener = new KeyboardListener(m_keyer);
+
+  // remotes
+  m_remoteClientOut = new RemoteClient();
+  m_keyer->addKeyerCW(m_remoteClientOut);
+  m_remoteServerIn = new RemoteServer(m_keyer);
+
   log(L_DEBUG) << "GuiConnector constructor finished";
 }
 
@@ -116,6 +122,19 @@ void GuiConnector::loadConfiguration() {
     Configuration::putValueInt(CFG_REMOTE_PORT, m_remotePort);
   }
 
+  if (Configuration::hasValue(CFG_REMOTE_IP)) {
+    const std::string configuredIp = Configuration::getValueString(CFG_REMOTE_IP);
+    if (!configuredIp.empty()) {
+      m_serverIp = QString::fromStdString(configuredIp);
+    } else {
+      m_serverIp = DEFAULT_REMOTE_IP;
+      Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
+    }
+  } else {
+    m_serverIp = DEFAULT_REMOTE_IP;
+    Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
+  }
+
   m_remoteConnected = Configuration::getValueBool(CFG_REMOTE_CONNECTED);
   m_remoteClient = Configuration::getValueBool(CFG_REMOTE_CLIENT);
 }
@@ -126,12 +145,19 @@ void GuiConnector::quit() {
   m_device->disconnectDevice();
   m_serialComm->stop();
   m_serialCommIn->stop();
+  m_remoteClientOut->stop();
+  m_remoteServerIn->stop();
 
   delete m_keyer;
   delete m_device;
   delete m_sound;
   delete m_serialComm;
+  delete m_serialCommIn;
+  delete m_remoteClientOut;
+  delete m_remoteServerIn;
   delete m_keyboard;
+  delete m_keyboardListener;
+  delete m_cwDecoder;
 }
 
 void GuiConnector::initDevice() {
@@ -370,10 +396,45 @@ void GuiConnector::setRemotePort(int port) {
   m_remotePort = port;
   Configuration::putValueInt(CFG_REMOTE_PORT, m_remotePort);
   emit remotePortChanged(m_remotePort);
+
+  if (m_remoteConnected) {
+    setRemoteConnected(false);
+    setRemoteConnected(true);
+  }
+}
+
+void GuiConnector::setServerIp(const QString &ip) {
+  const QString normalized = ip.trimmed();
+  if (normalized.isEmpty()) return;
+  if (m_serverIp == normalized) return;
+
+  m_serverIp = normalized;
+  Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
+  emit serverIpChanged(m_serverIp);
+
+  if (m_remoteConnected && m_remoteClient) {
+    setRemoteConnected(false);
+    setRemoteConnected(true);
+  }
 }
 
 void GuiConnector::setRemoteConnected(bool connected) {
   if (m_remoteConnected == connected) return;
+
+  if (connected) {
+    bool started = false;
+    if (m_remoteClient) {
+      m_remoteServerIn->stop();
+      started = m_remoteClientOut->start(m_serverIp.toStdString(), m_remotePort);
+    } else {
+      m_remoteClientOut->stop();
+      started = m_remoteServerIn->start(m_remotePort);
+    }
+    connected = started;
+  } else {
+    m_remoteClientOut->stop();
+    m_remoteServerIn->stop();
+  }
 
   m_remoteConnected = connected;
   Configuration::putValueBool(CFG_REMOTE_CONNECTED, m_remoteConnected);
@@ -386,6 +447,11 @@ void GuiConnector::setRemoteClient(bool isClient) {
   m_remoteClient = isClient;
   Configuration::putValueBool(CFG_REMOTE_CLIENT, m_remoteClient);
   emit remoteClientChanged(m_remoteClient);
+
+  if (m_remoteConnected) {
+    setRemoteConnected(false);
+    setRemoteConnected(true);
+  }
 }
 
 void GuiConnector::resetSound() {

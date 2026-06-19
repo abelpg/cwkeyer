@@ -17,6 +17,8 @@
 #include "../serial/SerialComm.h"
 #include "../serial/SerialPorts.h"
 #include "../serial/N1MMProxy.h"
+#include "../remote/RemoteClient.h"
+#include "../remote/RemoteServer.h"
 #include "../cwdecoder/CwDecoder.h"
 #include "../utils/Logger.h"
 
@@ -25,6 +27,7 @@ static constexpr const int    DEFAULT_FARNSWORTH  = 25;
 static constexpr const int    DEFAULT_SAMPLE_RATE = 44100;
 static constexpr const int    DEFAULT_FREQUENCY   = 650;
 static constexpr const int    DEFAULT_REMOTE_PORT = 50005;
+static constexpr const char*  DEFAULT_REMOTE_IP   = "127.0.0.1";
 static constexpr const double DEFAULT_AMPLITUDE   = 0.5;
 static constexpr const double DEFAULT_ATTACK      = 0.005;
 static constexpr const double DEFAULT_RELEASE     = 0.005;
@@ -51,6 +54,7 @@ class GuiConnector : public QObject{
   Q_PROPERTY(QStringList commPorts            READ commPorts            NOTIFY commPortsChanged)
   Q_PROPERTY(bool        enabledZadig         READ enabledZadig         NOTIFY enabledZadigChanged)
   Q_PROPERTY(int         remotePort           READ remotePort           WRITE setRemotePort           NOTIFY remotePortChanged)
+  Q_PROPERTY(QString     serverIp             READ serverIp             WRITE setServerIp             NOTIFY serverIpChanged)
   Q_PROPERTY(bool        remoteConnected      READ remoteConnected      WRITE setRemoteConnected      NOTIFY remoteConnectedChanged)
   Q_PROPERTY(bool        remoteClient         READ remoteClient         WRITE setRemoteClient         NOTIFY remoteClientChanged)
 
@@ -75,6 +79,7 @@ class GuiConnector : public QObject{
     int         selectedCommPort()    const { return m_selectedCommPort; }
     int         selectedCommPortIn()  const { return m_selectedCommPortIn; }
     int         remotePort()          const { return m_remotePort; }
+    QString     serverIp()            const { return m_serverIp; }
     bool        remoteConnected()     const { return m_remoteConnected; }
     bool        remoteClient()        const { return m_remoteClient; }
 
@@ -99,6 +104,7 @@ class GuiConnector : public QObject{
     void setSelectedCommPort(int index);
     void setSelectedCommPortIn(int index);
     void setRemotePort(int port);
+    void setServerIp(const QString &ip);
     void setRemoteConnected(bool connected);
     void setRemoteClient(bool isClient);
 
@@ -122,6 +128,7 @@ class GuiConnector : public QObject{
     void enabledCwDecoderChanged(bool enabled);
     void enabledZadigChanged(bool enabled);
     void remotePortChanged(int port);
+    void serverIpChanged(const QString &ip);
     void remoteConnectedChanged(bool connected);
     void remoteClientChanged(bool isClient);
 
@@ -131,6 +138,8 @@ class GuiConnector : public QObject{
     Keyer            *m_keyer;
     SerialComm       *m_serialComm;
     N1MMProxy        *m_serialCommIn;
+    RemoteClient     *m_remoteClientOut;
+    RemoteServer     *m_remoteServerIn;
     Keyboard         *m_keyboard;
     KeyboardListener *m_keyboardListener;
     QApplication     *m_app;
@@ -151,6 +160,7 @@ class GuiConnector : public QObject{
     int         m_selectedCommPortIn = -1;
 
     int  m_remotePort      = DEFAULT_REMOTE_PORT;
+    QString m_serverIp     = DEFAULT_REMOTE_IP;
     bool m_remoteConnected = false;
     bool m_remoteClient    = false;
 

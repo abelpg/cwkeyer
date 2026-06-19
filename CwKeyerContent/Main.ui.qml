@@ -396,7 +396,7 @@ Rectangle {
 
         Button {
             id: btn_remote
-            x: 285
+            x: 248
             y: 8
             width: 68
             height: 69
@@ -413,8 +413,8 @@ Rectangle {
 
         RadioButton {
             id: radioServer
-            x: 451
-            y: 49
+            x: 400
+            y: 11
             text: qsTr("Server")
             checked: !guiConnector.remoteClient
             onCheckedChanged: if (checked)
@@ -423,8 +423,8 @@ Rectangle {
 
         RadioButton {
             id: radioClient
-            x: 538
-            y: 49
+            x: 400
+            y: 43
             text: qsTr("Client")
             checked: guiConnector.remoteClient
             onCheckedChanged: if (checked)
@@ -433,9 +433,9 @@ Rectangle {
 
         SpinBox {
             id: remote_port
-            x: 451
+            x: 484
             y: 11
-            width: 165
+            width: 132
             height: 32
             editable: true
             from: 1
@@ -446,11 +446,24 @@ Rectangle {
 
         Rectangle {
             id: remoteConnected
-            x: 359
+            x: 322
             y: 8
             width: 69
             height: 69
             color: guiConnector.remoteConnected ? "#0fad00" : "#b40202"
+        }
+
+        TextField {
+            id: serverIp
+            x: 484
+            y: 49
+            width: 132
+            height: 32
+            visible: radioClient.checked
+            enabled: radioClient.checked
+            text: guiConnector.serverIp
+            placeholderText: qsTr("127.0.0.1")
+            onEditingFinished: guiConnector.serverIp = text
         }
     }
 
