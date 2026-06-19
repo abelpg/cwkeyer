@@ -14,7 +14,6 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
 
   // Create sound manager
   m_sound = new Sound(parent);
-  resetSound();
 
   // Create CwDecoder manager
   m_cwDecoder = new CwDecoder(std::bind(&GuiConnector::onDecodeTextCw, this, std::placeholders::_1));
@@ -23,7 +22,6 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   m_keyer = new Keyer(m_sound);
   m_keyer->addKeyerCW(m_serialComm);
   m_keyer->addKeyerCW(m_cwDecoder);
-  resetKeyer();
 
   // add N1MMProxy straight
   m_serialCommIn = new N1MMProxy(m_keyer);
@@ -38,10 +36,28 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
 
   // remotes
   m_remoteClientOut = new RemoteClient();
-  m_keyer->addKeyerCW(m_remoteClientOut);
   m_remoteServerIn = new RemoteServer(m_keyer);
+  m_keyer->addKeyerCW(m_remoteClientOut);
 
   log(L_DEBUG) << "GuiConnector constructor finished";
+}
+
+
+void GuiConnector::initConnector() {
+
+  Device *deviceConnected = m_device->initDevice();
+
+  if (deviceConnected == nullptr) {
+    m_keyboardListener->setEnabled(true);
+  }
+  sendDeviceUpdated(deviceConnected);
+
+
+  resetKeyer();
+  resetSound();
+  resetCwDecoder();
+  resetRemotes();
+
 }
 
 void GuiConnector::onDecodeTextCw(std::string text) {
@@ -55,6 +71,7 @@ void GuiConnector::onDecodeTextCw(std::string text) {
 }
 
 void GuiConnector::loadConfiguration() {
+  log(L_DEBUG) << "Loading configuration";
   // Amplitude: valor en [0.0, 1.0]
   double amp = Configuration::getValueDouble(CFG_AMPLITUDE);
   if (amp > 0.0) {
@@ -135,7 +152,6 @@ void GuiConnector::loadConfiguration() {
     Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
   }
 
-  m_remoteConnected = Configuration::getValueBool(CFG_REMOTE_CONNECTED);
   m_remoteClient = Configuration::getValueBool(CFG_REMOTE_CLIENT);
 }
 
@@ -160,17 +176,6 @@ void GuiConnector::quit() {
   delete m_cwDecoder;
 }
 
-void GuiConnector::initDevice() {
-
-  Device *deviceConnected = m_device->initDevice();
-
-  if (deviceConnected == nullptr) {
-    m_keyboardListener->setEnabled(true);
-  }
-  sendDeviceUpdated(deviceConnected);
-
-
-}
 
 void GuiConnector::connectDevice() {
   Device *deviceDetected = m_device->connectDevice();
@@ -397,10 +402,7 @@ void GuiConnector::setRemotePort(int port) {
   Configuration::putValueInt(CFG_REMOTE_PORT, m_remotePort);
   emit remotePortChanged(m_remotePort);
 
-  if (m_remoteConnected) {
-    setRemoteConnected(false);
-    setRemoteConnected(true);
-  }
+  resetRemotes();
 }
 
 void GuiConnector::setServerIp(const QString &ip) {
@@ -412,14 +414,10 @@ void GuiConnector::setServerIp(const QString &ip) {
   Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
   emit serverIpChanged(m_serverIp);
 
-  if (m_remoteConnected && m_remoteClient) {
-    setRemoteConnected(false);
-    setRemoteConnected(true);
-  }
+  resetRemotes();
 }
 
 void GuiConnector::setRemoteConnected(bool connected) {
-  if (m_remoteConnected == connected) return;
 
   if (connected) {
     bool started = false;
@@ -427,6 +425,10 @@ void GuiConnector::setRemoteConnected(bool connected) {
       m_remoteServerIn->stop();
       started = m_remoteClientOut->start(m_serverIp.toStdString(), m_remotePort);
     } else {
+
+      disconnectDevice();
+      setEnabledSound(false);
+
       m_remoteClientOut->stop();
       started = m_remoteServerIn->start(m_remotePort);
     }
@@ -436,9 +438,8 @@ void GuiConnector::setRemoteConnected(bool connected) {
     m_remoteServerIn->stop();
   }
 
-  m_remoteConnected = connected;
-  Configuration::putValueBool(CFG_REMOTE_CONNECTED, m_remoteConnected);
-  emit remoteConnectedChanged(m_remoteConnected);
+  Configuration::putValueBool(CFG_REMOTE_CONNECTED, connected);
+  emit remoteConnectedChanged(connected);
 }
 
 void GuiConnector::setRemoteClient(bool isClient) {
@@ -448,10 +449,7 @@ void GuiConnector::setRemoteClient(bool isClient) {
   Configuration::putValueBool(CFG_REMOTE_CLIENT, m_remoteClient);
   emit remoteClientChanged(m_remoteClient);
 
-  if (m_remoteConnected) {
-    setRemoteConnected(false);
-    setRemoteConnected(true);
-  }
+  resetRemotes();
 }
 
 void GuiConnector::resetSound() {
@@ -479,5 +477,19 @@ void GuiConnector::resetCwDecoder() {
   if (m_cwDecoder->started()) {
     m_cwDecoder->stop();
     m_cwDecoder->start(m_farnsWorth, m_wpm);
+  }
+}
+
+bool GuiConnector::remoteConnected() const {
+  return (m_remoteClient && m_remoteClientOut && m_remoteClientOut->started()) ||
+    (!m_remoteClient && m_remoteServerIn && m_remoteServerIn->started());
+}
+
+void GuiConnector::resetRemotes() {
+  bool connected = Configuration::getValueBool(CFG_REMOTE_CONNECTED);
+
+  setRemoteConnected(false);
+  if (connected) {
+    setRemoteConnected(true);
   }
 }

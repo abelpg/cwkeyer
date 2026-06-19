@@ -80,10 +80,9 @@ class GuiConnector : public QObject{
     int         selectedCommPortIn()  const { return m_selectedCommPortIn; }
     int         remotePort()          const { return m_remotePort; }
     QString     serverIp()            const { return m_serverIp; }
-    bool        remoteConnected()     const { return m_remoteConnected; }
+    bool        remoteConnected()     const;
     bool        remoteClient()        const { return m_remoteClient; }
 
-    Q_INVOKABLE void initDevice();
     Q_INVOKABLE void detectDevice();
     Q_INVOKABLE void connectDevice();
     Q_INVOKABLE void disconnectDevice();
@@ -107,6 +106,7 @@ class GuiConnector : public QObject{
     void setServerIp(const QString &ip);
     void setRemoteConnected(bool connected);
     void setRemoteClient(bool isClient);
+    void initConnector();
 
   signals:
     void textCwDecoderUpdated(QVariant varData);
@@ -161,12 +161,12 @@ class GuiConnector : public QObject{
 
     int  m_remotePort      = DEFAULT_REMOTE_PORT;
     QString m_serverIp     = DEFAULT_REMOTE_IP;
-    bool m_remoteConnected = false;
     bool m_remoteClient    = false;
 
     void resetSound();
     void resetKeyer();
     void resetCwDecoder();
+    void resetRemotes();
     void sendDeviceUpdated(Device *device);
     void loadAudioDevices();
     void loadConfiguration();
