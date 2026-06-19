@@ -24,6 +24,7 @@ static constexpr const int    DEFAULT_WPM         = 25;
 static constexpr const int    DEFAULT_FARNSWORTH  = 25;
 static constexpr const int    DEFAULT_SAMPLE_RATE = 44100;
 static constexpr const int    DEFAULT_FREQUENCY   = 650;
+static constexpr const int    DEFAULT_REMOTE_PORT = 12060;
 static constexpr const double DEFAULT_AMPLITUDE   = 0.5;
 static constexpr const double DEFAULT_ATTACK      = 0.005;
 static constexpr const double DEFAULT_RELEASE     = 0.005;
@@ -49,6 +50,9 @@ class GuiConnector : public QObject{
   Q_PROPERTY(QStringList audioDevices         READ audioDevices         NOTIFY audioDevicesChanged)
   Q_PROPERTY(QStringList commPorts            READ commPorts            NOTIFY commPortsChanged)
   Q_PROPERTY(bool        enabledZadig         READ enabledZadig         NOTIFY enabledZadigChanged)
+  Q_PROPERTY(int         remotePort           READ remotePort           WRITE setRemotePort           NOTIFY remotePortChanged)
+  Q_PROPERTY(bool        remoteConnected      READ remoteConnected      WRITE setRemoteConnected      NOTIFY remoteConnectedChanged)
+  Q_PROPERTY(bool        remoteClient         READ remoteClient         WRITE setRemoteClient         NOTIFY remoteClientChanged)
 
   public:
     explicit GuiConnector(QApplication *app, QObject *parent = nullptr);
@@ -70,6 +74,9 @@ class GuiConnector : public QObject{
     QStringList commPorts()           const { return m_commPorts; }
     int         selectedCommPort()    const { return m_selectedCommPort; }
     int         selectedCommPortIn()  const { return m_selectedCommPortIn; }
+    int         remotePort()          const { return m_remotePort; }
+    bool        remoteConnected()     const { return m_remoteConnected; }
+    bool        remoteClient()        const { return m_remoteClient; }
 
     Q_INVOKABLE void initDevice();
     Q_INVOKABLE void detectDevice();
@@ -91,6 +98,9 @@ class GuiConnector : public QObject{
     void setEnabledCwDecoder(bool enabled);
     void setSelectedCommPort(int index);
     void setSelectedCommPortIn(int index);
+    void setRemotePort(int port);
+    void setRemoteConnected(bool connected);
+    void setRemoteClient(bool isClient);
 
   signals:
     void textCwDecoderUpdated(QVariant varData);
@@ -111,6 +121,9 @@ class GuiConnector : public QObject{
     void enabledKeyboardChanged(bool enabled);
     void enabledCwDecoderChanged(bool enabled);
     void enabledZadigChanged(bool enabled);
+    void remotePortChanged(int port);
+    void remoteConnectedChanged(bool connected);
+    void remoteClientChanged(bool isClient);
 
   private:
     Sound            *m_sound;
@@ -136,6 +149,10 @@ class GuiConnector : public QObject{
     QStringList m_commPorts;
     int         m_selectedCommPort   = -1;
     int         m_selectedCommPortIn = -1;
+
+    int  m_remotePort      = DEFAULT_REMOTE_PORT;
+    bool m_remoteConnected = false;
+    bool m_remoteClient    = false;
 
     void resetSound();
     void resetKeyer();

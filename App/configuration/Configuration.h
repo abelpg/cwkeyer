@@ -17,6 +17,9 @@ static constexpr const char* CFG_SELECTED_AUDIO_DEVICE = "selected_audio_device"
 static constexpr const char* CFG_MODE                  = "mode";
 static constexpr const char* CFG_COMM_OUT              = "commout";
 static constexpr const char* CFG_COMM_IN               = "commin";
+static constexpr const char* CFG_REMOTE_PORT           = "remote_port";
+static constexpr const char* CFG_REMOTE_CONNECTED      = "remote_connected";
+static constexpr const char* CFG_REMOTE_CLIENT         = "remote_client";
 
 class Configuration {
 

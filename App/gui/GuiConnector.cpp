@@ -107,6 +107,17 @@ void GuiConnector::loadConfiguration() {
   if (selCommIn >= 0 && selCommIn < m_commPorts.size()) {
     m_selectedCommPortIn = selCommIn;
   }
+
+  int remotePort = Configuration::getValueInt(CFG_REMOTE_PORT);
+  if (remotePort > 0 && remotePort <= 65535) {
+    m_remotePort = remotePort;
+  } else {
+    m_remotePort = DEFAULT_REMOTE_PORT;
+    Configuration::putValueInt(CFG_REMOTE_PORT, m_remotePort);
+  }
+
+  m_remoteConnected = Configuration::getValueBool(CFG_REMOTE_CONNECTED);
+  m_remoteClient = Configuration::getValueBool(CFG_REMOTE_CLIENT);
 }
 
 void GuiConnector::quit() {
@@ -347,6 +358,31 @@ void GuiConnector::setSelectedCommPortIn(int index) {
   m_selectedCommPortIn = index;
   Configuration::putValueInt(CFG_COMM_IN, m_selectedCommPortIn);
   emit selectedCommPortInChanged(m_selectedCommPortIn);
+}
+
+void GuiConnector::setRemotePort(int port) {
+  if (port <= 0 || port > 65535) return;
+  if (m_remotePort == port) return;
+
+  m_remotePort = port;
+  Configuration::putValueInt(CFG_REMOTE_PORT, m_remotePort);
+  emit remotePortChanged(m_remotePort);
+}
+
+void GuiConnector::setRemoteConnected(bool connected) {
+  if (m_remoteConnected == connected) return;
+
+  m_remoteConnected = connected;
+  Configuration::putValueBool(CFG_REMOTE_CONNECTED, m_remoteConnected);
+  emit remoteConnectedChanged(m_remoteConnected);
+}
+
+void GuiConnector::setRemoteClient(bool isClient) {
+  if (m_remoteClient == isClient) return;
+
+  m_remoteClient = isClient;
+  Configuration::putValueBool(CFG_REMOTE_CLIENT, m_remoteClient);
+  emit remoteClientChanged(m_remoteClient);
 }
 
 void GuiConnector::resetSound() {

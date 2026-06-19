@@ -48,7 +48,7 @@ Rectangle {
         x: 550
         y: 8
         width: 82
-        height: 70
+        height: 67
         text: qsTr("Search\nZadig device")
         ToolTip.delay: 1000
         ToolTip.timeout: 5000
@@ -72,7 +72,7 @@ Rectangle {
         x: 11
         y: 8
         width: 107
-        height: 70
+        height: 67
         text: qsTr("Connect")
 
         Connections {
@@ -88,21 +88,12 @@ Rectangle {
     }
 
     Rectangle {
-        id: line1
-        x: 8
-        y: 84
-        width: 624
-        height: 5
-        color: "#bbbbbb"
-    }
-
-    Rectangle {
         id: device_connected
         x: 124
         y: 8
         width: 70
-        height: 70
-        color: Constants.backgroundColor
+        height: 67
+        color: "#ffffff"
     }
 
     Rectangle {
@@ -110,7 +101,7 @@ Rectangle {
         x: 200
         y: 8
         width: 344
-        height: 70
+        height: 67
         color: "#00ffffff"
         border.color: "#bbbbbb"
         border.width: 2
@@ -120,7 +111,7 @@ Rectangle {
             x: 3
             y: 3
             width: 341
-            height: 65
+            height: 64
             text: qsTr("")
             font.pixelSize: 16
             property bool connected: true
@@ -130,7 +121,7 @@ Rectangle {
     Rectangle {
         id: form_keyer
         x: 8
-        y: 95
+        y: 81
         width: 624
         height: 53
         color: "#00ffffff"
@@ -215,7 +206,7 @@ Rectangle {
     Rectangle {
         id: form_sound
         x: 8
-        y: 154
+        y: 136
         width: 624
         height: 90
         color: "#00ffffff"
@@ -311,9 +302,9 @@ Rectangle {
     Rectangle {
         id: form_com_out
         x: 8
-        y: 250
+        y: 229
         width: 624
-        height: 50
+        height: 89
         color: "#00ffffff"
         border.color: "#bbbbbb"
         border.width: 2
@@ -322,7 +313,7 @@ Rectangle {
             id: btn_comm_out
             x: 8
             y: 8
-            text: qsTr("Comm CW Out")
+            text: qsTr("CW Out")
             ToolTip.delay: 1000
             ToolTip.timeout: 5000
             ToolTip.visible: hovered
@@ -341,9 +332,10 @@ Rectangle {
 
         ComboBox {
             id: select_comm_out
-            x: 165
+            x: 117
             y: 8
             width: 120
+
             height: 32
             model: guiConnector.commPorts
             currentIndex: guiConnector.selectedCommPort
@@ -352,7 +344,7 @@ Rectangle {
 
         Rectangle {
             id: comm_out_connected
-            x: 129
+            x: 81
             y: 10
             width: 30
             height: 30
@@ -361,9 +353,11 @@ Rectangle {
 
         Button {
             id: btn_comm_in
-            x: 334
-            y: 10
-            text: qsTr("Comm CW In")
+            x: 8
+            y: 43
+            width: 67
+            height: 32
+            text: qsTr("CW In")
             ToolTip.delay: 1000
             ToolTip.timeout: 5000
             ToolTip.visible: hovered
@@ -382,28 +376,88 @@ Rectangle {
 
         Rectangle {
             id: comm_in_connected
-            x: 460
-            y: 10
+            x: 81
+            y: 45
             width: 30
             height: 30
             color: guiConnector.enabledCommIn ? "#0fad00" : "#b40202"
         }
         ComboBox {
             id: select_comm_in
-            x: 496
-            y: 8
+            x: 117
+            y: 45
             width: 120
+
             height: 32
             model: guiConnector.commPorts
             currentIndex: guiConnector.selectedCommPortIn
             onCurrentIndexChanged: guiConnector.selectedCommPortIn = currentIndex
         }
+
+        Button {
+            id: btn_remote
+            x: 285
+            y: 8
+            width: 68
+            height: 69
+            text: qsTr("Remote")
+            Connections {
+                target: btn_remote
+                function onClicked() {
+                    guiConnector.remoteConnected = !guiConnector.remoteConnected
+                }
+            }
+            ToolTip.timeout: 5000
+            ToolTip.delay: 1000
+        }
+
+        RadioButton {
+            id: radioServer
+            x: 451
+            y: 49
+            text: qsTr("Server")
+            checked: !guiConnector.remoteClient
+            onCheckedChanged: if (checked)
+                                  guiConnector.remoteClient = false
+        }
+
+        RadioButton {
+            id: radioClient
+            x: 538
+            y: 49
+            text: qsTr("Client")
+            checked: guiConnector.remoteClient
+            onCheckedChanged: if (checked)
+                                  guiConnector.remoteClient = true
+        }
+
+        SpinBox {
+            id: remote_port
+            x: 451
+            y: 11
+            width: 165
+            height: 32
+            editable: true
+            from: 1
+            to: 65535
+            value: guiConnector.remotePort
+            onValueChanged: guiConnector.remotePort = value
+        }
+
+        Rectangle {
+            id: remoteConnected
+            x: 359
+            y: 8
+            width: 69
+            height: 69
+            color: guiConnector.remoteConnected ? "#0fad00" : "#b40202"
+        }
     }
 
     CheckBox {
         id: cw_decoder_active
-        x: 11
-        y: 306
+        x: 8
+        y: 317
         text: qsTr("CW Decoder")
         checked: guiConnector.enabledCwDecoder
         onToggled: guiConnector.enabledCwDecoder = checked
@@ -412,9 +466,9 @@ Rectangle {
     Rectangle {
         id: rectangle_text_cw_decoder
         x: 8
-        y: 334
+        y: 349
         width: 624
-        height: 138
+        height: 123
         color: "#00ffffff"
         border.color: "#bbbbbb"
         border.width: 2
@@ -424,7 +478,7 @@ Rectangle {
             x: 0
             y: 0
             width: 624
-            height: 138
+            height: 123
             ScrollBar.horizontal.interactive: false
             ScrollBar.vertical.interactive: true
             clip: true
@@ -434,7 +488,7 @@ Rectangle {
                 x: 0
                 y: 0
                 width: 624
-                height: 138
+                height: 123
                 text: qsTr("")
                 font.pixelSize: 16
                 wrapMode: Text.Wrap
@@ -448,7 +502,7 @@ Rectangle {
     Button {
         id: btn_clear
         x: 582
-        y: 310
+        y: 325
         width: 50
         height: 24
         text: qsTr("Clear")
