@@ -338,6 +338,11 @@ bool GuiConnector::enabledZadig() const {
   return m_device->connected();
 }
 
+bool GuiConnector::remoteConnected() const {
+  return (m_remoteClient && m_remoteClientOut && m_remoteClientOut->started()) ||
+    (!m_remoteClient && m_remoteServerIn && m_remoteServerIn->started());
+}
+
 void GuiConnector::setEnabledKeyboard(bool enabled) {
   if (m_keyboardListener->isEnabled() == enabled) {
     log(L_DEBUG) << "GuiConnector::setEnabledKeyboard() when listener is enabled";
@@ -464,12 +469,14 @@ void GuiConnector::resetSound() {
 
   if (Configuration::hasValue(CFG_ENABLED_SOUND)) {
     m_sound->setEnabled(Configuration::getValueBool(CFG_ENABLED_SOUND));
+  } else {
+    m_sound->setEnabled(false);
   }
+  emit soundEnabledChanged(m_sound->enabled());
 }
 
 void GuiConnector::resetKeyer() {
   m_keyer->initKeyer(m_wpm, static_cast<Mode>(m_mode));
-  // Always reset cwDecoder
   resetCwDecoder();
 }
 
@@ -480,14 +487,8 @@ void GuiConnector::resetCwDecoder() {
   }
 }
 
-bool GuiConnector::remoteConnected() const {
-  return (m_remoteClient && m_remoteClientOut && m_remoteClientOut->started()) ||
-    (!m_remoteClient && m_remoteServerIn && m_remoteServerIn->started());
-}
-
 void GuiConnector::resetRemotes() {
   bool connected = Configuration::getValueBool(CFG_REMOTE_CONNECTED);
-
   setRemoteConnected(false);
   if (connected) {
     setRemoteConnected(true);
