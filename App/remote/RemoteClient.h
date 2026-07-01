@@ -7,14 +7,13 @@
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
-#include <optional>
 #include <string>
 #include <thread>
 
 /**
  * WebSocket client that keys a remote transceiver.
  *
- * Common logic (WebSocket framing, handshake, MOX and volume management)
+ * Common logic (WebSocket framing, handshake and MOX management)
  * lives in RemoteClient.cpp. Platform-specific socket primitives are
  * implemented in RemoteClient_win.cpp / RemoteClient_linux.cpp.
  */
@@ -25,7 +24,7 @@ public:
 
   /// Connects to the server, performs the WebSocket handshake and starts the MOX timer thread.
   bool start(const std::string &serverIp, int port, int moxReleaseDelayMs);
-  /// Releases MOX (restoring volume), stops the timer thread and closes the connection.
+  /// Releases MOX, stops the timer thread and closes the connection.
   void stop();
   /// Returns true while the client is connected and operational.
   bool started() const;
@@ -46,11 +45,9 @@ private:
   bool sendCommand(bool keyDown);
   bool sendKeyerCommand(const std::string &command, int duration);
   bool sendLine(const std::string &line);
-  bool receiveLine(std::string &line, int timeoutMs);
   bool activateMoxLocked();
   void deactivateMoxLocked();
   void scheduleMoxReleaseLocked(int duration);
-  bool queryServerVolume(int &volume);
   void resetMoxStateLocked(int moxReleaseDelayMs);
 
   // --- Platform-specific primitives (RemoteClient_win.cpp / RemoteClient_linux.cpp) ---
@@ -79,7 +76,6 @@ private:
   uint64_t m_moxScheduleToken = 0;
   uint64_t m_moxDeactivationAtMs = 0;
   int m_moxReleaseDelayMs = 250;
-  std::optional<int> m_previousVolume;
 
 #ifdef _WIN32
   bool m_wsaStarted = false;
