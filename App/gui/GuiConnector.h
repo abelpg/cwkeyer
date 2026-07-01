@@ -17,6 +17,7 @@
 #include "../serial/SerialComm.h"
 #include "../serial/SerialPorts.h"
 #include "../serial/N1MMProxy.h"
+#include "../remote/RemoteClient.h"
 #include "../cwdecoder/CwDecoder.h"
 #include "../utils/Logger.h"
 
@@ -24,6 +25,9 @@ static constexpr const int    DEFAULT_WPM         = 25;
 static constexpr const int    DEFAULT_FARNSWORTH  = 25;
 static constexpr const int    DEFAULT_SAMPLE_RATE = 44100;
 static constexpr const int    DEFAULT_FREQUENCY   = 650;
+static constexpr const int    DEFAULT_REMOTE_PORT = 50005;
+static constexpr const int    DEFAULT_REMOTE_MOX_DELAY_MS = 250;
+static constexpr const char*  DEFAULT_REMOTE_IP   = "127.0.0.1";
 static constexpr const double DEFAULT_AMPLITUDE   = 0.5;
 static constexpr const double DEFAULT_ATTACK      = 0.005;
 static constexpr const double DEFAULT_RELEASE     = 0.005;
@@ -49,8 +53,12 @@ class GuiConnector : public QObject{
   Q_PROPERTY(QStringList audioDevices         READ audioDevices         NOTIFY audioDevicesChanged)
   Q_PROPERTY(QStringList commPorts            READ commPorts            NOTIFY commPortsChanged)
   Q_PROPERTY(bool        enabledZadig         READ enabledZadig         NOTIFY enabledZadigChanged)
+  Q_PROPERTY(int         remotePort           READ remotePort           WRITE setRemotePort           NOTIFY remotePortChanged)
+  Q_PROPERTY(int         remoteMoxDelayMs     READ remoteMoxDelayMs     WRITE setRemoteMoxDelayMs     NOTIFY remoteMoxDelayMsChanged)
+   Q_PROPERTY(QString     serverIp             READ serverIp             WRITE setServerIp             NOTIFY serverIpChanged)
+   Q_PROPERTY(bool        remoteConnected      READ remoteConnected      WRITE setRemoteConnected      NOTIFY remoteConnectedChanged)
 
-  public:
+   public:
     explicit GuiConnector(QApplication *app, QObject *parent = nullptr);
 
     // Getters
@@ -69,9 +77,12 @@ class GuiConnector : public QObject{
     bool        enabledZadig()        const;
     QStringList commPorts()           const { return m_commPorts; }
     int         selectedCommPort()    const { return m_selectedCommPort; }
-    int         selectedCommPortIn()  const { return m_selectedCommPortIn; }
+     int         selectedCommPortIn()  const { return m_selectedCommPortIn; }
+     int         remotePort()          const { return m_remotePort; }
+     int         remoteMoxDelayMs()    const { return m_remoteMoxDelayMs; }
+     QString     serverIp()            const { return m_serverIp; }
+     bool        remoteConnected()     const;
 
-    Q_INVOKABLE void initDevice();
     Q_INVOKABLE void detectDevice();
     Q_INVOKABLE void connectDevice();
     Q_INVOKABLE void disconnectDevice();
@@ -91,6 +102,11 @@ class GuiConnector : public QObject{
     void setEnabledCwDecoder(bool enabled);
     void setSelectedCommPort(int index);
     void setSelectedCommPortIn(int index);
+     void setRemotePort(int port);
+     void setRemoteMoxDelayMs(int delayMs);
+     void setServerIp(const QString &ip);
+     void setRemoteConnected(bool connected);
+     void initConnector();
 
   signals:
     void textCwDecoderUpdated(QVariant varData);
@@ -111,17 +127,22 @@ class GuiConnector : public QObject{
     void enabledKeyboardChanged(bool enabled);
     void enabledCwDecoderChanged(bool enabled);
     void enabledZadigChanged(bool enabled);
+    void remotePortChanged(int port);
+     void remoteMoxDelayMsChanged(int delayMs);
+     void serverIpChanged(const QString &ip);
+     void remoteConnectedChanged(bool connected);
 
   private:
-    Sound            *m_sound;
-    UsbDevice        *m_device;
-    Keyer            *m_keyer;
-    SerialComm       *m_serialComm;
-    N1MMProxy        *m_serialCommIn;
-    Keyboard         *m_keyboard;
-    KeyboardListener *m_keyboardListener;
-    QApplication     *m_app;
-    CwDecoder        *m_cwDecoder;
+     Sound            *m_sound;
+     UsbDevice        *m_device;
+     Keyer            *m_keyer;
+     SerialComm       *m_serialComm;
+     N1MMProxy        *m_serialCommIn;
+     RemoteClient     *m_remoteClientOut;
+     Keyboard         *m_keyboard;
+     KeyboardListener *m_keyboardListener;
+     QApplication     *m_app;
+     CwDecoder        *m_cwDecoder;
 
     double m_amplitude  = DEFAULT_AMPLITUDE;
     double m_frequency  = DEFAULT_FREQUENCY;
@@ -131,15 +152,20 @@ class GuiConnector : public QObject{
     QStringList          m_audioDevices;
     QList<QAudioDevice>  m_audioDeviceList;
     int                  m_selectedAudioDevice = 0;
-    int                  m_mode               = static_cast<int>(Mode::IAMBIC_B);
+    int                  m_mode                = static_cast<int>(Mode::IAMBIC_B);
 
     QStringList m_commPorts;
     int         m_selectedCommPort   = -1;
     int         m_selectedCommPortIn = -1;
 
-    void resetSound();
+     int  m_remotePort      = DEFAULT_REMOTE_PORT;
+     int  m_remoteMoxDelayMs = DEFAULT_REMOTE_MOX_DELAY_MS;
+     QString m_serverIp     = DEFAULT_REMOTE_IP;
+
+     void resetSound();
     void resetKeyer();
     void resetCwDecoder();
+    void resetRemotes();
     void sendDeviceUpdated(Device *device);
     void loadAudioDevices();
     void loadConfiguration();

@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
             QCoreApplication::exit(-1);
         }
         // Only when connect init device
-        guiConnector.initDevice();
+        guiConnector.initConnector();
     }, Qt::QueuedConnection);
 
     engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");

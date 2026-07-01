@@ -12,6 +12,7 @@ add_subdirectory(serial)
 add_subdirectory(keyboard)
 add_subdirectory(usb)
 add_subdirectory(keyer)
+add_subdirectory(remote)
 add_subdirectory(gui)
 
 

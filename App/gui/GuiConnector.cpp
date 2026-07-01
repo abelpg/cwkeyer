@@ -14,7 +14,6 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
 
   // Create sound manager
   m_sound = new Sound(parent);
-  resetSound();
 
   // Create CwDecoder manager
   m_cwDecoder = new CwDecoder(std::bind(&GuiConnector::onDecodeTextCw, this, std::placeholders::_1));
@@ -23,7 +22,6 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   m_keyer = new Keyer(m_sound);
   m_keyer->addKeyerCW(m_serialComm);
   m_keyer->addKeyerCW(m_cwDecoder);
-  resetKeyer();
 
   // add N1MMProxy straight
   m_serialCommIn = new N1MMProxy(m_keyer);
@@ -33,9 +31,32 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   m_device   = new UsbDevice(m_keyer);
   m_device->addDitDah(m_keyboard);
 
-  // VBand / Vail listener if zadig device is not active
-  m_keyboardListener = new KeyboardListener(m_keyer);
-  log(L_DEBUG) << "GuiConnector constructor finished";
+   // VBand / Vail listener if zadig device is not active
+   m_keyboardListener = new KeyboardListener(m_keyer);
+
+   // remotes - only RemoteClient
+   m_remoteClientOut = new RemoteClient();
+   m_keyer->addKeyerCW(m_remoteClientOut);
+
+   log(L_DEBUG) << "GuiConnector constructor finished";
+}
+
+
+void GuiConnector::initConnector() {
+
+  Device *deviceConnected = m_device->initDevice();
+
+  if (deviceConnected == nullptr) {
+    m_keyboardListener->setEnabled(true);
+  }
+  sendDeviceUpdated(deviceConnected);
+
+
+  resetKeyer();
+  resetSound();
+  resetCwDecoder();
+  resetRemotes();
+
 }
 
 void GuiConnector::onDecodeTextCw(std::string text) {
@@ -49,6 +70,7 @@ void GuiConnector::onDecodeTextCw(std::string text) {
 }
 
 void GuiConnector::loadConfiguration() {
+  log(L_DEBUG) << "Loading configuration";
   // Amplitude: valor en [0.0, 1.0]
   double amp = Configuration::getValueDouble(CFG_AMPLITUDE);
   if (amp > 0.0) {
@@ -107,31 +129,56 @@ void GuiConnector::loadConfiguration() {
   if (selCommIn >= 0 && selCommIn < m_commPorts.size()) {
     m_selectedCommPortIn = selCommIn;
   }
+
+  int remotePort = Configuration::getValueInt(CFG_REMOTE_PORT);
+  if (remotePort > 0 && remotePort <= 65535) {
+    m_remotePort = remotePort;
+  } else {
+    m_remotePort = DEFAULT_REMOTE_PORT;
+    Configuration::putValueInt(CFG_REMOTE_PORT, m_remotePort);
+  }
+
+  const int remoteMoxDelayMs = Configuration::getValueInt(CFG_REMOTE_MOX_DELAY_MS);
+  if (remoteMoxDelayMs >= 0) {
+    m_remoteMoxDelayMs = remoteMoxDelayMs;
+  } else {
+    m_remoteMoxDelayMs = DEFAULT_REMOTE_MOX_DELAY_MS;
+    Configuration::putValueInt(CFG_REMOTE_MOX_DELAY_MS, m_remoteMoxDelayMs);
+  }
+
+  if (Configuration::hasValue(CFG_REMOTE_IP)) {
+    const std::string configuredIp = Configuration::getValueString(CFG_REMOTE_IP);
+    if (!configuredIp.empty()) {
+      m_serverIp = QString::fromStdString(configuredIp);
+    } else {
+      m_serverIp = DEFAULT_REMOTE_IP;
+      Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
+    }
+  } else {
+     m_serverIp = DEFAULT_REMOTE_IP;
+     Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
+   }
 }
 
 void GuiConnector::quit() {
-  log(L_DEBUG) << "Quit called";
-  m_sound->stop();
-  m_device->disconnectDevice();
-  m_serialComm->stop();
-  m_serialCommIn->stop();
+   log(L_DEBUG) << "Quit called";
+   m_sound->stop();
+   m_device->disconnectDevice();
+   m_serialComm->stop();
+   m_serialCommIn->stop();
+   m_remoteClientOut->stop();
 
-  delete m_keyer;
-  delete m_device;
-  delete m_sound;
-  delete m_serialComm;
-  delete m_keyboard;
+   delete m_keyer;
+   delete m_device;
+   delete m_sound;
+   delete m_serialComm;
+   delete m_serialCommIn;
+   delete m_remoteClientOut;
+   delete m_keyboard;
+   delete m_keyboardListener;
+   delete m_cwDecoder;
 }
 
-void GuiConnector::initDevice() {
-  Device *deviceConnected = m_device->initDevice();
-
-  if (deviceConnected == nullptr) {
-    m_keyboardListener->setEnabled(true);
-  }
-
-  sendDeviceUpdated(deviceConnected);
-}
 
 void GuiConnector::connectDevice() {
   Device *deviceDetected = m_device->connectDevice();
@@ -255,6 +302,7 @@ bool GuiConnector::enabledSound() const {
 
 void GuiConnector::setEnabledSound(bool enabled) {
   m_sound->setEnabled(enabled);
+  Configuration::putValueBool(CFG_ENABLED_SOUND, enabled);
   emit soundEnabledChanged(enabled);
 }
 
@@ -291,6 +339,10 @@ bool GuiConnector::enabledKeyboard() const {
 
 bool GuiConnector::enabledZadig() const {
   return m_device->connected();
+}
+
+bool GuiConnector::remoteConnected() const {
+   return m_remoteClientOut && m_remoteClientOut->started();
 }
 
 void GuiConnector::setEnabledKeyboard(bool enabled) {
@@ -349,6 +401,53 @@ void GuiConnector::setSelectedCommPortIn(int index) {
   emit selectedCommPortInChanged(m_selectedCommPortIn);
 }
 
+void GuiConnector::setRemotePort(int port) {
+  if (port <= 0 || port > 65535) return;
+  if (m_remotePort == port) return;
+
+  m_remotePort = port;
+  Configuration::putValueInt(CFG_REMOTE_PORT, m_remotePort);
+  emit remotePortChanged(m_remotePort);
+
+  resetRemotes();
+}
+
+void GuiConnector::setServerIp(const QString &ip) {
+  const QString normalized = ip.trimmed();
+  if (normalized.isEmpty()) return;
+  if (m_serverIp == normalized) return;
+
+  m_serverIp = normalized;
+  Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
+  emit serverIpChanged(m_serverIp);
+
+  resetRemotes();
+}
+
+void GuiConnector::setRemoteMoxDelayMs(int delayMs) {
+  if (delayMs < 0) return;
+  if (m_remoteMoxDelayMs == delayMs) return;
+
+  m_remoteMoxDelayMs = delayMs;
+  Configuration::putValueInt(CFG_REMOTE_MOX_DELAY_MS, m_remoteMoxDelayMs);
+  emit remoteMoxDelayMsChanged(m_remoteMoxDelayMs);
+
+  resetRemotes();
+}
+
+void GuiConnector::setRemoteConnected(bool connected) {
+   bool started = false;
+
+   if (connected) {
+     started = m_remoteClientOut->start(m_serverIp.toStdString(), m_remotePort, m_remoteMoxDelayMs);
+   } else {
+     m_remoteClientOut->stop();
+   }
+
+   Configuration::putValueBool(CFG_REMOTE_CONNECTED, started);
+   emit remoteConnectedChanged(started);
+}
+
 void GuiConnector::resetSound() {
   m_sound->stop();
   if (m_selectedAudioDevice >= 0 && m_selectedAudioDevice < m_audioDeviceList.size()) {
@@ -358,11 +457,17 @@ void GuiConnector::resetSound() {
   } else {
     m_sound->init(m_frequency, DEFAULT_SAMPLE_RATE, m_amplitude, DEFAULT_ATTACK, DEFAULT_RELEASE);
   }
+
+  if (Configuration::hasValue(CFG_ENABLED_SOUND)) {
+    m_sound->setEnabled(Configuration::getValueBool(CFG_ENABLED_SOUND));
+  } else {
+    m_sound->setEnabled(false);
+  }
+  emit soundEnabledChanged(m_sound->enabled());
 }
 
 void GuiConnector::resetKeyer() {
   m_keyer->initKeyer(m_wpm, static_cast<Mode>(m_mode));
-  // Always reset cwDecoder
   resetCwDecoder();
 }
 
@@ -371,4 +476,12 @@ void GuiConnector::resetCwDecoder() {
     m_cwDecoder->stop();
     m_cwDecoder->start(m_farnsWorth, m_wpm);
   }
+}
+
+void GuiConnector::resetRemotes() {
+   bool connected = Configuration::getValueBool(CFG_REMOTE_CONNECTED);
+   setRemoteConnected(false);
+   if (connected) {
+     setRemoteConnected(true);
+   }
 }

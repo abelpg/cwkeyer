@@ -17,6 +17,11 @@ static constexpr const char* CFG_SELECTED_AUDIO_DEVICE = "selected_audio_device"
 static constexpr const char* CFG_MODE                  = "mode";
 static constexpr const char* CFG_COMM_OUT              = "commout";
 static constexpr const char* CFG_COMM_IN               = "commin";
+static constexpr const char* CFG_ENABLED_SOUND         = "enabled_sound";
+static constexpr const char* CFG_REMOTE_PORT           = "remote_port";
+static constexpr const char* CFG_REMOTE_MOX_DELAY_MS   = "remote_mox_delay_ms";
+static constexpr const char* CFG_REMOTE_CONNECTED      = "remote_connected";
+static constexpr const char* CFG_REMOTE_IP             = "remote_ip";
 
 class Configuration {
 
@@ -33,6 +38,7 @@ class Configuration {
     static void putValueString(std::string key, std::string value);
 
     static QJsonObject * getValue(std::string key);
+    static bool hasValue(std::string key);
     static int getValueInt(std::string key);
     static double getValueDouble(std::string key);
     static bool getValueBool(std::string key);
