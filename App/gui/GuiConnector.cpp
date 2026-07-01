@@ -31,15 +31,10 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
   m_device   = new UsbDevice(m_keyer);
   m_device->addDitDah(m_keyboard);
 
-  // VBand / Vail listener if zadig device is not active
-  m_keyboardListener = new KeyboardListener(m_keyer);
+   // VBand / Vail listener if zadig device is not active
+   m_keyboardListener = new KeyboardListener(m_keyer);
 
-  // remotes
-  m_remoteClientOut = new RemoteClient();
-  m_remoteServerIn = new RemoteServer(m_keyer);
-  m_keyer->addKeyerCW(m_remoteClientOut);
-
-  log(L_DEBUG) << "GuiConnector constructor finished";
+   log(L_DEBUG) << "GuiConnector constructor finished";
 }
 
 
@@ -56,7 +51,6 @@ void GuiConnector::initConnector() {
   resetKeyer();
   resetSound();
   resetCwDecoder();
-  resetRemotes();
 
 }
 
@@ -139,6 +133,14 @@ void GuiConnector::loadConfiguration() {
     Configuration::putValueInt(CFG_REMOTE_PORT, m_remotePort);
   }
 
+  const int remoteMoxDelayMs = Configuration::getValueInt(CFG_REMOTE_MOX_DELAY_MS);
+  if (remoteMoxDelayMs >= 0) {
+    m_remoteMoxDelayMs = remoteMoxDelayMs;
+  } else {
+    m_remoteMoxDelayMs = DEFAULT_REMOTE_MOX_DELAY_MS;
+    Configuration::putValueInt(CFG_REMOTE_MOX_DELAY_MS, m_remoteMoxDelayMs);
+  }
+
   if (Configuration::hasValue(CFG_REMOTE_IP)) {
     const std::string configuredIp = Configuration::getValueString(CFG_REMOTE_IP);
     if (!configuredIp.empty()) {
@@ -148,32 +150,26 @@ void GuiConnector::loadConfiguration() {
       Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
     }
   } else {
-    m_serverIp = DEFAULT_REMOTE_IP;
-    Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
-  }
-
-  m_remoteClient = Configuration::getValueBool(CFG_REMOTE_CLIENT);
+     m_serverIp = DEFAULT_REMOTE_IP;
+     Configuration::putValueString(CFG_REMOTE_IP, m_serverIp.toStdString());
+   }
 }
 
 void GuiConnector::quit() {
-  log(L_DEBUG) << "Quit called";
-  m_sound->stop();
-  m_device->disconnectDevice();
-  m_serialComm->stop();
-  m_serialCommIn->stop();
-  m_remoteClientOut->stop();
-  m_remoteServerIn->stop();
+   log(L_DEBUG) << "Quit called";
+   m_sound->stop();
+   m_device->disconnectDevice();
+   m_serialComm->stop();
+   m_serialCommIn->stop();
 
-  delete m_keyer;
-  delete m_device;
-  delete m_sound;
-  delete m_serialComm;
-  delete m_serialCommIn;
-  delete m_remoteClientOut;
-  delete m_remoteServerIn;
-  delete m_keyboard;
-  delete m_keyboardListener;
-  delete m_cwDecoder;
+   delete m_keyer;
+   delete m_device;
+   delete m_sound;
+   delete m_serialComm;
+   delete m_serialCommIn;
+   delete m_keyboard;
+   delete m_keyboardListener;
+   delete m_cwDecoder;
 }
 
 
@@ -339,8 +335,7 @@ bool GuiConnector::enabledZadig() const {
 }
 
 bool GuiConnector::remoteConnected() const {
-  return (m_remoteClient && m_remoteClientOut && m_remoteClientOut->started()) ||
-    (!m_remoteClient && m_remoteServerIn && m_remoteServerIn->started());
+   return false;
 }
 
 void GuiConnector::setEnabledKeyboard(bool enabled) {
@@ -422,39 +417,21 @@ void GuiConnector::setServerIp(const QString &ip) {
   resetRemotes();
 }
 
-void GuiConnector::setRemoteConnected(bool connected) {
+void GuiConnector::setRemoteMoxDelayMs(int delayMs) {
+  if (delayMs < 0) return;
+  if (m_remoteMoxDelayMs == delayMs) return;
 
-  if (connected) {
-    bool started = false;
-    if (m_remoteClient) {
-      m_remoteServerIn->stop();
-      started = m_remoteClientOut->start(m_serverIp.toStdString(), m_remotePort);
-    } else {
-
-      disconnectDevice();
-      setEnabledSound(false);
-
-      m_remoteClientOut->stop();
-      started = m_remoteServerIn->start(m_remotePort);
-    }
-    connected = started;
-  } else {
-    m_remoteClientOut->stop();
-    m_remoteServerIn->stop();
-  }
-
-  Configuration::putValueBool(CFG_REMOTE_CONNECTED, connected);
-  emit remoteConnectedChanged(connected);
-}
-
-void GuiConnector::setRemoteClient(bool isClient) {
-  if (m_remoteClient == isClient) return;
-
-  m_remoteClient = isClient;
-  Configuration::putValueBool(CFG_REMOTE_CLIENT, m_remoteClient);
-  emit remoteClientChanged(m_remoteClient);
+  m_remoteMoxDelayMs = delayMs;
+  Configuration::putValueInt(CFG_REMOTE_MOX_DELAY_MS, m_remoteMoxDelayMs);
+  emit remoteMoxDelayMsChanged(m_remoteMoxDelayMs);
 
   resetRemotes();
+}
+
+void GuiConnector::setRemoteConnected(bool connected) {
+   // Remote connections are no longer supported
+   Configuration::putValueBool(CFG_REMOTE_CONNECTED, false);
+   emit remoteConnectedChanged(false);
 }
 
 void GuiConnector::resetSound() {
@@ -488,9 +465,5 @@ void GuiConnector::resetCwDecoder() {
 }
 
 void GuiConnector::resetRemotes() {
-  bool connected = Configuration::getValueBool(CFG_REMOTE_CONNECTED);
-  setRemoteConnected(false);
-  if (connected) {
-    setRemoteConnected(true);
-  }
+   setRemoteConnected(false);
 }

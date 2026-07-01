@@ -19,8 +19,8 @@ static constexpr const char* CFG_COMM_OUT              = "commout";
 static constexpr const char* CFG_COMM_IN               = "commin";
 static constexpr const char* CFG_ENABLED_SOUND         = "enabled_sound";
 static constexpr const char* CFG_REMOTE_PORT           = "remote_port";
+static constexpr const char* CFG_REMOTE_MOX_DELAY_MS   = "remote_mox_delay_ms";
 static constexpr const char* CFG_REMOTE_CONNECTED      = "remote_connected";
-static constexpr const char* CFG_REMOTE_CLIENT         = "remote_client";
 static constexpr const char* CFG_REMOTE_IP             = "remote_ip";
 
 class Configuration {

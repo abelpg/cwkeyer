@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <array>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
@@ -53,7 +54,7 @@ RemoteClient::~RemoteClient() {
   stop();
 }
 
-bool RemoteClient::start(const std::string &serverIp, int port) {
+bool RemoteClient::start(const std::string &serverIp, int port, int moxReleaseDelayMs) {
   if (port <= 0 || port > 65535) {
     log(L_ERROR) << "RemoteClient::start() invalid port: " << port;
     return false;
@@ -91,12 +92,48 @@ bool RemoteClient::start(const std::string &serverIp, int port) {
     return false;
   }
 
+  {
+    std::lock_guard lock(m_moxMutex);
+    m_moxReleaseDelayMs = moxReleaseDelayMs >= 0 ? moxReleaseDelayMs : 0;
+    m_moxActive = false;
+    m_stopMoxTimerThread = false;
+    m_moxDeactivationScheduled = false;
+    ++m_moxScheduleToken;
+    m_moxDeactivationAtMs = 0;
+  }
+
   m_running = true;
+  m_moxTimerThread = std::thread(&RemoteClient::moxTimerLoop, this);
   log(L_INFO) << "RemoteClient connected to " << serverIp << ":" << port;
   return true;
 }
 
 void RemoteClient::stop() {
+  bool shouldDeactivateMox = false;
+  {
+    std::lock_guard lock(m_moxMutex);
+    shouldDeactivateMox = m_moxActive;
+    m_stopMoxTimerThread = true;
+    m_moxDeactivationScheduled = false;
+    ++m_moxScheduleToken;
+    m_moxDeactivationAtMs = 0;
+  }
+  m_moxCv.notify_all();
+
+  if (m_moxTimerThread.joinable()) {
+    m_moxTimerThread.join();
+  }
+
+  if (m_running && shouldDeactivateMox && m_socketFd != -1) {
+    sendLine("trx:0,false;");
+  }
+
+  {
+    std::lock_guard lock(m_moxMutex);
+    m_moxActive = false;
+    m_stopMoxTimerThread = false;
+  }
+
   m_running = false;
 
   if (m_socketFd != -1) {
@@ -134,14 +171,89 @@ bool RemoteClient::sendDuration(int duration) {
 }
 
 bool RemoteClient::sendTimedCommand(int duration) {
-  return sendLine("keyer:0,true," + std::to_string(duration) + ";");
+  return sendKeyerCommand("keyer:0,true," + std::to_string(duration) + ";");
 }
 
 bool RemoteClient::sendCommand(bool keyDown) {
   if (keyDown) {
-    return sendLine("keyer:0,true;");
+    return sendKeyerCommand("keyer:0,true;");
   }
-  return sendLine("keyer:0,false;");
+  return sendKeyerCommand("keyer:0,false;");
+}
+
+bool RemoteClient::sendKeyerCommand(const std::string &command) {
+  std::lock_guard lock(m_moxMutex);
+
+  if (!m_running || m_socketFd == -1) {
+    return false;
+  }
+
+  m_moxDeactivationScheduled = false;
+  ++m_moxScheduleToken;
+
+  if (!m_moxActive) {
+    if (!sendLine("trx:0,true;")) {
+      return false;
+    }
+    m_moxActive = true;
+  }
+
+  if (!sendLine(command)) {
+    return false;
+  }
+
+  if (m_moxReleaseDelayMs <= 0) {
+    if (!sendLine("trx:0,false;")) {
+      m_moxActive = false;
+      return false;
+    }
+    m_moxActive = false;
+    return true;
+  }
+
+  m_moxDeactivationScheduled = true;
+  m_moxDeactivationAtMs = nowMs() + static_cast<uint64_t>(m_moxReleaseDelayMs);
+  ++m_moxScheduleToken;
+  m_moxCv.notify_one();
+  return true;
+}
+
+void RemoteClient::moxTimerLoop() {
+  std::unique_lock lock(m_moxMutex);
+
+  while (!m_stopMoxTimerThread) {
+    m_moxCv.wait(lock, [this]() { return m_stopMoxTimerThread || m_moxDeactivationScheduled; });
+    if (m_stopMoxTimerThread) {
+      break;
+    }
+
+    const uint64_t token = m_moxScheduleToken;
+    const uint64_t deactivateAtMs = m_moxDeactivationAtMs;
+    const uint64_t currentMs = nowMs();
+
+    if (deactivateAtMs > currentMs) {
+      const auto waitDuration = std::chrono::milliseconds(deactivateAtMs - currentMs);
+      if (m_moxCv.wait_for(lock, waitDuration, [this, token]() {
+            return m_stopMoxTimerThread || !m_moxDeactivationScheduled || m_moxScheduleToken != token;
+          })) {
+        continue;
+      }
+    }
+
+    m_moxDeactivationScheduled = false;
+    if (!m_moxActive) {
+      continue;
+    }
+
+    const bool sent = sendLine("trx:0,false;");
+
+    if (!sent && !m_running) {
+      m_moxActive = false;
+      continue;
+    }
+
+    m_moxActive = false;
+  }
 }
 
 bool RemoteClient::sendLine(const std::string &line) {

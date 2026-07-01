@@ -400,7 +400,7 @@ Rectangle {
             y: 8
             width: 68
             height: 69
-            text: qsTr("Remote")
+            text: qsTr("TCI\nClient")
             Connections {
                 target: btn_remote
                 function onClicked() {
@@ -411,31 +411,11 @@ Rectangle {
             ToolTip.delay: 1000
         }
 
-        RadioButton {
-            id: radioServer
-            x: 400
-            y: 11
-            text: qsTr("Server")
-            checked: !guiConnector.remoteClient
-            onCheckedChanged: if (checked)
-                                  guiConnector.remoteClient = false
-        }
-
-        RadioButton {
-            id: radioClient
-            x: 400
-            y: 43
-            text: qsTr("Client")
-            checked: guiConnector.remoteClient
-            onCheckedChanged: if (checked)
-                                  guiConnector.remoteClient = true
-        }
-
         SpinBox {
             id: remote_port
-            x: 484
-            y: 11
-            width: 132
+            x: 469
+            y: 8
+            width: 147
             height: 32
             editable: true
             from: 1
@@ -447,23 +427,41 @@ Rectangle {
         Rectangle {
             id: remoteConnected
             x: 322
-            y: 8
-            width: 69
-            height: 69
+            y: 43
+            width: 77
+            height: 32
             color: guiConnector.remoteConnected ? "#0fad00" : "#b40202"
         }
 
         TextField {
             id: serverIp
-            x: 484
-            y: 49
-            width: 132
+            x: 322
+            y: 8
+            width: 136
             height: 32
-            visible: radioClient.checked
-            enabled: radioClient.checked
             text: guiConnector.serverIp
             placeholderText: qsTr("127.0.0.1")
             onEditingFinished: guiConnector.serverIp = text
+        }
+
+        Text {
+            x: 405
+            y: 52
+            text: qsTr("MOX ms")
+            font.pixelSize: 14
+        }
+
+        SpinBox {
+            id: remote_mox_delay_ms
+            x: 469
+            y: 49
+            width: 147
+            height: 32
+            editable: true
+            from: 0
+            to: 10000
+            value: guiConnector.remoteMoxDelayMs
+            onValueChanged: guiConnector.remoteMoxDelayMs = value
         }
     }
 

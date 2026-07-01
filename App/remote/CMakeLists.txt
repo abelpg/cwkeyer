@@ -3,19 +3,16 @@ cmake_minimum_required(VERSION 3.16)
 if(WIN32)
     set(REMOTE_PLATFORM_SOURCES
             RemoteClient_win.cpp
-            RemoteServer_win.cpp
     )
 else()
     set(REMOTE_PLATFORM_SOURCES
             RemoteClient_linux.cpp
-            RemoteServer_linux.cpp
     )
 endif()
 
 add_library(LibRemote
         ${REMOTE_PLATFORM_SOURCES}
         RemoteClient.h
-        RemoteServer.h
 )
 
 target_include_directories(LibRemote

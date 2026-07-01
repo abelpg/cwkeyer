@@ -4,16 +4,18 @@
 #include "../utils/IKeyerCW.h"
 
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <mutex>
 #include <string>
+#include <thread>
 
 class RemoteClient : public IKeyerCW {
 public:
   RemoteClient();
   ~RemoteClient() override;
 
-  bool start(const std::string &serverIp, int port);
+  bool start(const std::string &serverIp, int port, int moxReleaseDelayMs);
   void stop();
   bool started() const;
 
@@ -23,9 +25,11 @@ public:
 
 private:
   bool performWebSocketHandshake(const std::string &serverIp, int port);
+  void moxTimerLoop();
   bool sendDuration(int duration);
   bool sendTimedCommand(int duration);
   bool sendCommand(bool keyDown);
+  bool sendKeyerCommand(const std::string &command);
   bool sendLine(const std::string &line);
 
 #ifdef _WIN32
@@ -36,6 +40,15 @@ private:
   intptr_t m_socketFd = -1;
   std::atomic<bool> m_running{false};
   std::mutex m_sendMutex;
+  std::mutex m_moxMutex;
+  std::condition_variable m_moxCv;
+  std::thread m_moxTimerThread;
+  bool m_moxActive = false;
+  bool m_stopMoxTimerThread = false;
+  bool m_moxDeactivationScheduled = false;
+  uint64_t m_moxScheduleToken = 0;
+  uint64_t m_moxDeactivationAtMs = 0;
+  int m_moxReleaseDelayMs = 250;
 };
 
 #endif //CWKEYERAPP_REMOTECLIENT_H
