@@ -29,7 +29,7 @@ private:
   bool sendDuration(int duration);
   bool sendTimedCommand(int duration);
   bool sendCommand(bool keyDown);
-  bool sendKeyerCommand(const std::string &command);
+  bool sendKeyerCommand(const std::string &command, int duration);
   bool sendLine(const std::string &line);
 
 #ifdef _WIN32

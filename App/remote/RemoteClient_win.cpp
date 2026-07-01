@@ -180,17 +180,17 @@ bool RemoteClient::sendDuration(int duration) {
 }
 
 bool RemoteClient::sendTimedCommand(int duration) {
-  return sendKeyerCommand("keyer:0,true," + std::to_string(duration) + ";");
+  return sendKeyerCommand("keyer:0,true," + std::to_string(duration) + ";", duration);
 }
 
 bool RemoteClient::sendCommand(bool keyDown) {
   if (keyDown) {
-    return sendKeyerCommand("keyer:0,true;");
+    return sendKeyerCommand("keyer:0,true;", 0);
   }
-  return sendKeyerCommand("keyer:0,false;");
+  return sendKeyerCommand("keyer:0,false;",0);
 }
 
-bool RemoteClient::sendKeyerCommand(const std::string &command) {
+bool RemoteClient::sendKeyerCommand(const std::string &command, int duration) {
   std::lock_guard lock(m_moxMutex);
 
   if (!m_running || m_socketFd == -1) {
@@ -221,7 +221,7 @@ bool RemoteClient::sendKeyerCommand(const std::string &command) {
   }
 
   m_moxDeactivationScheduled = true;
-  m_moxDeactivationAtMs = nowMs() + static_cast<uint64_t>(m_moxReleaseDelayMs);
+  m_moxDeactivationAtMs = nowMs() + static_cast<uint64_t>(m_moxReleaseDelayMs + duration);
   ++m_moxScheduleToken;
   m_moxCv.notify_one();
   return true;

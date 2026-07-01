@@ -34,6 +34,10 @@ GuiConnector::GuiConnector(QApplication *app, QObject *parent) : QObject(parent)
    // VBand / Vail listener if zadig device is not active
    m_keyboardListener = new KeyboardListener(m_keyer);
 
+   // remotes - only RemoteClient
+   m_remoteClientOut = new RemoteClient();
+   m_keyer->addKeyerCW(m_remoteClientOut);
+
    log(L_DEBUG) << "GuiConnector constructor finished";
 }
 
@@ -51,6 +55,7 @@ void GuiConnector::initConnector() {
   resetKeyer();
   resetSound();
   resetCwDecoder();
+  resetRemotes();
 
 }
 
@@ -161,12 +166,14 @@ void GuiConnector::quit() {
    m_device->disconnectDevice();
    m_serialComm->stop();
    m_serialCommIn->stop();
+   m_remoteClientOut->stop();
 
    delete m_keyer;
    delete m_device;
    delete m_sound;
    delete m_serialComm;
    delete m_serialCommIn;
+   delete m_remoteClientOut;
    delete m_keyboard;
    delete m_keyboardListener;
    delete m_cwDecoder;
@@ -335,7 +342,7 @@ bool GuiConnector::enabledZadig() const {
 }
 
 bool GuiConnector::remoteConnected() const {
-   return false;
+   return m_remoteClientOut && m_remoteClientOut->started();
 }
 
 void GuiConnector::setEnabledKeyboard(bool enabled) {
@@ -429,9 +436,16 @@ void GuiConnector::setRemoteMoxDelayMs(int delayMs) {
 }
 
 void GuiConnector::setRemoteConnected(bool connected) {
-   // Remote connections are no longer supported
-   Configuration::putValueBool(CFG_REMOTE_CONNECTED, false);
-   emit remoteConnectedChanged(false);
+   bool started = false;
+
+   if (connected) {
+     started = m_remoteClientOut->start(m_serverIp.toStdString(), m_remotePort, m_remoteMoxDelayMs);
+   } else {
+     m_remoteClientOut->stop();
+   }
+
+   Configuration::putValueBool(CFG_REMOTE_CONNECTED, started);
+   emit remoteConnectedChanged(started);
 }
 
 void GuiConnector::resetSound() {
@@ -465,5 +479,9 @@ void GuiConnector::resetCwDecoder() {
 }
 
 void GuiConnector::resetRemotes() {
+   bool connected = Configuration::getValueBool(CFG_REMOTE_CONNECTED);
    setRemoteConnected(false);
+   if (connected) {
+     setRemoteConnected(true);
+   }
 }

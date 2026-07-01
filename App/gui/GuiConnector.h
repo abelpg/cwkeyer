@@ -17,6 +17,7 @@
 #include "../serial/SerialComm.h"
 #include "../serial/SerialPorts.h"
 #include "../serial/N1MMProxy.h"
+#include "../remote/RemoteClient.h"
 #include "../cwdecoder/CwDecoder.h"
 #include "../utils/Logger.h"
 
@@ -137,6 +138,7 @@ class GuiConnector : public QObject{
      Keyer            *m_keyer;
      SerialComm       *m_serialComm;
      N1MMProxy        *m_serialCommIn;
+     RemoteClient     *m_remoteClientOut;
      Keyboard         *m_keyboard;
      KeyboardListener *m_keyboardListener;
      QApplication     *m_app;
