@@ -6,9 +6,46 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+#include <array>
+#include <cstdlib>
 #include <cstring>
+#include <vector>
 
 #pragma comment(lib, "Ws2_32.lib")
+
+namespace {
+
+std::string base64Encode(const uint8_t *data, size_t len) {
+  static constexpr char table[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+  std::string out;
+  out.reserve(((len + 2) / 3) * 4);
+
+  for (size_t i = 0; i < len; i += 3) {
+    const uint32_t octetA = data[i];
+    const uint32_t octetB = (i + 1 < len) ? data[i + 1] : 0;
+    const uint32_t octetC = (i + 2 < len) ? data[i + 2] : 0;
+    const uint32_t triple = (octetA << 16) | (octetB << 8) | octetC;
+
+    out.push_back(table[(triple >> 18) & 0x3F]);
+    out.push_back(table[(triple >> 12) & 0x3F]);
+    out.push_back((i + 1 < len) ? table[(triple >> 6) & 0x3F] : '=');
+    out.push_back((i + 2 < len) ? table[triple & 0x3F] : '=');
+  }
+
+  return out;
+}
+
+bool isWebSocketUpgradeResponse(const std::string &headers) {
+  if (headers.find("HTTP/1.1 101") != 0) {
+    return false;
+  }
+  return headers.find("Upgrade: websocket") != std::string::npos ||
+         headers.find("upgrade: websocket") != std::string::npos;
+}
+
+} // namespace
 
 RemoteClient::RemoteClient() = default;
 
@@ -52,19 +89,19 @@ bool RemoteClient::start(const std::string &serverIp, int port) {
   }
 
   m_socketFd = static_cast<intptr_t>(sock);
+  if (!performWebSocketHandshake(serverIp, port)) {
+    closesocket(sock);
+    m_socketFd = -1;
+    return false;
+  }
+
   m_running = true;
   log(L_INFO) << "RemoteClient connected to " << serverIp << ":" << port;
   return true;
 }
 
 void RemoteClient::stop() {
-  if (!m_running.exchange(false)) {
-    if (m_wsaStarted) {
-      WSACleanup();
-      m_wsaStarted = false;
-    }
-    return;
-  }
+  m_running = false;
 
   if (m_socketFd != -1) {
     closesocket(static_cast<SOCKET>(m_socketFd));
@@ -90,21 +127,11 @@ void RemoteClient::runCW(KeyerItem item, int duration) {
 }
 
 void RemoteClient::startRunCw() {
-  m_straightStartMs = nowMs();
+  sendCommand(true);
 }
 
 void RemoteClient::stopRunCw() {
-  if (m_straightStartMs == 0) {
-    return;
-  }
-
-  const uint64_t elapsed = nowMs() - m_straightStartMs;
-  m_straightStartMs = 0;
-  if (elapsed == 0) {
-    return;
-  }
-
-  sendDuration(static_cast<int>(elapsed));
+  sendCommand(false);
 }
 
 bool RemoteClient::sendDuration(int duration) {
@@ -112,17 +139,59 @@ bool RemoteClient::sendDuration(int duration) {
     return false;
   }
 
-  return sendLine(std::to_string(duration) + "\n");
+  return sendTimedCommand(duration);
+}
+
+bool RemoteClient::sendTimedCommand(int duration) {
+  return sendLine("keyer:0,true," + std::to_string(duration) + ";");
+}
+
+bool RemoteClient::sendCommand(bool keyDown) {
+  if (keyDown) {
+    return sendLine("keyer:0,true;");
+  }
+  return sendLine("keyer:0,false;");
 }
 
 bool RemoteClient::sendLine(const std::string &line) {
   std::lock_guard lock(m_sendMutex);
 
+  if (!m_running || m_socketFd == -1) {
+    return false;
+  }
+
+  std::vector<uint8_t> frame;
+  frame.reserve(line.size() + 14);
+  frame.push_back(0x81); // FIN + text frame
+
+  if (line.size() <= 125) {
+    frame.push_back(static_cast<uint8_t>(0x80 | line.size()));
+  } else if (line.size() <= 0xFFFF) {
+    frame.push_back(0x80 | 126);
+    frame.push_back(static_cast<uint8_t>((line.size() >> 8) & 0xFF));
+    frame.push_back(static_cast<uint8_t>(line.size() & 0xFF));
+  } else {
+    frame.push_back(0x80 | 127);
+    for (int i = 7; i >= 0; --i) {
+      frame.push_back(static_cast<uint8_t>((line.size() >> (8 * i)) & 0xFF));
+    }
+  }
+
+  std::array<uint8_t, 4> maskKey{};
+  for (auto &byte : maskKey) {
+    byte = static_cast<uint8_t>(std::rand() & 0xFF);
+    frame.push_back(byte);
+  }
+
+  for (size_t i = 0; i < line.size(); ++i) {
+    frame.push_back(static_cast<uint8_t>(line[i]) ^ maskKey[i % 4]);
+  }
+
   size_t sentTotal = 0;
-  while (sentTotal < line.size()) {
+  while (sentTotal < frame.size()) {
     const int sent = ::send(static_cast<SOCKET>(m_socketFd),
-                            line.c_str() + sentTotal,
-                            static_cast<int>(line.size() - sentTotal),
+                            reinterpret_cast<const char *>(frame.data()) + sentTotal,
+                            static_cast<int>(frame.size() - sentTotal),
                             0);
     if (sent == SOCKET_ERROR || sent == 0) {
       m_running = false;
@@ -132,6 +201,53 @@ bool RemoteClient::sendLine(const std::string &line) {
   }
 
   return true;
+}
+
+bool RemoteClient::performWebSocketHandshake(const std::string &serverIp, int port) {
+  std::array<uint8_t, 16> randomBytes{};
+  for (auto &byte : randomBytes) {
+    byte = static_cast<uint8_t>(std::rand() & 0xFF);
+  }
+
+  const std::string wsKey = base64Encode(randomBytes.data(), randomBytes.size());
+  const std::string request =
+      "GET / HTTP/1.1\r\n"
+      "Host: " + serverIp + ":" + std::to_string(port) + "\r\n"
+      "Upgrade: websocket\r\n"
+      "Connection: Upgrade\r\n"
+      "Sec-WebSocket-Key: " + wsKey + "\r\n"
+      "Sec-WebSocket-Version: 13\r\n\r\n";
+
+  size_t sentTotal = 0;
+  while (sentTotal < request.size()) {
+    const int sent = ::send(static_cast<SOCKET>(m_socketFd),
+                            request.c_str() + sentTotal,
+                            static_cast<int>(request.size() - sentTotal),
+                            0);
+    if (sent == SOCKET_ERROR || sent == 0) {
+      return false;
+    }
+    sentTotal += static_cast<size_t>(sent);
+  }
+
+  std::string response;
+  response.reserve(1024);
+  std::array<char, 512> buffer{};
+  while (response.find("\r\n\r\n") == std::string::npos) {
+    const int received = ::recv(static_cast<SOCKET>(m_socketFd),
+                                buffer.data(),
+                                static_cast<int>(buffer.size()),
+                                0);
+    if (received == SOCKET_ERROR || received == 0) {
+      return false;
+    }
+    response.append(buffer.data(), static_cast<size_t>(received));
+    if (response.size() > 8192) {
+      return false;
+    }
+  }
+
+  return isWebSocketUpgradeResponse(response);
 }
 
 bool RemoteClient::initWinsock() {

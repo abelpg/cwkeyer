@@ -22,7 +22,10 @@ public:
   void stopRunCw() override;
 
 private:
+  bool performWebSocketHandshake(const std::string &serverIp, int port);
   bool sendDuration(int duration);
+  bool sendTimedCommand(int duration);
+  bool sendCommand(bool keyDown);
   bool sendLine(const std::string &line);
 
 #ifdef _WIN32
@@ -33,7 +36,6 @@ private:
   intptr_t m_socketFd = -1;
   std::atomic<bool> m_running{false};
   std::mutex m_sendMutex;
-  uint64_t m_straightStartMs = 0;
 };
 
 #endif //CWKEYERAPP_REMOTECLIENT_H
