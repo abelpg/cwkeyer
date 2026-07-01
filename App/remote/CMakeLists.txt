@@ -11,6 +11,7 @@ else()
 endif()
 
 add_library(LibRemote
+        RemoteClient.cpp
         ${REMOTE_PLATFORM_SOURCES}
         RemoteClient.h
 )

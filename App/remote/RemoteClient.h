@@ -7,23 +7,38 @@
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 
+/**
+ * WebSocket client that keys a remote transceiver.
+ *
+ * Common logic (WebSocket framing, handshake, MOX and volume management)
+ * lives in RemoteClient.cpp. Platform-specific socket primitives are
+ * implemented in RemoteClient_win.cpp / RemoteClient_linux.cpp.
+ */
 class RemoteClient : public IKeyerCW {
 public:
   RemoteClient();
   ~RemoteClient() override;
 
+  /// Connects to the server, performs the WebSocket handshake and starts the MOX timer thread.
   bool start(const std::string &serverIp, int port, int moxReleaseDelayMs);
+  /// Releases MOX (restoring volume), stops the timer thread and closes the connection.
   void stop();
+  /// Returns true while the client is connected and operational.
   bool started() const;
 
+  /// Sends a timed CW element (dit/dah) to the remote server.
   void runCW(KeyerItem item, int duration) override;
+  /// Presses the remote key (key down).
   void startRunCw() override;
+  /// Releases the remote key (key up).
   void stopRunCw() override;
 
 private:
+  // --- Common logic (RemoteClient.cpp) ---
   bool performWebSocketHandshake(const std::string &serverIp, int port);
   void moxTimerLoop();
   bool sendDuration(int duration);
@@ -31,11 +46,26 @@ private:
   bool sendCommand(bool keyDown);
   bool sendKeyerCommand(const std::string &command, int duration);
   bool sendLine(const std::string &line);
+  bool receiveLine(std::string &line, int timeoutMs);
+  bool activateMoxLocked();
+  void deactivateMoxLocked();
+  void scheduleMoxReleaseLocked(int duration);
+  bool queryServerVolume(int &volume);
+  void resetMoxStateLocked(int moxReleaseDelayMs);
 
-#ifdef _WIN32
-  bool initWinsock();
-  bool m_wsaStarted = false;
-#endif
+  // --- Platform-specific primitives (RemoteClient_win.cpp / RemoteClient_linux.cpp) ---
+  /// Performs platform network initialization (e.g. WSAStartup on Windows).
+  bool platformInit();
+  /// Performs platform network cleanup (e.g. WSACleanup on Windows).
+  void platformCleanup();
+  /// Opens a TCP connection to ip:port; stores the descriptor in m_socketFd.
+  bool openConnection(const std::string &serverIp, int port);
+  /// Closes the socket stored in m_socketFd, if open.
+  void closeConnection();
+  /// Sends the full buffer over the socket; returns false on any error.
+  bool sendRaw(const void *data, size_t len);
+  /// Receives up to len bytes; waits at most timeoutMs (-1 = blocking). Returns bytes read, 0 on timeout/close, -1 on error.
+  int recvRaw(void *buffer, size_t len, int timeoutMs);
 
   intptr_t m_socketFd = -1;
   std::atomic<bool> m_running{false};
@@ -49,7 +79,11 @@ private:
   uint64_t m_moxScheduleToken = 0;
   uint64_t m_moxDeactivationAtMs = 0;
   int m_moxReleaseDelayMs = 250;
+  std::optional<int> m_previousVolume;
+
+#ifdef _WIN32
+  bool m_wsaStarted = false;
+#endif
 };
 
 #endif //CWKEYERAPP_REMOTECLIENT_H
-
