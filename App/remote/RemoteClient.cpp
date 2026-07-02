@@ -11,6 +11,10 @@
 
 namespace {
 
+constexpr int WS_READ_TIMEOUT_MS = 1000;
+constexpr uint64_t WS_PING_INTERVAL_MS = 15000;
+constexpr uint64_t WS_MAX_PAYLOAD_LEN = 1024 * 1024;
+
 /// Encodes a byte buffer as Base64 (used for the Sec-WebSocket-Key header).
 std::string base64Encode(const uint8_t *data, size_t len) {
   static constexpr char table[] =
@@ -85,6 +89,8 @@ bool RemoteClient::start(const std::string &serverIp, int port, int moxReleaseDe
   }
 
   m_running = true;
+  m_stopWebSocketThread = false;
+  m_webSocketThread = std::thread(&RemoteClient::webSocketLoop, this);
   m_moxTimerThread = std::thread(&RemoteClient::moxTimerLoop, this);
   log(L_INFO) << "RemoteClient connected to " << serverIp << ":" << port;
   return true;
@@ -102,7 +108,12 @@ void RemoteClient::stop() {
     ++m_moxScheduleToken;
     m_moxDeactivationAtMs = 0;
   }
+  m_stopWebSocketThread = true;
   m_moxCv.notify_all();
+
+  if (m_webSocketThread.joinable()) {
+    m_webSocketThread.join();
+  }
 
   if (m_moxTimerThread.joinable()) {
     m_moxTimerThread.join();
@@ -198,6 +209,56 @@ bool RemoteClient::sendKeyerCommand(const std::string &command, int duration) {
   return true;
 }
 
+/// Sends a masked WebSocket frame with the given opcode and payload.
+bool RemoteClient::sendFrame(uint8_t opcode, const uint8_t *payload, size_t payloadLen) {
+  std::lock_guard lock(m_sendMutex);
+
+  if (!m_running || m_socketFd == -1) {
+    return false;
+  }
+
+  std::vector<uint8_t> frame;
+  frame.reserve(payloadLen + 14);
+  frame.push_back(static_cast<uint8_t>(0x80 | (opcode & 0x0F))); // FIN + opcode
+
+  // Payload length (7 bits, 16 bits or 64 bits) with the mask bit set.
+  if (payloadLen <= 125) {
+    frame.push_back(static_cast<uint8_t>(0x80 | payloadLen));
+  } else if (payloadLen <= 0xFFFF) {
+    frame.push_back(0x80 | 126);
+    frame.push_back(static_cast<uint8_t>((payloadLen >> 8) & 0xFF));
+    frame.push_back(static_cast<uint8_t>(payloadLen & 0xFF));
+  } else {
+    frame.push_back(0x80 | 127);
+    for (int i = 7; i >= 0; --i) {
+      frame.push_back(static_cast<uint8_t>((payloadLen >> (8 * i)) & 0xFF));
+    }
+  }
+
+  // Client frames must be masked (RFC 6455).
+  std::array<uint8_t, 4> maskKey{};
+  for (auto &byte : maskKey) {
+    byte = static_cast<uint8_t>(std::rand() & 0xFF);
+    frame.push_back(byte);
+  }
+
+  for (size_t i = 0; i < payloadLen; ++i) {
+    frame.push_back(payload[i] ^ maskKey[i % 4]);
+  }
+
+  if (!sendRaw(frame.data(), frame.size())) {
+    m_running = false;
+    return false;
+  }
+
+  return true;
+}
+
+/// Sends a WebSocket control frame (ping/pong/close).
+bool RemoteClient::sendControlFrame(uint8_t opcode, const std::vector<uint8_t> &payload) {
+  return sendFrame(opcode, payload.data(), payload.size());
+}
+
 /// Activates MOX by keying the TRX.
 /// Must be called with m_moxMutex held.
 bool RemoteClient::activateMoxLocked() {
@@ -271,47 +332,137 @@ void RemoteClient::moxTimerLoop() {
 
 /// Encodes the text as a masked WebSocket text frame and sends it to the server.
 bool RemoteClient::sendLine(const std::string &line) {
-  std::lock_guard lock(m_sendMutex);
+  return sendFrame(0x1, reinterpret_cast<const uint8_t *>(line.data()), line.size());
+}
 
-  if (!m_running || m_socketFd == -1) {
-    return false;
+/// Reads exactly len bytes with timeout handling.
+/// Returns 1 on success, -2 on timeout, 0 on close and -1 on error.
+int RemoteClient::readExact(uint8_t *buffer, size_t len, int timeoutMs) {
+  size_t offset = 0;
+  while (offset < len && m_running && !m_stopWebSocketThread.load()) {
+    const int received = recvRaw(buffer + offset, len - offset, timeoutMs);
+    if (received > 0) {
+      offset += static_cast<size_t>(received);
+      continue;
+    }
+    if (received == -2) {
+      if (offset == 0) {
+        return -2;
+      }
+      continue;
+    }
+    return received;
   }
 
-  std::vector<uint8_t> frame;
-  frame.reserve(line.size() + 14);
-  frame.push_back(0x81); // FIN + text frame
+  return offset == len ? 1 : -1;
+}
 
-  // Payload length (7 bits, 16 bits or 64 bits) with the mask bit set.
-  if (line.size() <= 125) {
-    frame.push_back(static_cast<uint8_t>(0x80 | line.size()));
-  } else if (line.size() <= 0xFFFF) {
-    frame.push_back(0x80 | 126);
-    frame.push_back(static_cast<uint8_t>((line.size() >> 8) & 0xFF));
-    frame.push_back(static_cast<uint8_t>(line.size() & 0xFF));
-  } else {
-    frame.push_back(0x80 | 127);
-    for (int i = 7; i >= 0; --i) {
-      frame.push_back(static_cast<uint8_t>((line.size() >> (8 * i)) & 0xFF));
+/// Reads a single WebSocket frame.
+/// Returns 1 on success, -2 on timeout, 0 on close and -1 on error/protocol error.
+int RemoteClient::recvFrame(uint8_t &opcode, std::vector<uint8_t> &payload, int timeoutMs) {
+  std::array<uint8_t, 2> header{};
+  const int headerStatus = readExact(header.data(), header.size(), timeoutMs);
+  if (headerStatus != 1) {
+    return headerStatus;
+  }
+
+  const bool isFinal = (header[0] & 0x80) != 0;
+  opcode = static_cast<uint8_t>(header[0] & 0x0F);
+  const bool hasMask = (header[1] & 0x80) != 0;
+  uint64_t payloadLen = static_cast<uint64_t>(header[1] & 0x7F);
+
+  if (!isFinal) {
+    return -1;
+  }
+
+  if (payloadLen == 126) {
+    std::array<uint8_t, 2> extLen{};
+    const int extStatus = readExact(extLen.data(), extLen.size(), timeoutMs);
+    if (extStatus != 1) {
+      return extStatus;
+    }
+    payloadLen = (static_cast<uint64_t>(extLen[0]) << 8) | static_cast<uint64_t>(extLen[1]);
+  } else if (payloadLen == 127) {
+    std::array<uint8_t, 8> extLen{};
+    const int extStatus = readExact(extLen.data(), extLen.size(), timeoutMs);
+    if (extStatus != 1) {
+      return extStatus;
+    }
+    payloadLen = 0;
+    for (uint8_t byte : extLen) {
+      payloadLen = (payloadLen << 8) | static_cast<uint64_t>(byte);
     }
   }
 
-  // Client frames must be masked (RFC 6455).
+  if (payloadLen > WS_MAX_PAYLOAD_LEN) {
+    return -1;
+  }
+
   std::array<uint8_t, 4> maskKey{};
-  for (auto &byte : maskKey) {
-    byte = static_cast<uint8_t>(std::rand() & 0xFF);
-    frame.push_back(byte);
+  if (hasMask) {
+    const int maskStatus = readExact(maskKey.data(), maskKey.size(), timeoutMs);
+    if (maskStatus != 1) {
+      return maskStatus;
+    }
   }
 
-  for (size_t i = 0; i < line.size(); ++i) {
-    frame.push_back(static_cast<uint8_t>(line[i]) ^ maskKey[i % 4]);
+  payload.assign(static_cast<size_t>(payloadLen), 0);
+  if (payloadLen > 0) {
+    const int payloadStatus = readExact(payload.data(), payload.size(), timeoutMs);
+    if (payloadStatus != 1) {
+      return payloadStatus;
+    }
+    if (hasMask) {
+      for (size_t i = 0; i < payload.size(); ++i) {
+        payload[i] ^= maskKey[i % 4];
+      }
+    }
   }
 
-  if (!sendRaw(frame.data(), frame.size())) {
-    m_running = false;
-    return false;
-  }
+  return 1;
+}
 
-  return true;
+/// Receives server control frames and handles ping/pong keepalive.
+void RemoteClient::webSocketLoop() {
+  uint64_t lastPingMs = nowMs();
+
+  while (m_running && !m_stopWebSocketThread.load()) {
+    uint8_t opcode = 0;
+    std::vector<uint8_t> payload;
+    const int frameStatus = recvFrame(opcode, payload, WS_READ_TIMEOUT_MS);
+
+    if (frameStatus == -2) {
+      if (nowMs() - lastPingMs >= WS_PING_INTERVAL_MS) {
+        if (!sendControlFrame(0x9, {})) {
+          m_running = false;
+          break;
+        }
+        lastPingMs = nowMs();
+      }
+      continue;
+    }
+
+    if (frameStatus <= 0) {
+      m_running = false;
+      break;
+    }
+
+    switch (opcode) {
+      case 0x8: // close
+        sendControlFrame(0x8, payload);
+        m_running = false;
+        return;
+      case 0x9: // ping
+        if (!sendControlFrame(0xA, payload)) {
+          m_running = false;
+          return;
+        }
+        break;
+      case 0xA: // pong
+      default:
+        break;
+    }
+  }
 }
 
 /// Performs the HTTP upgrade handshake required to open the WebSocket.

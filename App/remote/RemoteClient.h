@@ -2,13 +2,14 @@
 #define CWKEYERAPP_REMOTECLIENT_H
 
 #include "../utils/IKeyerCW.h"
-
+#include "../utils/Logger.h"
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 /**
  * WebSocket client that keys a remote transceiver.
@@ -44,7 +45,12 @@ private:
   bool sendTimedCommand(int duration);
   bool sendCommand(bool keyDown);
   bool sendKeyerCommand(const std::string &command, int duration);
+  bool sendFrame(uint8_t opcode, const uint8_t *payload, size_t payloadLen);
+  bool sendControlFrame(uint8_t opcode, const std::vector<uint8_t> &payload);
   bool sendLine(const std::string &line);
+  int readExact(uint8_t *buffer, size_t len, int timeoutMs);
+  int recvFrame(uint8_t &opcode, std::vector<uint8_t> &payload, int timeoutMs);
+  void webSocketLoop();
   bool activateMoxLocked();
   void deactivateMoxLocked();
   void scheduleMoxReleaseLocked(int duration);
@@ -61,7 +67,7 @@ private:
   void closeConnection();
   /// Sends the full buffer over the socket; returns false on any error.
   bool sendRaw(const void *data, size_t len);
-  /// Receives up to len bytes; waits at most timeoutMs (-1 = blocking). Returns bytes read, 0 on timeout/close, -1 on error.
+  /// Receives up to len bytes; waits at most timeoutMs (-1 = blocking). Returns bytes read, -2 on timeout, 0 on close, -1 on error.
   int recvRaw(void *buffer, size_t len, int timeoutMs);
 
   intptr_t m_socketFd = -1;
@@ -70,8 +76,10 @@ private:
   std::mutex m_moxMutex;
   std::condition_variable m_moxCv;
   std::thread m_moxTimerThread;
+  std::thread m_webSocketThread;
   bool m_moxActive = false;
   bool m_stopMoxTimerThread = false;
+  std::atomic<bool> m_stopWebSocketThread{false};
   bool m_moxDeactivationScheduled = false;
   uint64_t m_moxScheduleToken = 0;
   uint64_t m_moxDeactivationAtMs = 0;
