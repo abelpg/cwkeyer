@@ -92,7 +92,7 @@ void SerialComm::stopRunCw() {
   ioctl(m_hSerial, TIOCMSET, &status);
 }
 
-void SerialComm::runCW(KeyerItem /*item*/, int duration) {
+void SerialComm::runCW(KeyerItem /*item*/, int duration, int /*spaceDuration*/) {
   if (!m_running) return;
   if (m_hSerial < 0) { std::cerr << "SerialComm::runCW: port closed\n"; return; }
   int fd = m_hSerial;

@@ -14,6 +14,8 @@ namespace {
 constexpr int WS_READ_TIMEOUT_MS = 1000;
 constexpr uint64_t WS_PING_INTERVAL_MS = 15000;
 constexpr uint64_t WS_MAX_PAYLOAD_LEN = 1024 * 1024;
+/// Constant settle time to wait after enabling MOX before keying.
+constexpr int MOX_ACTIVATION_DELAY_MS = 100;
 
 /// Encodes a byte buffer as Base64 (used for the Sec-WebSocket-Key header).
 std::string base64Encode(const uint8_t *data, size_t len) {
@@ -90,8 +92,10 @@ bool RemoteClient::start(const std::string &serverIp, int port, int moxReleaseDe
 
   m_running = true;
   m_stopWebSocketThread = false;
+  m_stopSenderThread = false;
   m_webSocketThread = std::thread(&RemoteClient::webSocketLoop, this);
   m_moxTimerThread = std::thread(&RemoteClient::moxTimerLoop, this);
+  m_senderThread = std::thread(&RemoteClient::senderLoop, this);
   log(L_INFO) << "RemoteClient connected to " << serverIp << ":" << port;
   return true;
 }
@@ -109,7 +113,13 @@ void RemoteClient::stop() {
     m_moxDeactivationAtMs = 0;
   }
   m_stopWebSocketThread = true;
+  m_stopSenderThread = true;
   m_moxCv.notify_all();
+  m_queueCv.notify_all();
+
+  if (m_senderThread.joinable()) {
+    m_senderThread.join();
+  }
 
   if (m_webSocketThread.joinable()) {
     m_webSocketThread.join();
@@ -117,6 +127,12 @@ void RemoteClient::stop() {
 
   if (m_moxTimerThread.joinable()) {
     m_moxTimerThread.join();
+  }
+
+  {
+    std::lock_guard lock(m_queueMutex);
+    std::queue<CwElement> empty;
+    m_cwQueue.swap(empty);
   }
 
   if (m_running && shouldDeactivateMox && m_socketFd != -1) {
@@ -141,12 +157,20 @@ bool RemoteClient::started() const {
   return m_running.load();
 }
 
-/// Sends a timed CW element (dit/dah); other item types are ignored.
-void RemoteClient::runCW(KeyerItem item, int duration) {
+/// Enqueues a timed CW element (dit/dah); other item types are ignored.
+void RemoteClient::runCW(KeyerItem item, int duration, int spaceDuration) {
   if (item != DIT && item != DAH) {
     return;
   }
-  sendDuration(duration);
+  if (!m_running || duration <= 0) {
+    return;
+  }
+
+  {
+    std::lock_guard lock(m_queueMutex);
+    m_cwQueue.push(CwElement{duration, spaceDuration});
+  }
+  m_queueCv.notify_one();
 }
 
 /// Presses the remote key (key down).
@@ -159,18 +183,83 @@ void RemoteClient::stopRunCw() {
   sendCommand(false);
 }
 
-/// Validates and forwards a keyer element duration to the server.
-bool RemoteClient::sendDuration(int duration) {
-  if (!m_running || duration <= 0) {
-    return false;
-  }
+/// Worker loop: waits for queued CW elements and sends them one by one.
+void RemoteClient::senderLoop() {
+  while (!m_stopSenderThread.load()) {
+    CwElement element{};
+    {
+      std::unique_lock lock(m_queueMutex);
+      m_queueCv.wait(lock, [this]() {
+        return m_stopSenderThread.load() || !m_cwQueue.empty();
+      });
+      if (m_stopSenderThread.load()) {
+        break;
+      }
+      if (m_cwQueue.empty()) {
+        continue;
+      }
+      element = m_cwQueue.front();
+      m_cwQueue.pop();
+    }
 
-  return sendTimedCommand(duration);
+    processElement(element);
+  }
 }
 
-/// Builds and sends a timed keyer command ("keyer:0,true,<duration>;").
-bool RemoteClient::sendTimedCommand(int duration) {
-  return sendKeyerCommand("keyer:0,true," + std::to_string(duration) + ";", duration);
+/// Sends a single queued CW element following the MOX keying flow:
+///  1. If MOX is disabled: enable it and wait a constant settle time.
+///  2. If MOX is enabled: cancel any scheduled MOX release.
+///  3. Send the timed key command ("keyer:0,true,<duration>;").
+///  4. Wait the element's trailing space.
+///  5. Schedule the MOX release.
+void RemoteClient::processElement(const CwElement &element) {
+  bool moxJustActivated = false;
+  {
+    std::lock_guard lock(m_moxMutex);
+    if (!m_running || m_socketFd == -1) {
+      return;
+    }
+
+    // A new element extends MOX: cancel any pending deactivation.
+    m_moxDeactivationScheduled = false;
+    ++m_moxScheduleToken;
+
+    if (!m_moxActive) {
+      if (!activateMoxLocked()) {
+        return;
+      }
+      moxJustActivated = true;
+    }
+  }
+
+  // Give the TRX time to settle after enabling MOX.
+  if (moxJustActivated) {
+    Utils::sleepFor(MOX_ACTIVATION_DELAY_MS);
+  }
+
+  // Send the timed key command.
+  {
+    std::lock_guard lock(m_moxMutex);
+    if (!m_running || m_socketFd == -1) {
+      return;
+    }
+    if (!sendLine("keyer:0,true," + std::to_string(element.duration) + ";")) {
+      return;
+    }
+  }
+
+  // Wait the trailing space before processing the next element.
+  if (element.spaceDuration > 0) {
+    Utils::sleepFor(element.spaceDuration);
+  }
+
+  // Schedule the MOX release; a following element will cancel it.
+  {
+    std::lock_guard lock(m_moxMutex);
+    if (m_running && m_moxActive) {
+      scheduleMoxReleaseLocked(0);
+    }
+  }
 }
 
 /// Builds and sends an untimed keyer command (key down / key up).
@@ -332,6 +421,7 @@ void RemoteClient::moxTimerLoop() {
 
 /// Encodes the text as a masked WebSocket text frame and sends it to the server.
 bool RemoteClient::sendLine(const std::string &line) {
+  log(L_DEBUG) << "Sending line: " << line;
   return sendFrame(0x1, reinterpret_cast<const uint8_t *>(line.data()), line.size());
 }
 

@@ -7,9 +7,17 @@
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
+#include <queue>
 #include <string>
 #include <thread>
 #include <vector>
+
+/// Represents a single CW element to be sent to the remote server: the keyed
+/// duration and the trailing space (inter-element / letter / word) duration.
+struct CwElement {
+  int duration = 0;
+  int spaceDuration = 0;
+};
 
 /**
  * WebSocket client that keys a remote transceiver.
@@ -30,8 +38,8 @@ public:
   /// Returns true while the client is connected and operational.
   bool started() const;
 
-  /// Sends a timed CW element (dit/dah) to the remote server.
-  void runCW(KeyerItem item, int duration) override;
+  /// Enqueues a timed CW element (dit/dah) to be sent to the remote server.
+  void runCW(KeyerItem item, int duration, int spaceDuration) override;
   /// Presses the remote key (key down).
   void startRunCw() override;
   /// Releases the remote key (key up).
@@ -41,8 +49,8 @@ private:
   // --- Common logic (RemoteClient.cpp) ---
   bool performWebSocketHandshake(const std::string &serverIp, int port);
   void moxTimerLoop();
-  bool sendDuration(int duration);
-  bool sendTimedCommand(int duration);
+  void senderLoop();
+  void processElement(const CwElement &element);
   bool sendCommand(bool keyDown);
   bool sendKeyerCommand(const std::string &command, int duration);
   bool sendFrame(uint8_t opcode, const uint8_t *payload, size_t payloadLen);
@@ -77,9 +85,14 @@ private:
   std::condition_variable m_moxCv;
   std::thread m_moxTimerThread;
   std::thread m_webSocketThread;
+  std::thread m_senderThread;
   bool m_moxActive = false;
   bool m_stopMoxTimerThread = false;
   std::atomic<bool> m_stopWebSocketThread{false};
+  std::atomic<bool> m_stopSenderThread{false};
+  std::mutex m_queueMutex;
+  std::condition_variable m_queueCv;
+  std::queue<CwElement> m_cwQueue;
   bool m_moxDeactivationScheduled = false;
   uint64_t m_moxScheduleToken = 0;
   uint64_t m_moxDeactivationAtMs = 0;

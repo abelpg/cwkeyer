@@ -69,7 +69,6 @@ bool RemoteClient::sendRaw(const void *data, size_t len) {
   const auto *bytes = static_cast<const char *>(data);
   size_t sentTotal = 0;
   while (sentTotal < len) {
-    log(L_DEBUG) << "Sending " << sentTotal << " bytes";
     const int sent = ::send(static_cast<SOCKET>(m_socketFd),
                             bytes + sentTotal,
                             static_cast<int>(len - sentTotal),

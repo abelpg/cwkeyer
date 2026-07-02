@@ -86,7 +86,7 @@ void CwDecoder::timeoutLoop() {
 
 // ── IKeyerCW override ─────────────────────────────────────────────────────────
 
-void CwDecoder::runCW(KeyerItem item, int duration) {
+void CwDecoder::runCW(KeyerItem item, int duration, int /*spaceDuration*/) {
   if (!m_started) return;
 
   std::lock_guard<std::mutex> lock(m_mutex);

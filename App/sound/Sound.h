@@ -38,7 +38,7 @@ public:
 
   bool enabled() const { return m_enabled; }
 
-  void runCW(KeyerItem item, int duration) override;
+  void runCW(KeyerItem item, int duration, int spaceDuration) override;
   void startRunCw() override;
   void stopRunCw() override;
 
