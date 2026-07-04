@@ -202,65 +202,17 @@ void RemoteClient::senderLoop() {
       m_cwQueue.pop();
     }
 
-    processElement(element);
+    bool resultUp =  sendKeyerCommand("keyer:0,true," + std::to_string(element.duration) + ";", element.duration);
+    bool resultDown =  sendKeyerCommand("keyer:0,false," + std::to_string(element.spaceDuration) + ";", element.spaceDuration);
+    // Wait the trailing space before processing the next element.
+    Utils::sleepFor(element.duration + element.spaceDuration);
+    log(L_DEBUG) << "RemoteClient::senderLoop: sent CW element, duration=" << element.duration
+                 << ", spaceDuration=" << element.spaceDuration
+                 << ", result=" << (resultUp && resultDown ? "success" : "failure");
   }
 }
 
-/// Sends a single queued CW element following the MOX keying flow:
-///  1. If MOX is disabled: enable it and wait a constant settle time.
-///  2. If MOX is enabled: cancel any scheduled MOX release.
-///  3. Send the timed key command ("keyer:0,true,<duration>;").
-///  4. Wait the element's trailing space.
-///  5. Schedule the MOX release.
-void RemoteClient::processElement(const CwElement &element) {
-  bool moxJustActivated = false;
-  {
-    std::lock_guard lock(m_moxMutex);
-    if (!m_running || m_socketFd == -1) {
-      return;
-    }
 
-    // A new element extends MOX: cancel any pending deactivation.
-    m_moxDeactivationScheduled = false;
-    ++m_moxScheduleToken;
-
-    if (!m_moxActive) {
-      if (!activateMoxLocked()) {
-        return;
-      }
-      moxJustActivated = true;
-    }
-  }
-
-  // Give the TRX time to settle after enabling MOX.
-  if (moxJustActivated) {
-    Utils::sleepFor(MOX_ACTIVATION_DELAY_MS);
-  }
-
-  // Send the timed key command.
-  {
-    std::lock_guard lock(m_moxMutex);
-    if (!m_running || m_socketFd == -1) {
-      return;
-    }
-    if (!sendLine("keyer:0,true," + std::to_string(element.duration) + ";")) {
-      return;
-    }
-  }
-
-  // Wait the trailing space before processing the next element.
-  if (element.spaceDuration > 0) {
-    Utils::sleepFor(element.spaceDuration);
-  }
-
-  // Schedule the MOX release; a following element will cancel it.
-  {
-    std::lock_guard lock(m_moxMutex);
-    if (m_running && m_moxActive) {
-      scheduleMoxReleaseLocked(0);
-    }
-  }
-}
 
 /// Builds and sends an untimed keyer command (key down / key up).
 bool RemoteClient::sendCommand(bool keyDown) {

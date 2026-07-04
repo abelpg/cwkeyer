@@ -50,7 +50,6 @@ private:
   bool performWebSocketHandshake(const std::string &serverIp, int port);
   void moxTimerLoop();
   void senderLoop();
-  void processElement(const CwElement &element);
   bool sendCommand(bool keyDown);
   bool sendKeyerCommand(const std::string &command, int duration);
   bool sendFrame(uint8_t opcode, const uint8_t *payload, size_t payloadLen);
