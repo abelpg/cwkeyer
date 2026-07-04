@@ -51,7 +51,7 @@ private:
   void moxTimerLoop();
   void senderLoop();
   bool sendCommand(bool keyDown);
-  bool sendKeyerCommand(const std::string &command, int duration);
+  bool sendKeyerCommand(const std::string &command);
   bool sendFrame(uint8_t opcode, const uint8_t *payload, size_t payloadLen);
   bool sendControlFrame(uint8_t opcode, const std::vector<uint8_t> &payload);
   bool sendLine(const std::string &line);

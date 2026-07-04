@@ -202,13 +202,36 @@ void RemoteClient::senderLoop() {
       m_cwQueue.pop();
     }
 
-    bool resultUp =  sendKeyerCommand("keyer:0,true," + std::to_string(element.duration) + ";", element.duration);
-    bool resultDown =  sendKeyerCommand("keyer:0,false," + std::to_string(element.spaceDuration) + ";", element.spaceDuration);
-    // Wait the trailing space before processing the next element.
-    Utils::sleepFor(element.duration + element.spaceDuration);
+    bool moxReady = false;
+    {
+      std::lock_guard lock(m_moxMutex);
+      if (m_running && m_socketFd != -1) {
+        // A new CW element extends MOX lifetime and cancels pending release.
+        m_moxDeactivationScheduled = false;
+        ++m_moxScheduleToken;
+        moxReady = m_moxActive || activateMoxLocked();
+      }
+    }
+
+    const bool resultDown = moxReady && sendKeyerCommand("keyer:0,true,0;");
+    Utils::sleepFor(element.spaceDuration / 2);
+    const bool resultUp = sendKeyerCommand("keyer:0,false," + std::to_string(element.duration) + ";");
+
+    // Wait only trailing space; element hold time was already consumed above.
+    Utils::sleepFor(element.duration + (element.spaceDuration / 2) );
     log(L_DEBUG) << "RemoteClient::senderLoop: sent CW element, duration=" << element.duration
                  << ", spaceDuration=" << element.spaceDuration
-                 << ", result=" << (resultUp && resultDown ? "success" : "failure");
+                 << ", keyDown=" << (resultDown ? "success" : "failure")
+                 << ", keyUp=" << (resultUp ? "success" : "failure");
+
+    std::lock_guard lock(m_moxMutex);
+    if (m_running && m_socketFd != -1) {
+      if (m_moxReleaseDelayMs <= 0) {
+        deactivateMoxLocked();
+      } else {
+        scheduleMoxReleaseLocked(0);
+      }
+    }
   }
 }
 
@@ -217,37 +240,16 @@ void RemoteClient::senderLoop() {
 /// Builds and sends an untimed keyer command (key down / key up).
 bool RemoteClient::sendCommand(bool keyDown) {
   const std::string command = keyDown ? "keyer:0,true;" : "keyer:0,false;";
-  return sendKeyerCommand(command, 0);
+  return sendKeyerCommand(command);
 }
 
-/// Sends a keyer command, activating MOX beforehand if needed, and either
-/// releases MOX immediately (no delay configured) or schedules its release.
-bool RemoteClient::sendKeyerCommand(const std::string &command, int duration) {
-  std::lock_guard lock(m_moxMutex);
+/// Sends a keyer command over the WebSocket.
+bool RemoteClient::sendKeyerCommand(const std::string &command) {
 
   if (!m_running || m_socketFd == -1) {
     return false;
   }
-
-  // Cancel any pending deactivation: a new command extends MOX.
-  m_moxDeactivationScheduled = false;
-  ++m_moxScheduleToken;
-
-  if (!m_moxActive && !activateMoxLocked()) {
-    return false;
-  }
-
-  if (!sendLine(command)) {
-    return false;
-  }
-
-  if (m_moxReleaseDelayMs <= 0) {
-    deactivateMoxLocked();
-    return m_running;
-  }
-
-  scheduleMoxReleaseLocked(duration);
-  return true;
+  return sendLine(command);
 }
 
 /// Sends a masked WebSocket frame with the given opcode and payload.
