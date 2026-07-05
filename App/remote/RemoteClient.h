@@ -51,7 +51,7 @@ private:
   void moxTimerLoop();
   void senderLoop();
   bool sendCommand(bool keyDown);
-  bool sendKeyerCommand(const std::string &command);
+  bool sendKeyerCommand(bool keyDown, int intervalMs);
   bool sendFrame(uint8_t opcode, const uint8_t *payload, size_t payloadLen);
   bool sendControlFrame(uint8_t opcode, const std::vector<uint8_t> &payload);
   bool sendLine(const std::string &line);
@@ -95,6 +95,7 @@ private:
   bool m_moxDeactivationScheduled = false;
   uint64_t m_moxScheduleToken = 0;
   uint64_t m_moxDeactivationAtMs = 0;
+  uint64_t m_lastSendKeyerCommandAtMs = 0;
   int m_moxReleaseDelayMs = 250;
 
 #ifdef _WIN32

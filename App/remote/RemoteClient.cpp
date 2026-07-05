@@ -15,7 +15,6 @@ constexpr int WS_READ_TIMEOUT_MS = 1000;
 constexpr uint64_t WS_PING_INTERVAL_MS = 15000;
 constexpr uint64_t WS_MAX_PAYLOAD_LEN = 1024 * 1024;
 /// Constant settle time to wait after enabling MOX before keying.
-constexpr int MOX_ACTIVATION_DELAY_MS = 100;
 
 /// Encodes a byte buffer as Base64 (used for the Sec-WebSocket-Key header).
 std::string base64Encode(const uint8_t *data, size_t len) {
@@ -88,6 +87,7 @@ bool RemoteClient::start(const std::string &serverIp, int port, int moxReleaseDe
   {
     std::lock_guard lock(m_moxMutex);
     resetMoxStateLocked(moxReleaseDelayMs);
+    m_lastSendKeyerCommandAtMs = 0;
   }
 
   m_running = true;
@@ -213,16 +213,25 @@ void RemoteClient::senderLoop() {
       }
     }
 
-    const bool resultDown = moxReady && sendKeyerCommand("keyer:0,true,0;");
-    Utils::sleepFor(element.spaceDuration / 2);
-    const bool resultUp = sendKeyerCommand("keyer:0,false," + std::to_string(element.duration) + ";");
+    const uint64_t now = nowMs();
+    int previousTime = 0;
+    if (m_lastSendKeyerCommandAtMs != 0 && now >= m_lastSendKeyerCommandAtMs) {
+      const uint64_t elapsed = now - m_lastSendKeyerCommandAtMs;
+      if (elapsed <= (element.spaceDuration * 3) + 10) {
+        previousTime = static_cast<int>(elapsed);
+      }
+    }
 
-    // Wait only trailing space; element hold time was already consumed above.
-    Utils::sleepFor(element.duration + (element.spaceDuration / 2) );
-    log(L_DEBUG) << "RemoteClient::senderLoop: sent CW element, duration=" << element.duration
-                 << ", spaceDuration=" << element.spaceDuration
-                 << ", keyDown=" << (resultDown ? "success" : "failure")
-                 << ", keyUp=" << (resultUp ? "success" : "failure");
+    const bool resultDown = moxReady && sendKeyerCommand(true, previousTime);
+    if (resultDown) {
+      Utils::sleepFor(element.duration);
+    }
+    const bool resultUp = resultDown && sendKeyerCommand(false, element.duration);
+    if (resultUp) {
+      m_lastSendKeyerCommandAtMs = nowMs();
+    }
+
+    Utils::sleepFor(element.spaceDuration);
 
     std::lock_guard lock(m_moxMutex);
     if (m_running && m_socketFd != -1) {
@@ -239,16 +248,22 @@ void RemoteClient::senderLoop() {
 
 /// Builds and sends an untimed keyer command (key down / key up).
 bool RemoteClient::sendCommand(bool keyDown) {
-  const std::string command = keyDown ? "keyer:0,true;" : "keyer:0,false;";
-  return sendKeyerCommand(command);
+  return sendKeyerCommand(keyDown, 0);
 }
 
 /// Sends a keyer command over the WebSocket.
-bool RemoteClient::sendKeyerCommand(const std::string &command) {
+bool RemoteClient::sendKeyerCommand(bool keyDown, int intervalMs) {
+  if (intervalMs < 0) {
+    intervalMs = 0;
+  }
 
   if (!m_running || m_socketFd == -1) {
     return false;
   }
+
+  const std::string command =
+      "keyer:0," + std::string(keyDown ? "true" : "false") + "," + std::to_string(intervalMs) + ";";
+
   return sendLine(command);
 }
 
@@ -375,8 +390,12 @@ void RemoteClient::moxTimerLoop() {
 
 /// Encodes the text as a masked WebSocket text frame and sends it to the server.
 bool RemoteClient::sendLine(const std::string &line) {
-  log(L_DEBUG) << "Sending line: " << line;
-  return sendFrame(0x1, reinterpret_cast<const uint8_t *>(line.data()), line.size());
+
+  auto now= nowMs();
+
+  bool result = sendFrame(0x1, reinterpret_cast<const uint8_t *>(line.data()), line.size());
+  log(L_INFO) << "Sending line: " << line << " in " << (nowMs() - now) << " ms";
+  return result;
 }
 
 /// Reads exactly len bytes with timeout handling.
