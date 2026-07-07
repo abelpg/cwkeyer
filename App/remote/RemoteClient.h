@@ -58,10 +58,6 @@ private:
   int readExact(uint8_t *buffer, size_t len, int timeoutMs);
   int recvFrame(uint8_t &opcode, std::vector<uint8_t> &payload, int timeoutMs);
   void webSocketLoop();
-  bool activateMoxLocked();
-  void deactivateMoxLocked();
-  void scheduleMoxReleaseLocked(int duration);
-  void resetMoxStateLocked(int moxReleaseDelayMs);
 
   // --- Platform-specific primitives (RemoteClient_win.cpp / RemoteClient_linux.cpp) ---
   /// Performs platform network initialization (e.g. WSAStartup on Windows).
@@ -80,23 +76,15 @@ private:
   intptr_t m_socketFd = -1;
   std::atomic<bool> m_running{false};
   std::mutex m_sendMutex;
-  std::mutex m_moxMutex;
-  std::condition_variable m_moxCv;
-  std::thread m_moxTimerThread;
   std::thread m_webSocketThread;
   std::thread m_senderThread;
-  bool m_moxActive = false;
-  bool m_stopMoxTimerThread = false;
   std::atomic<bool> m_stopWebSocketThread{false};
   std::atomic<bool> m_stopSenderThread{false};
   std::mutex m_queueMutex;
   std::condition_variable m_queueCv;
   std::queue<CwElement> m_cwQueue;
-  bool m_moxDeactivationScheduled = false;
-  uint64_t m_moxScheduleToken = 0;
-  uint64_t m_moxDeactivationAtMs = 0;
   uint64_t m_lastSendKeyerCommandAtMs = 0;
-  int m_moxReleaseDelayMs = 250;
+
 
 #ifdef _WIN32
   bool m_wsaStarted = false;

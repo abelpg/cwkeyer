@@ -84,17 +84,10 @@ bool RemoteClient::start(const std::string &serverIp, int port, int moxReleaseDe
     return false;
   }
 
-  {
-    std::lock_guard lock(m_moxMutex);
-    resetMoxStateLocked(moxReleaseDelayMs);
-    m_lastSendKeyerCommandAtMs = 0;
-  }
-
   m_running = true;
   m_stopWebSocketThread = false;
   m_stopSenderThread = false;
   m_webSocketThread = std::thread(&RemoteClient::webSocketLoop, this);
-  m_moxTimerThread = std::thread(&RemoteClient::moxTimerLoop, this);
   m_senderThread = std::thread(&RemoteClient::senderLoop, this);
   log(L_INFO) << "RemoteClient connected to " << serverIp << ":" << port;
   return true;
@@ -103,18 +96,9 @@ bool RemoteClient::start(const std::string &serverIp, int port, int moxReleaseDe
 /// Stops the timer thread, releases MOX if it was active, closes the socket
 /// and performs platform cleanup.
 void RemoteClient::stop() {
-  bool shouldDeactivateMox = false;
-  {
-    std::lock_guard lock(m_moxMutex);
-    shouldDeactivateMox = m_moxActive;
-    m_stopMoxTimerThread = true;
-    m_moxDeactivationScheduled = false;
-    ++m_moxScheduleToken;
-    m_moxDeactivationAtMs = 0;
-  }
+
   m_stopWebSocketThread = true;
   m_stopSenderThread = true;
-  m_moxCv.notify_all();
   m_queueCv.notify_all();
 
   if (m_senderThread.joinable()) {
@@ -125,25 +109,11 @@ void RemoteClient::stop() {
     m_webSocketThread.join();
   }
 
-  if (m_moxTimerThread.joinable()) {
-    m_moxTimerThread.join();
-  }
 
   {
     std::lock_guard lock(m_queueMutex);
     std::queue<CwElement> empty;
     m_cwQueue.swap(empty);
-  }
-
-  if (m_running && shouldDeactivateMox && m_socketFd != -1) {
-    std::lock_guard lock(m_moxMutex);
-    deactivateMoxLocked();
-  }
-
-  {
-    std::lock_guard lock(m_moxMutex);
-    m_moxActive = false;
-    m_stopMoxTimerThread = false;
   }
 
   m_running = false;
@@ -202,16 +172,6 @@ void RemoteClient::senderLoop() {
       m_cwQueue.pop();
     }
 
-    bool moxReady = false;
-    {
-      std::lock_guard lock(m_moxMutex);
-      if (m_running && m_socketFd != -1) {
-        // A new CW element extends MOX lifetime and cancels pending release.
-        m_moxDeactivationScheduled = false;
-        ++m_moxScheduleToken;
-        moxReady = m_moxActive || activateMoxLocked();
-      }
-    }
 
     const uint64_t now = nowMs();
     int previousTime = 0;
@@ -222,7 +182,7 @@ void RemoteClient::senderLoop() {
       }
     }
 
-    const bool resultDown = moxReady && sendKeyerCommand(true, previousTime);
+    const bool resultDown = sendKeyerCommand(true, previousTime);
     if (resultDown) {
       Utils::sleepFor(element.duration);
     }
@@ -233,14 +193,6 @@ void RemoteClient::senderLoop() {
 
     Utils::sleepFor(element.spaceDuration);
 
-    std::lock_guard lock(m_moxMutex);
-    if (m_running && m_socketFd != -1) {
-      if (m_moxReleaseDelayMs <= 0) {
-        deactivateMoxLocked();
-      } else {
-        scheduleMoxReleaseLocked(0);
-      }
-    }
   }
 }
 
@@ -317,76 +269,6 @@ bool RemoteClient::sendControlFrame(uint8_t opcode, const std::vector<uint8_t> &
   return sendFrame(opcode, payload.data(), payload.size());
 }
 
-/// Activates MOX by keying the TRX.
-/// Must be called with m_moxMutex held.
-bool RemoteClient::activateMoxLocked() {
-  if (!sendLine("trx:0,true;")) {
-    return false;
-  }
-
-  m_moxActive = true;
-  return true;
-}
-
-/// Deactivates MOX by unkeying the TRX.
-/// Must be called with m_moxMutex held.
-void RemoteClient::deactivateMoxLocked() {
-  sendLine("trx:0,false;");
-
-  m_moxActive = false;
-}
-
-/// Schedules the MOX release after the configured delay plus the element duration.
-/// Must be called with m_moxMutex held.
-void RemoteClient::scheduleMoxReleaseLocked(int duration) {
-  m_moxDeactivationScheduled = true;
-  m_moxDeactivationAtMs = nowMs() + static_cast<uint64_t>(m_moxReleaseDelayMs + duration);
-  ++m_moxScheduleToken;
-  m_moxCv.notify_one();
-}
-
-/// Resets all MOX-related state to a clean initial condition.
-/// Must be called with m_moxMutex held.
-void RemoteClient::resetMoxStateLocked(int moxReleaseDelayMs) {
-  m_moxReleaseDelayMs = moxReleaseDelayMs >= 0 ? moxReleaseDelayMs : 0;
-  m_moxActive = false;
-  m_stopMoxTimerThread = false;
-  m_moxDeactivationScheduled = false;
-  ++m_moxScheduleToken;
-  m_moxDeactivationAtMs = 0;
-}
-
-/// Background loop that releases MOX when the scheduled deadline expires,
-/// unless a newer command reschedules or cancels the deactivation.
-void RemoteClient::moxTimerLoop() {
-  std::unique_lock lock(m_moxMutex);
-
-  while (!m_stopMoxTimerThread) {
-    m_moxCv.wait(lock, [this]() { return m_stopMoxTimerThread || m_moxDeactivationScheduled; });
-    if (m_stopMoxTimerThread) {
-      break;
-    }
-
-    const uint64_t token = m_moxScheduleToken;
-    const uint64_t deactivateAtMs = m_moxDeactivationAtMs;
-    const uint64_t currentMs = nowMs();
-
-    if (deactivateAtMs > currentMs) {
-      const auto waitDuration = std::chrono::milliseconds(deactivateAtMs - currentMs);
-      const bool interrupted = m_moxCv.wait_for(lock, waitDuration, [this, token]() {
-        return m_stopMoxTimerThread || !m_moxDeactivationScheduled || m_moxScheduleToken != token;
-      });
-      if (interrupted) {
-        continue; // Rescheduled, cancelled or stopping: re-evaluate from the top.
-      }
-    }
-
-    m_moxDeactivationScheduled = false;
-    if (m_moxActive) {
-      deactivateMoxLocked();
-    }
-  }
-}
 
 /// Encodes the text as a masked WebSocket text frame and sends it to the server.
 bool RemoteClient::sendLine(const std::string &line) {
