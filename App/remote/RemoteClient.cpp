@@ -183,15 +183,19 @@ void RemoteClient::senderLoop() {
     }
 
     const bool resultDown = sendKeyerCommand(true, previousTime);
-    if (resultDown) {
-      Utils::sleepFor(element.duration);
-    }
     const bool resultUp = resultDown && sendKeyerCommand(false, element.duration);
+
+    if (resultDown) {
+      Utils::sleepFor(element.duration );
+    }
+
     if (resultUp) {
       m_lastSendKeyerCommandAtMs = nowMs();
     }
 
-    Utils::sleepFor(element.spaceDuration);
+    if (resultDown) {
+      Utils::sleepFor(element.spaceDuration );
+    }
 
   }
 }
