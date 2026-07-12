@@ -127,6 +127,17 @@ bool RemoteClient::started() const {
   return m_running.load();
 }
 
+int RemoteClient::calculateSpaceBetweenCwElement(int spaceDuration) {
+  const uint64_t now = nowMs();
+  if (m_lastSendKeyerCommandAtMs != 0 && now >= m_lastSendKeyerCommandAtMs) {
+    const uint64_t elapsed = now - m_lastSendKeyerCommandAtMs;
+    if (elapsed <= (spaceDuration * 3) + 10) {
+      return static_cast<int>(elapsed);
+    }
+  }
+  return 0;
+}
+
 /// Enqueues a timed CW element (dit/dah); other item types are ignored.
 void RemoteClient::runCW(KeyerItem item, int duration, int spaceDuration) {
   if (item != DIT && item != DAH) {
@@ -136,9 +147,14 @@ void RemoteClient::runCW(KeyerItem item, int duration, int spaceDuration) {
     return;
   }
 
+  // Space between calls.
+  int spaceBetweenCwElement = calculateSpaceBetweenCwElement(spaceDuration);
+
+  // Send dit/dah
   {
     std::lock_guard lock(m_queueMutex);
-    m_cwQueue.push(CwElement{duration, spaceDuration});
+    m_cwQueue.push(CwElement{duration, spaceDuration,spaceBetweenCwElement});
+    m_lastSendKeyerCommandAtMs = nowMs();
   }
   m_queueCv.notify_one();
 }
@@ -172,25 +188,11 @@ void RemoteClient::senderLoop() {
       m_cwQueue.pop();
     }
 
-
-    const uint64_t now = nowMs();
-    int previousTime = 0;
-    if (m_lastSendKeyerCommandAtMs != 0 && now >= m_lastSendKeyerCommandAtMs) {
-      const uint64_t elapsed = now - m_lastSendKeyerCommandAtMs;
-      if (elapsed <= (element.spaceDuration * 3) + 10) {
-        previousTime = static_cast<int>(elapsed);
-      }
-    }
-
-    const bool resultDown = sendKeyerCommand(true, previousTime);
+    const bool resultDown = sendKeyerCommand(true, element.spaceBetweenCwElement);
     const bool resultUp = resultDown && sendKeyerCommand(false, element.duration);
 
     if (resultDown) {
       Utils::sleepFor(element.duration );
-    }
-
-    if (resultUp) {
-      m_lastSendKeyerCommandAtMs = nowMs();
     }
 
     if (resultDown) {

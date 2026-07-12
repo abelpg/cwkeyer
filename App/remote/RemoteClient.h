@@ -17,6 +17,7 @@
 struct CwElement {
   int duration = 0;
   int spaceDuration = 0;
+  int spaceBetweenCwElement = 0;
 };
 
 /**
@@ -72,6 +73,8 @@ private:
   bool sendRaw(const void *data, size_t len);
   /// Receives up to len bytes; waits at most timeoutMs (-1 = blocking). Returns bytes read, -2 on timeout, 0 on close, -1 on error.
   int recvRaw(void *buffer, size_t len, int timeoutMs);
+
+  int calculateSpaceBetweenCwElement(int spaceDuration);
 
   intptr_t m_socketFd = -1;
   std::atomic<bool> m_running{false};
