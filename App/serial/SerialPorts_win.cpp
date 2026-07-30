@@ -1,7 +1,12 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "SerialPorts.h"
 #include <windows.h>
 
-// ── Windows: enumerate COM ports from the Registry ───────────────────────────
+// â”€â”€ Windows: enumerate COM ports from the Registry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 std::vector<std::string> SerialPorts::listPorts() {
   std::vector<std::string> ports;
@@ -27,4 +32,5 @@ std::vector<std::string> SerialPorts::listPorts() {
   }
   return ports;
 }
+
 

@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "Utils.h"
 
 
@@ -11,3 +16,4 @@
 void Utils::sleepFor(int milliseconds) {
   usleep(milliseconds  * 1000);
 }
+

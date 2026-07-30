@@ -1,4 +1,9 @@
-﻿#include "RemoteClient.h"
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
+#include "RemoteClient.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -117,3 +122,4 @@ int RemoteClient::recvRaw(void *buffer, size_t len, int timeoutMs) {
   }
   return received;
 }
+

@@ -1,10 +1,15 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "SerialPorts.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <algorithm>
 #include <string>
 
-// ── Linux: enumerate serial ports from /dev ───────────────────────────────────
+// â”€â”€ Linux: enumerate serial ports from /dev â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 static bool isSerialDevice(const std::string &name) {
   return (name.rfind("ttyS",   0) == 0 ||
@@ -33,4 +38,5 @@ std::vector<std::string> SerialPorts::listPorts() {
   std::sort(ports.begin(), ports.end());
   return ports;
 }
+
 

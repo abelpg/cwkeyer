@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 
 #ifndef CWKEYERAPP_CONFIGURATION_H
 #define CWKEYERAPP_CONFIGURATION_H
@@ -51,3 +56,4 @@ class Configuration {
 
 
 #endif //CWKEYERAPP_CONFIGURATION_H
+

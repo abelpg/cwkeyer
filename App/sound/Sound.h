@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #ifndef CWKEYERAPP_SOUND_H
 #define CWKEYERAPP_SOUND_H
 
@@ -75,7 +80,7 @@ private:
   double m_releaseTime    = 0.0;
 
   std::map<int, QByteArray> m_cacheSound;
-  // En la sección private:
+  // En la secciÃ³n private:
   QIODevice    *m_sinkDevice   = nullptr;   // device de push del sink
   QTimer       *m_pushTimer    = nullptr;   // timer para escribir chunks
 };

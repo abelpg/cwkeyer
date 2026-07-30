@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "CwDecoder.h"
 
 CwDecoder::CwDecoder(std::function<void(const std::string &)> callbackTextDecoded) {
@@ -32,7 +37,7 @@ void CwDecoder::stop() {
   m_currentSequence.clear();
 }
 
-// ── Private helpers ───────────────────────────────────────────────────────────
+// â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Must be called with m_mutex held
 void CwDecoder::flushLetter() {
@@ -84,7 +89,7 @@ void CwDecoder::timeoutLoop() {
   }
 }
 
-// ── IKeyerCW override ─────────────────────────────────────────────────────────
+// â”€â”€ IKeyerCW override â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void CwDecoder::runCW(KeyerItem item, int duration, int /*spaceDuration*/) {
   if (!m_started) return;

@@ -1,7 +1,12 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "Keyboard.h"
 #include <windows.h>
 
-// ── Windows key injection via SendInput ──────────────────────────────────────
+// â”€â”€ Windows key injection via SendInput â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 static void sendKey(WORD vk, bool pressed) {
   INPUT input{};
@@ -41,4 +46,5 @@ void Keyboard::pressDah(bool pressed) {
 void Keyboard::setEnabled(bool enabled) {
   m_enabled = enabled;
 }
+
 
