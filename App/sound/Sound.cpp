@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "Sound.h"
 
 Sound::Sound(QObject *parent) : QObject(parent) {
@@ -121,13 +126,13 @@ void Sound::onStartCwRequested() {
     // Reiniciar el generador (ataque limpio desde 0)
     m_cwGenerator->startStream();
 
-    // Si el timer ya está activo el sink sigue corriendo: solo hemos relanzado
-    // el generador y no hay nada más que hacer. Evitamos detener/reiniciar el
+    // Si el timer ya estÃ¡ activo el sink sigue corriendo: solo hemos relanzado
+    // el generador y no hay nada mÃ¡s que hacer. Evitamos detener/reiniciar el
     // sink entre elementos CW, que es la causa del corte de audio.
     if (m_pushTimer) return;
 
-    // Primera vez (o tras un período largo de silencio): arrancar el sink.
-    stop();   // limpia cualquier reproducción de tono puntual activa
+    // Primera vez (o tras un perÃ­odo largo de silencio): arrancar el sink.
+    stop();   // limpia cualquier reproducciÃ³n de tono puntual activa
     m_sinkDevice = m_sink->start();
 
     const int chunkMs    = 20;
@@ -135,7 +140,7 @@ void Sound::onStartCwRequested() {
 
     // Ticks consecutivos de silencio (generador parado) antes de apagar el sink.
     // 2 s de margen: cubre cualquier latencia de hardware y pausa inter-elemento.
-    // Si llega un nuevo onStartCwRequested antes, el timer ya está vivo y sigue.
+    // Si llega un nuevo onStartCwRequested antes, el timer ya estÃ¡ vivo y sigue.
     const int maxIdleTicks = 2000 / chunkMs;
 
     m_pushTimer = new QTimer(this);
@@ -145,13 +150,13 @@ void Sound::onStartCwRequested() {
             [this, numSamples, maxIdleTicks, idleTicks = 0]() mutable {
         if (!m_sinkDevice) return;
 
-        // El generador produce tono con envolvente o silencio cuando está parado;
-        // simplemente volcamos lo que genere sin lógica de drenado manual.
+        // El generador produce tono con envolvente o silencio cuando estÃ¡ parado;
+        // simplemente volcamos lo que genere sin lÃ³gica de drenado manual.
         QByteArray chunk = m_cwGenerator->generateChunk(numSamples);
         m_sinkDevice->write(chunk);
 
         if (m_cwGenerator->isStopped()) {
-            // Silencio activo: contar hacia el apagado automático del sink
+            // Silencio activo: contar hacia el apagado automÃ¡tico del sink
             if (++idleTicks >= maxIdleTicks) {
                 m_pushTimer->stop();
                 m_pushTimer->deleteLater();
@@ -169,8 +174,8 @@ void Sound::onStartCwRequested() {
 void Sound::onStopCwRequested() {
     if (!m_cwGenerator) return;
     // El generador aplica el release y luego emite silencio.
-    // El timer sigue corriendo; el sink NO se detiene aquí para evitar
-    // cortes cuando el siguiente elemento CW llegue poco después.
+    // El timer sigue corriendo; el sink NO se detiene aquÃ­ para evitar
+    // cortes cuando el siguiente elemento CW llegue poco despuÃ©s.
     m_cwGenerator->stopStream();
 }
 

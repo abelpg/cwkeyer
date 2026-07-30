@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #ifndef CWKEYERAPP_KEYER_H
 #define CWKEYERAPP_KEYER_H
 
@@ -72,3 +77,4 @@ class Keyer : public IDitDah {
 
 
 #endif //CWKEYERAPP_KEYER_H
+

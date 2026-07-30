@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "CwGenerator.h"
 
 CwGenerator::CwGenerator(int sampleRate, double frequency,
@@ -42,7 +47,7 @@ QByteArray CwGenerator::generateChunk(int numSamples) {
             if (elapsed >= m_releaseSamples) {
                 // Release terminado: silencio, marcar como stopped
                 out[i] = 0;
-                m_stopped = true;   // el timer dejará de llamar a generateChunk
+                m_stopped = true;   // el timer dejarÃ¡ de llamar a generateChunk
                 ++m_sampleIndex;
                 continue;
             }

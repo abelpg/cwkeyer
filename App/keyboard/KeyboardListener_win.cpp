@@ -1,10 +1,15 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "KeyboardListener.h"
 #include <windows.h>
 
-// ── Windows global low-level keyboard hook ───────────────────────────────────
+// â”€â”€ Windows global low-level keyboard hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
-KeyboardListener* KeyboardListener::s_instance = nullptr;  // Inicializar el puntero estático
+KeyboardListener* KeyboardListener::s_instance = nullptr;  // Inicializar el puntero estÃ¡tico
 
 void KeyboardListener::hook() {
   if (!m_hook) {
@@ -41,4 +46,5 @@ LRESULT CALLBACK KeyboardListener::lowLevelKeyboard(int nCode, WPARAM wParam, LP
   }
   return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
+
 

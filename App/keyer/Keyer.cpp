@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "Keyer.h"
 
 
@@ -141,3 +146,4 @@ void Keyer::keyerCall() {
 int Keyer::ditTime()   const { return m_ditTime; }
 int Keyer::dahTime()   const { return m_dahTime; }
 int Keyer::spaceTime() const { return m_spaceTime; }
+

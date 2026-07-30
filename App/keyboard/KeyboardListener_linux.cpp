@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "KeyboardListener.h"
 
 #include <X11/Xlib.h>
@@ -124,7 +129,7 @@ void KeyboardListener::hook() {
     /* cleanup + return */
   }
 
-  XSync(m_controlDisplay, False);   // <-- asegura que el contexto llegó al servidor
+  XSync(m_controlDisplay, False);   // <-- asegura que el contexto llegÃ³ al servidor
 
   if (!XRecordEnableContextAsync(m_dataDisplay, m_context, handle_event, reinterpret_cast<XPointer>(this))) {
     log(L_DEBUG) << "XRecordEnableContextAsync() EXIT";
@@ -160,3 +165,4 @@ void KeyboardListener::unhook() {
   if (m_controlDisplay) { XCloseDisplay(m_controlDisplay); m_controlDisplay = nullptr; }
   log(L_DEBUG) << "KeyboardListener::unhook() called end";
 }
+

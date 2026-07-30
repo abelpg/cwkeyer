@@ -1,7 +1,12 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "SerialComm.h"
 #include <windows.h>
 
-// ── Windows implementation via Win32 HANDLE / DCB ────────────────────────────
+// â”€â”€ Windows implementation via Win32 HANDLE / DCB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 SerialComm::SerialComm(bool rtsControl, bool dtrControl, bool overlapped)
     : m_rtsControl(rtsControl), m_dtrControl(dtrControl), m_overlapped(overlapped) {}
@@ -139,4 +144,5 @@ void SerialComm::processQueue() {
     EscapeCommFunction(m_hSerial, CLRDTR);
   }
 }
+
 

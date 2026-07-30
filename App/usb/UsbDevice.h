@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #ifndef CWKEYERAPP_USBDEVICE_H
 #define CWKEYERAPP_USBDEVICE_H
 
@@ -68,3 +73,4 @@ class UsbDevice {
 
 
 #endif //CWKEYERAPP_USBDEVICE_H
+

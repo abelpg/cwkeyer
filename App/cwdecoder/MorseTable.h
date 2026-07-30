@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #ifndef CWKEYERAPP_MORSETABLE_H
 #define CWKEYERAPP_MORSETABLE_H
 
@@ -40,11 +45,11 @@ public:
         return (it != table().end()) ? it->second : NOT_FOUND;
     }
 
-    /** Full decode table: dot-dash sequence → character. */
+    /** Full decode table: dot-dash sequence â†’ character. */
     static const std::unordered_map<std::string, char> &table() {
         static const std::unordered_map<std::string, char> s_table = {
 
-            // ── Letters ───────────────────────────────────────────────────
+            // â”€â”€ Letters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             { ".-",   'A' },
             { "-...", 'B' },
             { "-.-.", 'C' },
@@ -72,7 +77,7 @@ public:
             { "-.--", 'Y' },
             { "--..", 'Z' },
 
-            // ── Digits ────────────────────────────────────────────────────
+            // â”€â”€ Digits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             { "-----", '0' },
             { ".----", '1' },
             { "..---", '2' },
@@ -84,7 +89,7 @@ public:
             { "---..", '8' },
             { "----.", '9' },
 
-            // ── Punctuation (ITU-R M.1677) ────────────────────────────────
+            // â”€â”€ Punctuation (ITU-R M.1677) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             { ".-.-.-", '.' },   // full stop
             { "--..--", ',' },   // comma
             { "..--..", '?' },   // question mark
@@ -103,7 +108,7 @@ public:
             { ".--.-.", '@' },   // at sign (AC)
             { "..--.-", '_' },   // underscore
 
-            // ── Prosigns (ITU-R M.1677) ─────────────────────────────────
+            // â”€â”€ Prosigns (ITU-R M.1677) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             { "...-.-",  SK }, // end of work (SK)
             { "-...-.-", BK }, // end of work (BK)
             { "........", CW_ERROR }, // error (HH)
@@ -113,3 +118,4 @@ public:
 };
 
 #endif //CWKEYERAPP_MORSETABLE_H
+

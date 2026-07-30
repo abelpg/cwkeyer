@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "SerialComm.h"
 #include <fcntl.h>
 #include <unistd.h>
@@ -6,7 +11,7 @@
 #include <cstring>
 #include <cerrno>
 
-// ── Linux implementation via POSIX termios / ioctl ────────────────────────────
+// â”€â”€ Linux implementation via POSIX termios / ioctl â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 SerialComm::SerialComm(bool rtsControl, bool dtrControl, bool /*overlapped*/)
     : m_rtsControl(rtsControl), m_dtrControl(dtrControl), m_overlapped(false) {}
@@ -103,4 +108,5 @@ void SerialComm::runCW(KeyerItem /*item*/, int duration) {
       ioctl(fd, TIOCMGET, &s); s &= ~TIOCM_DTR; ioctl(fd, TIOCMSET, &s);
   }).detach();
 }
+
 

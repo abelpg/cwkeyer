@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 
 #ifndef CWKEYERAPP_CWGENERATOR_H
 #define CWKEYERAPP_CWGENERATOR_H
@@ -16,7 +21,7 @@ public:
 
     void startStream();
     void stopStream();
-    bool isStopped() const;          // true cuando el release terminó
+    bool isStopped() const;          // true cuando el release terminÃ³
 
     QByteArray generateChunk(int numSamples);
 
@@ -34,3 +39,4 @@ private:
 };
 
 #endif //CWKEYERAPP_CWGENERATOR_H
+

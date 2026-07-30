@@ -1,10 +1,15 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "N1MMProxy.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
 
-// ── Linux: DSR monitoring via TIOCMGET polling + pipe stop signal ─────────────
+// â”€â”€ Linux: DSR monitoring via TIOCMGET polling + pipe stop signal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 N1MMProxy::N1MMProxy(IDitDah *ditDah)
     : SerialComm(false, false, false), m_ditDah(ditDah) {}
@@ -67,4 +72,5 @@ void N1MMProxy::dsrMonitorLoop() {
     }
   }
 }
+
 

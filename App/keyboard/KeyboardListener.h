@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 
 #ifndef CWKEYERAPP_KEYBOARDLISTENER_H
 #define CWKEYERAPP_KEYBOARDLISTENER_H
@@ -37,7 +42,7 @@ class KeyboardListener  {
 
 #ifdef _WIN32
   static LRESULT CALLBACK lowLevelKeyboard(int nCode, WPARAM wParam, LPARAM lParam);
-  static KeyboardListener* s_instance;  // Instancia estática singleton
+  static KeyboardListener* s_instance;  // Instancia estÃ¡tica singleton
   HHOOK m_hook = nullptr;
 #else
   std::thread m_eventThread;
@@ -56,3 +61,4 @@ class KeyboardListener  {
 };
 
 #endif //CWKEYERAPP_KEYBOARDLISTENER_H
+

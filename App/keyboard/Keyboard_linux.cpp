@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 EA1FXG Abel
+ * This file is part of CwKeyer and is licensed under the GNU General Public License v3.0 or later.
+ * See LICENSE for details.
+ */
 #include "Keyboard.h"
 #include <linux/uinput.h>
 #include <fcntl.h>
@@ -6,7 +11,7 @@
 #include <sys/ioctl.h>
 #include <time.h>
 
-// ── Linux key injection via uinput virtual keyboard ──────────────────────────
+// â”€â”€ Linux key injection via uinput virtual keyboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Requires access to /dev/uinput:
 //   sudo usermod -aG uinput $USER
 //   or udev rule: KERNEL=="uinput", GROUP="uinput", MODE="0660"
@@ -61,7 +66,7 @@ static void sendKey(int keyCode, bool pressed) {
   uinputEmit(g_uinputFd, EV_SYN, SYN_REPORT, 0);
 }
 
-// ── Keyboard class ───────────────────────────────────────────────────────────
+// â”€â”€ Keyboard class â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 Keyboard::Keyboard(QObject *parent) : QObject(parent) {
   setupUInput();
@@ -94,4 +99,5 @@ void Keyboard::pressDah(bool pressed) {
 void Keyboard::setEnabled(bool enabled) {
   m_enabled = enabled;
 }
+
 
