@@ -188,14 +188,17 @@ void RemoteClient::senderLoop() {
       m_cwQueue.pop();
     }
 
-    const bool resultDown = sendKeyerCommand(true, element.spaceBetweenCwElement);
-    const bool resultUp = resultDown && sendKeyerCommand(false, element.duration);
-
-    if (resultDown) {
-      Utils::sleepFor(element.duration );
+    if (element.spaceBetweenCwElement > 0) {
+      Utils::sleepFor(element.spaceBetweenCwElement);
     }
 
+    const bool resultDown = sendKeyerCommand(true, element.duration - 20);
     if (resultDown) {
+      Utils::sleepFor(element.duration);
+    }
+    const bool resultUp = resultDown && sendKeyerCommand(false, 0);
+
+    if (resultUp) {
       Utils::sleepFor(element.spaceDuration );
     }
 
