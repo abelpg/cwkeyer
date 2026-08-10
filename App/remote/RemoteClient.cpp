@@ -44,14 +44,6 @@ std::string base64Encode(const uint8_t *data, size_t len) {
   return out;
 }
 
-/// Returns true if the HTTP response headers correspond to a successful WebSocket upgrade.
-bool isWebSocketUpgradeResponse(const std::string &headers) {
-  if (headers.find("HTTP/1.1 101") != 0) {
-    return false;
-  }
-  return headers.find("Upgrade: websocket") != std::string::npos ||
-         headers.find("upgrade: websocket") != std::string::npos;
-}
 
 } // namespace
 
@@ -197,7 +189,7 @@ void RemoteClient::senderLoop() {
       Utils::sleepFor(element.spaceBetweenCwElement);
     }
 
-    const bool resultDown = sendKeyerCommand(true, element.duration - 20);
+    const bool resultDown = sendKeyerCommand(true, element.duration);
     if (resultDown) {
       Utils::sleepFor(element.duration);
     }
@@ -406,6 +398,9 @@ void RemoteClient::webSocketLoop() {
       break;
     }
 
+    log(L_DEBUG) << "Received WebSocket frame: opcode=" << static_cast<int>(opcode)
+                 << " payloadLen=" << payload.size();
+
     switch (opcode) {
       case 0x8: // close
         sendControlFrame(0x8, payload);
@@ -446,19 +441,22 @@ bool RemoteClient::performWebSocketHandshake(const std::string &serverIp, int po
 
   std::string response;
   response.reserve(1024);
-  std::array<char, 512> buffer{};
-  while (response.find("\r\n\r\n") == std::string::npos) {
-    const int received = recvRaw(buffer.data(), buffer.size(), -1);
-    if (received <= 0) {
-      return false;
-    }
-    response.append(buffer.data(), static_cast<size_t>(received));
-    if (response.size() > 8192) {
-      return false;
+  std::array<char, 1024> buffer{};
+  int received= 1;
+  while (received >0) {
+    received = recvRaw(buffer.data(), buffer.size(), -1);
+    if (received > 0) {
+      response.assign(buffer.data(), static_cast<size_t>(received));
+      log(L_DEBUG) << "Received handshake response chunk: " << response;
+      if (response.find("ready") != std::string::npos) {
+        return true;
+      }
     }
   }
 
-  return isWebSocketUpgradeResponse(response);
+  return false;
+
+
 }
 
 
