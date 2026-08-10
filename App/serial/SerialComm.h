@@ -35,7 +35,7 @@ public:
 
   bool started() const { return m_running; }
 
-  void runCW(KeyerItem item, int duration) override;
+  void runCW(KeyerItem item, int duration, int spaceDuration) override;
   void startRunCw() override;
   void stopRunCw() override;
 

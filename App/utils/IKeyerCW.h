@@ -20,7 +20,7 @@ enum KeyerItem {
 class IKeyerCW {
   public:
     virtual ~IKeyerCW() = default;
-    virtual void runCW(KeyerItem item, int duration) = 0;
+    virtual void runCW(KeyerItem item, int duration, int spaceDuration = 0) = 0;
     virtual void startRunCw() = 0;
     virtual void stopRunCw() = 0;
 

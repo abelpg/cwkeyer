@@ -96,12 +96,12 @@ void Keyer::addKeyerCW(IKeyerCW *keyerCW) {
 void Keyer::playDitDah(KeyerItem item) {
   if (item == DIT) {
     for (IKeyerCW *keyerCW : m_keyerCWList) {
-      keyerCW->runCW(DIT, m_ditTime);
+      keyerCW->runCW(DIT, m_ditTime, m_spaceTime);
     }
     Utils::sleepFor(m_ditTime + m_spaceTime);
   } else if (item == DAH) {
     for (IKeyerCW *keyerCW : m_keyerCWList) {
-      keyerCW->runCW(DAH, m_dahTime);
+      keyerCW->runCW(DAH, m_dahTime, m_spaceTime);
     }
     Utils::sleepFor(m_dahTime + m_spaceTime);
   }

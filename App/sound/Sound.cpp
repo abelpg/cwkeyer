@@ -179,7 +179,7 @@ void Sound::onStopCwRequested() {
     m_cwGenerator->stopStream();
 }
 
-void Sound::runCW(KeyerItem item, int duration) {
+void Sound::runCW(KeyerItem /*item*/, int duration, int /*spaceDuration*/) {
     emit playRequested(duration);
 }
 

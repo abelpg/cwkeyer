@@ -106,7 +106,7 @@ void SerialComm::stopRunCw() {
   EscapeCommFunction(m_hSerial, CLRDTR);
 }
 
-void SerialComm::runCW(KeyerItem item, int duration) {
+void SerialComm::runCW(KeyerItem item, int duration, int /*spaceDuration*/) {
   if (!m_running) return;
   if (m_hSerial == INVALID_HANDLE_VALUE) {
     std::cerr << "SerialComm::runCW: port closed\n";

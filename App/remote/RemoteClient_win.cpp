@@ -7,7 +7,6 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-
 #pragma comment(lib, "Ws2_32.lib")
 
 /// Initializes Winsock (WSAStartup); required once before using sockets on Windows.
@@ -79,6 +78,8 @@ bool RemoteClient::sendRaw(const void *data, size_t len) {
                             bytes + sentTotal,
                             static_cast<int>(len - sentTotal),
                             0);
+
+    log(L_DEBUG) << "Sent " << sent << " bytes";
     if (sent == SOCKET_ERROR || sent == 0) {
       return false;
     }
@@ -89,7 +90,7 @@ bool RemoteClient::sendRaw(const void *data, size_t len) {
 }
 
 /// Receives up to len bytes; waits at most timeoutMs (-1 = blocking).
-/// Returns bytes read, 0 on timeout/connection close, -1 on error.
+/// Returns bytes read, -2 on timeout, 0 on connection close and -1 on error.
 int RemoteClient::recvRaw(void *buffer, size_t len, int timeoutMs) {
   if (m_socketFd == -1) {
     return -1;
@@ -111,7 +112,7 @@ int RemoteClient::recvRaw(void *buffer, size_t len, int timeoutMs) {
       return -1;
     }
     if (ready == 0) {
-      return 0; // Timeout.
+      return -2; // Timeout.
     }
   }
 

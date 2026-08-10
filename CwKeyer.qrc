@@ -1,7 +1,7 @@
 <RCC>
     <qresource>
+        <file>configuration.json</file>
         <file>CwKeyer.qmlproject</file>
-        <file>CwKeyer.ico</file>
         <file>CwKeyer/Constants.qml</file>
         <file>CwKeyer/qmldir</file>
         <file>CwKeyerContent/App.qml</file>
